@@ -22,7 +22,10 @@
       "Bash(supabase migration repair *)",
       "Bash(wrangler deploy *)",
       "Bash(wrangler deploy)",
-      "Bash(pnpm deploy)",
+      "Bash(pnpm ship)",
+      "Bash(pnpm run ship)",
+      "Bash(scripts/ship.sh)",
+      "Bash(bash scripts/ship.sh)",
       "Bash(pnpm exec wrangler deploy *)",
       "Bash(wrangler secret *)",
       "Bash(pnpm exec wrangler secret *)"

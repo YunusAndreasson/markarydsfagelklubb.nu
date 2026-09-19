@@ -22,10 +22,10 @@
   },
 
   // workers.dev stays on: it is the only public URL until the custom domain
-  // cutover, and PR preview URLs (`wrangler versions upload --preview-alias`)
-  // live under it.
+  // cutover. Per-version preview URLs are off — nothing uses them (production
+  // ships with `pnpm ship`), and each would be another public copy of the site.
   "workers_dev": true,
-  "preview_urls": true,
+  "preview_urls": false,
 
   "assets": {
     "directory": "./dist",

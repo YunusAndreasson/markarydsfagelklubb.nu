@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Post-deploy smoke test. Usage: scripts/smoke-test.sh https://mafk-web.jonas-268.workers.dev
+# Post-deploy smoke test; `pnpm ship` runs it last. Usage: scripts/smoke-test.sh <base-url>
 #
 # Retries because a fresh deploy can take a few seconds to reach every edge.
 # Fails (non-zero) unless the home page serves and /api/health reports ok.

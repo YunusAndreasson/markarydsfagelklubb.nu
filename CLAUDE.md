@@ -6,9 +6,9 @@ copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
 comments and docs are English.
 
 **Status: step 1 — foundations only.** The repo has the stack, the Supabase
-wiring, CI/CD and agent context. It has no features yet: no login, no content
-tables, no real pages. Don't build features ahead of the step you've been
-asked for.
+wiring, CI, local shipping and agent context. It has no features yet: no
+login, no content tables, no real pages. Don't build features ahead of the
+step you've been asked for.
 
 Sibling repos: `../mafk-mobie` is the **live** Expo app that uses the same
 database. `../mafk` is the old TanStack web app, now retired, whose Worker
@@ -35,12 +35,14 @@ that this repo mirrors.
 | `pnpm check:fix` | Biome autofix |
 | `pnpm test` | Vitest (pure modules in `src/**/*.test.ts`) |
 | `pnpm types:db` | Regenerate `src/lib/database.types.ts` from the shared project (generated: never hand-edit) |
-| `scripts/smoke-test.sh <url>` | Home page + `/api/health` must be ok; CI runs it after every deploy |
+| `pnpm ship` | **The only deploy path.** Needs a clean `main`; runs verify, `wrangler deploy` (logged-in OAuth), then the smoke test. Only when the user asks |
+| `scripts/smoke-test.sh <url>` | Home page + `/api/health` must be ok |
 
-Deploys go through CI (`.github/workflows/ci.yml`): push to `main` deploys to
-production at https://mafk-web.jonas-268.workers.dev, and a PR gets a preview
-URL at `pr-<n>-mafk-web.jonas-268.workers.dev`. Don't run `wrangler deploy`
-by hand unless the user asks.
+Production is https://mafk-web.jonas-268.workers.dev, shipped **from the
+developer's machine only**. CI (`.github/workflows/ci.yml`) runs `pnpm verify`
+on every push and PR and never deploys, so no Cloudflare credential lives in
+GitHub. Don't call `wrangler deploy` directly; `pnpm ship` ties every live
+version to a commit.
 
 ## The shared database — read before touching data
 
