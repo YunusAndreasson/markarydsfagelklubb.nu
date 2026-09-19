@@ -1,0 +1,120 @@
+# One pipeline: verify every push and PR; deploy main to production; give every
+# PR its own preview URL. `pnpm verify` is the gate locally and here — the same
+# command, so "it passed on my machine" and "CI is green" mean the same thing.
+#
+# Deliberately NOT here: database migrations. The Supabase project is shared
+# with the live mobile app (bird alerts included), so `supabase db push` is a
+# human act — see docs/shared-database.md.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A newer push makes an older PR run irrelevant; a production deploy is never
+  # cut off halfway.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PRODUCTION_URL: https://mafk-web.jonas-268.workers.dev
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm BEFORE setup-node: `cache: pnpm` shells out to pnpm to find the
+      # store. The version comes from package.json `packageManager`.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Biome, `wrangler types` + `astro check`, Vitest, `astro build`.
+      - run: pnpm verify
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ env.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Deploy to Cloudflare Workers
+        run: pnpm exec wrangler deploy --message "${{ github.sha }}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # The static home page proves the assets deployed; /api/health proves the
+      # Worker boots, reads its env and reaches Supabase with the published key.
+      - name: Smoke test
+        run: ./scripts/smoke-test.sh "$PRODUCTION_URL"
+
+  preview:
+    if: github.event_name == 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # A version upload does NOT change what production serves. The alias
+      # gives the PR a stable URL that follows its latest push. It runs with
+      # production's vars — i.e. against the same shared Supabase project.
+      - name: Upload preview version
+        id: upload
+        run: |
+          set -o pipefail
+          pnpm exec wrangler versions upload \
+            --preview-alias "pr-${{ github.event.number }}" \
+            --message "PR #${{ github.event.number }} ${{ github.event.pull_request.head.sha }}" \
+            | tee upload.log
+          url=$(grep -oE 'https://pr-${{ github.event.number }}-mafk-web\.[a-z0-9-]+\.workers\.dev' upload.log | head -n 1)
+          if [ -z "$url" ]; then echo "::error::No preview alias URL in wrangler output"; exit 1; fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test
+        run: ./scripts/smoke-test.sh "${{ steps.upload.outputs.url }}"
+
+      - name: Comment preview URL
+        run: |
+          gh pr comment "${{ github.event.number }}" --edit-last --create-if-none \
+            --body "Preview: ${{ steps.upload.outputs.url }} (commit ${{ github.event.pull_request.head.sha }})"
+        env:
+          GH_TOKEN: ${{ github.token }}
