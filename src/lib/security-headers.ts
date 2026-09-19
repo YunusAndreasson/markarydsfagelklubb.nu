@@ -1,17 +1,22 @@
+import { embedFrameSources } from "./embeds"
+import { SUPABASE_ORIGIN } from "./media"
+
 /**
  * Security headers applied to every response the Worker generates.
  *
- * `public/_headers` covers **static assets only** — a Worker response never
- * passes through it. Without this the admin area, the one part of the site
- * behind a session, would be the only part shipping no security headers.
+ * `public/_headers` covers **static assets only**: the scripts, the favicon and
+ * the prerendered 404. A Worker response never passes through it, and since
+ * step 3 every page is a Worker response.
  *
  * `security-headers.test.ts` asserts these stay identical to the `/*` block in
  * `public/_headers`, because the two drift silently otherwise.
  *
  * `'unsafe-inline'` in script-src covers the pre-paint theme script and Astro's
- * inline island bootstrap. `form-action 'self'` also governs where a form POST
- * may redirect to in Chromium — revisit it when admin sign-in adds an OAuth
- * hop. Any CSP change is verified in Zen (Gecko), not only Chromium.
+ * inline island bootstrap. It is also why a `javascript:` URL must never reach
+ * an href: the sanitizer and the `pages.link_url` check both refuse them.
+ * `frame-src` lists exactly the embed sources the sanitizer lets through.
+ * `form-action 'self'` also governs where a form POST may redirect to in
+ * Chromium. Any CSP change is verified in Zen (Gecko), not only Chromium.
  */
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = Object.freeze({
   "X-Content-Type-Options": "nosniff",
@@ -19,10 +24,19 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = Object.freeze(
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Cross-Origin-Opener-Policy": "same-origin",
-  "Content-Security-Policy":
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; " +
-    "base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' data: ${SUPABASE_ORIGIN}`,
+    "font-src 'self'",
+    "connect-src 'self'",
+    `frame-src ${embedFrameSources().join(" ")}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; "),
 })
 
 const CONNECT_SRC = "connect-src 'self'"

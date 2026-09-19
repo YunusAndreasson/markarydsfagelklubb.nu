@@ -1,4 +1,7 @@
 ---
+// The document shell every page shares: head, theme, noindex. It queries
+// nothing, so the prerendered 404 can use it at build time. The public header
+// and menu live in site.astro, the admin chrome in admin.astro.
 import "@/styles/global.css"
 
 interface Props {

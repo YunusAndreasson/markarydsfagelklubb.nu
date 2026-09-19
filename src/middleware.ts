@@ -2,10 +2,18 @@ import { defineMiddleware } from "astro:middleware"
 import { decideAdminAccess, isAdminPath, type SessionKind } from "@/lib/admin-access"
 import { readIsAdmin } from "@/lib/admin-flag"
 import { applySecurityHeaders, supabaseConnectOrigins } from "@/lib/security-headers"
+import { createSupabasePublicClient } from "@/lib/supabase-public"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 import { readServerEnv } from "@/lib/worker-env"
 
 const API_PREFIX = "/api/"
+
+/**
+ * Public pages change when the admin publishes, so browsers may reuse one for a
+ * minute and no longer (docs/roadmap.md, D4). Nothing between here and the
+ * browser caches it: Workers Cache stays off until launch.
+ */
+const PUBLIC_CACHE_CONTROL = "public, max-age=60"
 
 function plainResponse(body: string, status: number): Response {
   return new Response(body, {
@@ -15,17 +23,17 @@ function plainResponse(body: string, status: number): Response {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Prerendered pages (the 404) render at build time: there is no request and
+  // no Worker environment, and the build must not need Supabase. Served later
+  // as static assets, they get their headers from public/_headers.
+  if (context.isPrerendered) return next()
+
   const { pathname, search } = context.url
 
-  // Public routes are prerendered at build time and have no session. Returning
-  // before touching the Worker environment keeps the build from needing any
-  // Supabase configuration at all.
-  //
-  // Static assets get their security headers from public/_headers. Worker
-  // responses never pass through that file, so /api/* and /admin/* set them here.
-  if (!isAdminPath(pathname)) {
-    const response = await next()
-    return pathname.startsWith(API_PREFIX) ? applySecurityHeaders(response) : response
+  // /api/health reads the environment itself, so it can report a
+  // misconfiguration as a health state rather than a bare 500.
+  if (pathname.startsWith(API_PREFIX)) {
+    return applySecurityHeaders(await next())
   }
 
   const result = readServerEnv()
@@ -34,6 +42,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Joined into the message: wrangler's console formatter truncates objects.
     console.error(`mafk-web: server_misconfigured — ${result.problems.join("; ")}`)
     return applySecurityHeaders(plainResponse("server_misconfigured", 500))
+  }
+
+  if (!isAdminPath(pathname)) {
+    // Public pages read as an anonymous visitor would: the publishable key and
+    // no session. They never touch an auth cookie, which keeps them cacheable.
+    context.locals.db = createSupabasePublicClient(
+      result.env.supabaseUrl,
+      result.env.supabasePublishableKey
+    )
+    const response = await next()
+    if (response.status === 200 && !response.headers.has("Cache-Control")) {
+      response.headers.set("Cache-Control", PUBLIC_CACHE_CONTROL)
+    }
+    return applySecurityHeaders(response)
   }
 
   const { supabase, authResponseHeaders } = createSupabaseServerClient(

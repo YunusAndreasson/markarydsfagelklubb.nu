@@ -7,11 +7,12 @@
 # time; do not add one here.
 #
 # Must match SECURITY_HEADERS in src/lib/security-headers.ts exactly — Worker
-# responses (/admin/*, /api/*) never pass through this file. A test enforces it.
+# responses (every page since step 3) never pass through this file; it covers
+# the static assets and the prerendered 404. A test enforces it.
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Cross-Origin-Opener-Policy: same-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://zgnmajovyqibgxlcomvb.supabase.co; font-src 'self'; connect-src 'self'; frame-src https://www.artportalen.se https://artportalen.se https://www.google.com/maps/embed; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'

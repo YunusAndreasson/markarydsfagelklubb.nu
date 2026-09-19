@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
+import { embedFrameSources } from "./embeds"
+import { SUPABASE_ORIGIN } from "./media"
 import { applySecurityHeaders, SECURITY_HEADERS, supabaseConnectOrigins } from "./security-headers"
 
 /**
@@ -63,6 +65,33 @@ describe("public/_headers", () => {
     // Checked against parsed RULES, not raw text — the file mentions the path
     // in a comment explaining exactly this.
     expect(parseRulePaths(headersFile)).toEqual(["/*"])
+  })
+})
+
+/** One directive of the CSP, split into its sources. */
+function cspDirective(name: string): string[] {
+  const csp = SECURITY_HEADERS["Content-Security-Policy"] ?? ""
+  const directive = csp
+    .split(";")
+    .map((part) => part.trim().split(/\s+/))
+    .find(([directiveName]) => directiveName === name)
+  return directive ? directive.slice(1) : []
+}
+
+describe("content security policy", () => {
+  it("frames exactly the embed sources the sanitizer lets through", () => {
+    expect(cspDirective("frame-src")).toEqual(embedFrameSources())
+  })
+
+  it("loads images from the Supabase project the Worker is configured for", () => {
+    // The site-media bucket is public at <SUPABASE_URL>/storage/v1/object/public/…
+    const wrangler = readFileSync(
+      fileURLToPath(new URL("../../wrangler.jsonc", import.meta.url)),
+      "utf8"
+    )
+    const configured = wrangler.match(/"SUPABASE_URL":\s*"([^"]+)"/)?.[1]
+    expect(configured && new URL(configured).origin).toBe(SUPABASE_ORIGIN)
+    expect(cspDirective("img-src")).toContain(SUPABASE_ORIGIN)
   })
 })
 

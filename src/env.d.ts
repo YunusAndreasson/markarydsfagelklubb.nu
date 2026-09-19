@@ -1,11 +1,17 @@
 /// <reference types="astro/client" />
 /// <reference types="@astrojs/cloudflare/types.d.ts" />
 
+import type { SupabasePublicClient } from "@/lib/supabase-public"
 import type { SupabaseServerClient } from "@/lib/supabase-server"
 
 declare global {
   namespace App {
     interface Locals {
+      /**
+       * Set by the middleware for public pages only: the publishable key with
+       * no session, so it sees exactly what an anonymous visitor may see.
+       */
+      db?: SupabasePublicClient
       /** Set by the middleware for `/admin/*` only — a fresh client per request. */
       supabase?: SupabaseServerClient
       /** The verified session's user on `/admin/*`, or null when signed out. */
