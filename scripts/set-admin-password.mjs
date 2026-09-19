@@ -11,8 +11,8 @@
 // It only changes the password. Whether the account may enter /admin is
 // `profiles.is_admin`, granted separately through SQL (docs/shared-database.md).
 import { execFileSync } from "node:child_process"
-import readline from "node:readline"
 import { createClient } from "@supabase/supabase-js"
+import { askHidden } from "./hidden-input.mjs"
 
 const PROJECT_REF = "zgnmajovyqibgxlcomvb"
 const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`
@@ -23,24 +23,12 @@ function fail(message) {
   process.exit(1)
 }
 
-/** Read a line without echoing it. */
-function askHidden(label) {
-  if (!process.stdin.isTTY) fail("Run this in a terminal: it reads secrets from the keyboard.")
-  process.stdout.write(label)
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: true,
-  })
-  // Swallow readline's echo of the typed characters.
-  rl._writeToOutput = () => {}
-  return new Promise((resolve) => {
-    rl.question("", (answer) => {
-      rl.close()
-      process.stdout.write("\n")
-      resolve(answer)
-    })
-  })
+async function ask(label) {
+  try {
+    return await askHidden(label)
+  } catch (error) {
+    fail(error.message)
+  }
 }
 
 /** A usable secret key from the logged-in CLI, or null. Never printed. */
@@ -75,13 +63,15 @@ if (secretKey) {
 } else {
   console.log("• No secret key from the Supabase CLI. Copy it from the dashboard:")
   console.log("  Project Settings → API Keys → Secret keys.")
-  secretKey = (await askHidden("  Secret key: ")).trim()
+  secretKey = (await ask("  Secret key: ")).trim()
   if (!secretKey) fail("No secret key.")
 }
 
 const admin = createClient(SUPABASE_URL, secretKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
+
+console.log("• Looking up the account…")
 
 // 46 users today; one page of 1000 is plenty for a club.
 const { data: list, error: listError } = await admin.auth.admin.listUsers({
@@ -103,9 +93,15 @@ if (profile?.is_admin !== true) {
   console.log("  profiles.is_admin is granted.")
 }
 
-const password = await askHidden(`New password (at least ${MIN_LENGTH} characters): `)
-if (password.length < MIN_LENGTH) fail(`Too short: use at least ${MIN_LENGTH} characters.`)
-const again = await askHidden("Repeat it: ")
+console.log("")
+const passwordLabel = `New password (at least ${MIN_LENGTH} characters): `
+const password = await ask(passwordLabel)
+if (password.length < MIN_LENGTH) {
+  fail(
+    `Too short (${password.length} characters): use at least ${MIN_LENGTH}. Nothing was changed.`
+  )
+}
+const again = await ask("Repeat it: ".padEnd(passwordLabel.length))
 if (again !== password) fail("The two entries differ. Nothing was changed.")
 
 const { error: updateError } = await admin.auth.admin.updateUserById(user.id, { password })
