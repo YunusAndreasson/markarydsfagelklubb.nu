@@ -81,6 +81,90 @@ export type Database = {
           },
         ]
       }
+      articles: {
+        Row: {
+          author_name: string
+          body_html: string
+          category_id: number | null
+          cover_media_id: number | null
+          created_at: string
+          excerpt: string
+          id: number
+          published_at: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string
+          body_html?: string
+          category_id?: number | null
+          cover_media_id?: number | null
+          created_at?: string
+          excerpt?: string
+          id?: never
+          published_at?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          body_html?: string
+          category_id?: number | null
+          cover_media_id?: number | null
+          created_at?: string
+          excerpt?: string
+          id?: never
+          published_at?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "articles_cover_media_id_fkey"
+            columns: ["cover_media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       expo_push_tokens: {
         Row: {
           created_at: string
@@ -132,6 +216,42 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name?: string
+        }
+        Relationships: []
+      }
+      media: {
+        Row: {
+          alt: string
+          bytes: number
+          created_at: string
+          format: string
+          height: number
+          id: number
+          storage_prefix: string
+          width: number
+          widths: number[]
+        }
+        Insert: {
+          alt?: string
+          bytes?: number
+          created_at?: string
+          format: string
+          height: number
+          id?: never
+          storage_prefix: string
+          width: number
+          widths: number[]
+        }
+        Update: {
+          alt?: string
+          bytes?: number
+          created_at?: string
+          format?: string
+          height?: number
+          id?: never
+          storage_prefix?: string
+          width?: number
+          widths?: number[]
         }
         Relationships: []
       }
@@ -197,6 +317,65 @@ export type Database = {
             columns: ["species_id"]
             isOneToOne: false
             referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          body_html: string
+          created_at: string
+          description: string
+          id: number
+          kind: string
+          link_url: string | null
+          parent_id: number | null
+          published_at: string | null
+          show_in_menu: boolean
+          slug: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          description?: string
+          id?: never
+          kind?: string
+          link_url?: string | null
+          parent_id?: number | null
+          published_at?: string | null
+          show_in_menu?: boolean
+          slug: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          description?: string
+          id?: never
+          kind?: string
+          link_url?: string | null
+          parent_id?: number | null
+          published_at?: string | null
+          show_in_menu?: boolean
+          slug?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
             referencedColumns: ["id"]
           },
         ]

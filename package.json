@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "verify": "pnpm check && pnpm typecheck && pnpm test && pnpm build",
     "ship": "bash scripts/ship.sh",
-    "types:db": "supabase gen types typescript --project-id zgnmajovyqibgxlcomvb > src/lib/database.types.ts",
+    "types:db": "supabase gen types typescript --project-id zgnmajovyqibgxlcomvb > src/lib/database.types.ts && biome format --write src/lib/database.types.ts",
     "types:cf": "wrangler types",
     "admin:password": "node scripts/set-admin-password.mjs"
   },

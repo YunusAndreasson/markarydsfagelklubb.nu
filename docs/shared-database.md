@@ -27,11 +27,30 @@ rely on it for a change.
 | edge function `delete-account` | invoked by the app | — | **live**: App Store requirement |
 | schema `drizzle` (`__drizzle_migrations`) | nothing | — | left over from the retired web app |
 
+## What this repo owns
+
+Created by `supabase/migrations/20260919203847_content_core.sql` (step 3,
+applied 2026-09-19). The app doesn't read any of it.
+
+| Object | Written by | Access (RLS) |
+|---|---|---|
+| `public.categories` | the admin | read: everyone · write: `private.is_admin()` |
+| `public.articles` | the admin | read: anon only published and due (`status = 'published' and published_at <= now()`), the admin everything · write: admin |
+| `public.pages` | the admin | the same rule as articles. The page tree and the menu (`kind` `page` or `link`) |
+| `public.media` | the admin's browser, on upload | read: anon only the covers of visible articles, the admin everything · write: admin |
+| `private.touch_updated_at()` | — | trigger function on `articles` and `pages`; EXECUTE revoked from everyone |
+| storage bucket `site-media` (public) | the admin's browser | public URLs need no policy. `site_media_{select,insert,delete}_admin` on `storage.objects`, each scoped to `bucket_id = 'site-media'`. WebP/JPEG only, 5 MB per file |
+
+The new tables start from `revoke all … from anon, authenticated`, because the
+project's default privileges would otherwise give both every privilege,
+TRUNCATE included, which RLS doesn't cover. anon then gets `select`, and
+authenticated gets `select, insert, update, delete`, which RLS narrows to the
+admin.
+
 What else is true today:
 
-- **Nothing is readable anonymously.** Every policy targets `authenticated` or
-  an owner. The public site's tables will be the first with `anon` read
-  policies.
+- **Only this repo's tables are readable anonymously.** Every policy on the
+  app's tables targets `authenticated` or an owner.
 - **No table has `FORCE ROW LEVEL SECURITY`**, and none of them should get it
   from this repo.
 - **There are no database triggers, no `pg_net`, no `pg_cron`.** The alert

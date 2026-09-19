@@ -36,8 +36,18 @@ it can break members' reports or alerts, which you won't see from this repo.
     `select`.
   - Explicit roles (`to anon`, `to authenticated`), and one policy per command.
     Never `for all … using (true)`.
-  - Public content: `to anon, authenticated` select, limited to published rows.
+  - Public content gets **two** select policies: `to anon`, limited to
+    published rows, and `to authenticated`, with the same rule
+    `or (select private.is_admin())`. They can't be merged, because anon has
+    no EXECUTE on `private.is_admin()` and no USAGE on `private`. See the
+    content-core migration for the pattern.
   - Writes: `to authenticated` with `(select private.is_admin())`.
+  - Start every new table from `revoke all … from anon, authenticated` and
+    grant back only what the API needs. The project's default privileges give
+    both roles everything, TRUNCATE included, and RLS doesn't cover TRUNCATE.
+  - A policy on `storage.objects` must include `bucket_id = '<this repo's
+    bucket>'`, or it widens access to the app's `user-uploads`. Delete needs a
+    select policy too, or `remove()` silently matches nothing.
 - Index every column a policy or a foreign key reads.
 - A new `security definer` helper goes in `private`, with
   `set search_path = ''`, `revoke execute … from public, anon`, and
