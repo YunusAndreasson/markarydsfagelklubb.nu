@@ -113,3 +113,10 @@ describe("sanitizeContent: what survives", () => {
     expect(sanitizeContent("<p>1 &lt; 2 &amp; 3 &gt; 2</p>")).toBe("<p>1 &lt; 2 &amp; 3 &gt; 2</p>")
   })
 })
+
+describe("sanitizeContent: tidying", () => {
+  it("drops the editor's empty paragraphs at the edges, but not inside", () => {
+    expect(sanitizeContent("<p></p><p>Text</p><p></p>")).toBe("<p>Text</p>")
+    expect(sanitizeContent("<p>Ett</p><p></p><p>Två</p>")).toBe("<p>Ett</p><p></p><p>Två</p>")
+  })
+})

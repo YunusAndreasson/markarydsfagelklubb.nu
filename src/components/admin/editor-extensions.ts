@@ -77,9 +77,11 @@ export const Embed = Node.create({
     return {
       setEmbed:
         (attributes) =>
-        ({ commands }) =>
+        ({ commands, state }) =>
           isAllowedEmbed(attributes.src) &&
-          commands.insertContent({ type: this.name, attrs: attributes }),
+          // After the selection, never over it: inserting a map must not eat
+          // the selected text, or the image that was just inserted.
+          commands.insertContentAt(state.selection.to, { type: this.name, attrs: attributes }),
     }
   },
 })

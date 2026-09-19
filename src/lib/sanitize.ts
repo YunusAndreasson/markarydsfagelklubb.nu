@@ -80,6 +80,9 @@ function srcsetIsSiteMedia(srcset: string): boolean {
   )
 }
 
+/** The editor keeps a paragraph at the end to type in; it isn't content. */
+const EDGE_EMPTY_PARAGRAPHS = /^(?:<p><\/p>)+|(?:<p><\/p>)+$/g
+
 export function sanitizeContent(html: string): string {
-  return sanitizeHtml(html, OPTIONS).trim()
+  return sanitizeHtml(html, OPTIONS).trim().replace(EDGE_EMPTY_PARAGRAPHS, "").trim()
 }

@@ -461,8 +461,9 @@ export function RichTextEditor({
               supabaseUrl={supabaseUrl}
               supabasePublishableKey={supabasePublishableKey}
               onUploaded={(image) => {
+                // After the selection, so an image never replaces selected text.
                 run((c) =>
-                  c.insertContent({
+                  c.insertContentAt(editor.state.selection.to, {
                     type: "image",
                     attrs: {
                       src: mediaFallbackUrl(image),
