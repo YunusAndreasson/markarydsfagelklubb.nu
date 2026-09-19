@@ -1,0 +1,17 @@
+# Cloudflare applies EVERY matching rule and concatenates same-named headers
+# rather than letting the more specific one win — browsers then honour the first
+# value they read. So /* carries security headers ONLY; any cache lifetime must
+# go on a prefix that matches exactly one rule.
+#
+# The adapter appends its own immutable Cache-Control for /_astro/* at build
+# time; do not add one here.
+#
+# Must match SECURITY_HEADERS in src/lib/security-headers.ts exactly — Worker
+# responses (/admin/*, /api/*) never pass through this file. A test enforces it.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'

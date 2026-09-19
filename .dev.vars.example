@@ -1,0 +1,13 @@
+# Local overrides for the Worker runtime (`pnpm dev`, `pnpm preview`).
+#
+# Copy to `.dev.vars` (gitignored) only if you need one. SUPABASE_URL and
+# SUPABASE_PUBLISHABLE_KEY are public and already live in wrangler.jsonc `vars`,
+# so step 1 needs nothing here. Values in .dev.vars override `vars` locally.
+#
+# Future secrets go here locally and into production with
+# `wrangler secret put <NAME>` — never into wrangler.jsonc, never with a
+# fallback in code. Example, not read by any code yet:
+#
+# The SECRET key bypasses RLS on a database the live mobile app shares. It
+# must never reach a client island or a prerendered page.
+# SUPABASE_SECRET_KEY=sb_secret_xxxxxxxxxxxxxxxxxxxxxxxx
