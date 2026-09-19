@@ -8,8 +8,9 @@ paths:
 
 # UI rules
 
-Load the `shadcn` skill before writing UI, and run `pnpm dlx shadcn@latest search`
-before hand-rolling a component.
+Load the `frontend-design` skill for every design task, and the `shadcn` skill
+before writing UI. Run `pnpm dlx shadcn@latest search` before hand-rolling a
+component.
 
 - **Base UI, not Radix.** Compose with the `render` prop, never `asChild`. A
   Base UI `Button` rendering a non-`<button>` needs `nativeButton={false}`; for
