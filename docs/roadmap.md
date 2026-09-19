@@ -530,7 +530,7 @@ Proposed order. Each step is one plan and ends shipped with `pnpm ship`.
 |---|---|---|---|
 | 1 | ~~Foundations~~ — done 2026-09-19 | — | no |
 | 2 | ~~**Admin-inloggning:** one administrator, the `/admin` shell and gate~~ — done 2026-09-19 | D2 | no schema or auth config change; `is_admin` granted to one account |
-| 3 | **Innehållsgrund:** pages, articles, media bucket, editor, sanitizing, public rendering, navigation, **a few dummy articles** (F1 + F2), and the **design pass** for the public site (`frontend-design`) | D3–D6, F1 menu: all decided 2026-09-19, ready to plan | **new tables + bucket** (first migration) |
+| 3 | ~~**Innehållsgrund:** pages, articles, media bucket, editor, sanitizing, public rendering, navigation, dummy articles (F1 + F2), and the design pass~~ — done 2026-09-19 | D3–D6, F1 menu | **new tables + bucket**, applied 2026-09-19 |
 | 4 | **Larm på webben** (F4: public, display only) | D1, and the club's policy update | no schema change; first Worker secret |
 | 5 | **Kalender** (F3) | F3 open questions | new table |
 | 6 | **Lokaler** map (F5) | F5 open questions | no |

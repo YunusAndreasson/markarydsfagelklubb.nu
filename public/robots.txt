@@ -1,6 +1,6 @@
 # The new site is under construction on workers.dev while the WordPress site
 # still serves markarydsfagelklubb.nu. Nothing here should be indexed until the
 # domain cutover — replace this file (and drop the noindex meta in
-# src/layouts/main.astro) as part of launch.
+# src/layouts/base.astro) as part of launch.
 User-agent: *
 Disallow: /
