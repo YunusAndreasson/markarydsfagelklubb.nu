@@ -5,10 +5,18 @@ markarydsfagelklubb.nu with a public site and an admin area (the CMS). All UI
 copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
 comments and docs are English.
 
-**Status: step 1 — foundations only.** The repo has the stack, the Supabase
-wiring, CI, local shipping and agent context. It has no features yet: no
-login, no content tables, no real pages. Don't build features ahead of the
-step you've been asked for.
+**Status: step 2 — admin sign-in.** The repo has the stack, the Supabase
+wiring, CI, local shipping, agent context, and a gated `/admin` that exactly
+one administrator signs in to (email + password). It has no content tables and
+no real pages yet. Don't build features ahead of the step you've been asked
+for. The full agenda, the open decisions and the proposed step order are in
+`docs/roadmap.md`; plan a step from its section there.
+
+**Admin access**: `src/lib/admin-access.ts` holds the whole policy (unit
+tested), `src/middleware.ts` applies it to every `/admin*` request. A session
+alone never opens `/admin`, because sign-up is open for the app; the gate also
+reads `profiles.is_admin` with the user's own session. RLS stays the real
+boundary for data.
 
 Sibling repos: `../mafk-mobie` is the **live** Expo app that uses the same
 database. `../mafk` is the old TanStack web app, now retired, whose Worker
@@ -37,6 +45,7 @@ that this repo mirrors.
 | `pnpm types:db` | Regenerate `src/lib/database.types.ts` from the shared project (generated: never hand-edit) |
 | `pnpm ship` | **The only deploy path.** Needs a clean `main`; runs verify, `wrangler deploy` (logged-in OAuth), then the smoke test. Only when the user asks |
 | `scripts/smoke-test.sh <url>` | Home page + `/api/health` must be ok |
+| `pnpm admin:password <email>` | Set the admin's password. **The user runs it** in their own terminal (hidden prompts); never run it or handle the password yourself |
 
 Production is https://mafk-web.jonas-268.workers.dev, shipped **from the
 developer's machine only**. CI (`.github/workflows/ci.yml`) runs `pnpm verify`
@@ -141,7 +150,12 @@ Project skills live in `.claude/skills/`. Third-party ones are tracked in
 `migrate`). Authored here: `/new-migration`.
 
 **Load `supabase-postgres-best-practices` before writing any migration, RLS
-policy or index. Load `shadcn` before writing UI.** The global `cloudflare`,
-`wrangler`, `workers-best-practices`, `web-perf` and `frontend-design` skills
-apply too. Prefer retrieval over memory for Astro, Cloudflare and Supabase
-APIs, because all three move fast.
+policy or index. Load `shadcn` before writing UI. Load `frontend-design` for
+every design task** (anything visible: pages, layouts, components, on-screen
+copy), and follow its plan → review → build → critique process. The brand
+tokens (Markaryd green, Inter) are shared with the app and stay fixed; the
+design work is layout, type scale, copy and the site's character.
+
+The global `cloudflare`, `wrangler`, `workers-best-practices` and `web-perf`
+skills apply too. Prefer retrieval over memory for Astro, Cloudflare and
+Supabase APIs, because all three move fast.

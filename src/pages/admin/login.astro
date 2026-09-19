@@ -1,0 +1,138 @@
+---
+export const prerender = false
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import AdminLayout from "@/layouts/admin.astro"
+import { LOGOUT_PATH } from "@/lib/admin-access"
+import { readIsAdmin } from "@/lib/admin-flag"
+import { safeNext } from "@/lib/redirect"
+
+const { supabase, user } = Astro.locals
+
+// A plain form post. Nothing on this page hydrates, so sign-in works with
+// JavaScript disabled entirely. Astro's origin check rejects cross-site posts.
+let errorMessage: string | null = null
+let submittedEmail = ""
+let next = safeNext(Astro.url.searchParams.get("next"), Astro.url.origin)
+
+if (Astro.request.method === "POST") {
+  if (!supabase) {
+    errorMessage = "Inloggningen är inte tillgänglig just nu."
+  } else {
+    const form = await Astro.request.formData()
+    submittedEmail = String(form.get("email") ?? "").trim()
+    const password = String(form.get("password") ?? "")
+    next = safeNext(String(form.get("next") ?? ""), Astro.url.origin)
+
+    if (!submittedEmail || !password) {
+      errorMessage = "Ange e-postadress och lösenord."
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: submittedEmail,
+        password,
+      })
+      if (error || !data.user) {
+        // Deliberately identical for a wrong password and an unknown address,
+        // so this page cannot be used to enumerate accounts. Supabase Auth
+        // rate-limits the attempts themselves.
+        errorMessage = "Fel e-postadress eller lösenord. Kontrollera dem och försök igen."
+      } else {
+        // Authorise right away, so a member's valid app credentials never
+        // leave a session behind in the admin area.
+        const isAdmin = await readIsAdmin(supabase, data.user.id)
+        if (isAdmin) {
+          // 303 so a refresh of the destination does not re-POST the form.
+          return Astro.redirect(next, 303)
+        }
+        await supabase.auth.signOut()
+        errorMessage =
+          isAdmin === null
+            ? "Inloggningen är inte tillgänglig just nu. Försök igen om en stund."
+            : "Det här kontot är inte administratör. Logga in med administratörskontot."
+      }
+    }
+  }
+}
+
+// A member who is still signed in from before (the middleware sends them here).
+const signedInWithoutAccess = Astro.request.method === "GET" && user != null
+---
+
+<AdminLayout title="Logga in">
+  <div class="mx-auto flex w-full max-w-sm flex-col gap-6 py-10">
+    {
+      signedInWithoutAccess && (
+        <Alert>
+          <AlertTitle>Du är inloggad med fel konto</AlertTitle>
+          <AlertDescription>
+            <p>
+              {user?.email ?? "Kontot"} är inte administratör. Logga ut och logga in med
+              administratörskontot.
+            </p>
+            <form method="POST" action={LOGOUT_PATH} class="mt-3">
+              <Button type="submit" variant="outline" className="h-11">
+                Logga ut
+              </Button>
+            </form>
+          </AlertDescription>
+        </Alert>
+      )
+    }
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Logga in</CardTitle>
+        <CardDescription>För klubbens administratör.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form method="POST" class="flex flex-col gap-6">
+          <input type="hidden" name="next" value={next} />
+
+          {
+            errorMessage && (
+              <Alert variant="destructive">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )
+          }
+
+          <FieldGroup>
+            <Field data-invalid={errorMessage ? true : undefined}>
+              <FieldLabel htmlFor="email">E-post</FieldLabel>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="username"
+                className="h-11"
+                required
+                value={submittedEmail}
+                aria-invalid={errorMessage ? true : undefined}
+              />
+            </Field>
+            <Field data-invalid={errorMessage ? true : undefined}>
+              <FieldLabel htmlFor="password">Lösenord</FieldLabel>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                className="h-11"
+                required
+                aria-invalid={errorMessage ? true : undefined}
+              />
+            </Field>
+          </FieldGroup>
+
+          <Button type="submit" size="lg" className="h-11">
+            Logga in
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  </div>
+</AdminLayout>

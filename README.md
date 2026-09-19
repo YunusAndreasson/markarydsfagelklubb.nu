@@ -32,6 +32,19 @@ The public Supabase URL and publishable key are in `wrangler.jsonc`, so no
 | `pnpm ship` | Deploy to production from this machine |
 | `pnpm types:db` | Regenerate database types after a migration |
 
+## The admin area
+
+`/admin` is for the club's one administrator, who signs in with email and
+password. Set or reset the password in your own terminal (it prompts, and
+prints nothing secret):
+
+```bash
+pnpm admin:password yunus@edenmind.com
+```
+
+Access needs `profiles.is_admin = true` on that account as well, granted with
+SQL. See [docs/shared-database.md](docs/shared-database.md).
+
 ## Deploying
 
 Shipping happens from your own machine, never from CI:

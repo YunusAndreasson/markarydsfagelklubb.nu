@@ -14,7 +14,7 @@ rely on it for a change.
 
 | Object | Written by | Access (RLS) | Status |
 |---|---|---|---|
-| `public.profiles` | app (own row) | read: authenticated · write: own row; `is_admin` column is revoked from clients | **live** |
+| `public.profiles` | app (own row) | read: authenticated · write: own row. `is_admin` is readable, but clients can't insert or update it | **live** |
 | `public.species` | service role (seeded) | read: authenticated | **live** |
 | `public.locations` | admins | read: authenticated · insert: `private.is_admin()` | **live** |
 | `public.observations` | app (own rows) | read: authenticated · write/delete: own | **live** |
@@ -39,9 +39,10 @@ What else is true today:
   `send-bird-alert`, the function writes `alerts` and pushes through Expo. None
   of it passes through this site's Worker, so deploying the site cannot break it.
   *Changing these tables or that function can.*
-- **No user has `profiles.is_admin = true` yet** (0 rows). The admin-login step
-  must grant the first admins deliberately, using the SQL editor or a migration
-  and never the app.
+- **One admin:** Jonas (`yunus@edenmind.com`), the site's only web
+  administrator, granted 2026-09-19 with `supabase db query --linked`. The flag
+  is shared with the app, where it also allows creating lokaler. Grant or revoke
+  it only with SQL, and only when the user asks for that specific change.
 - The mobile repo keeps its own SQL under `../mafk-mobie/supabase/` and applies
   it with `supabase db query --linked -f …`. That writes **no** migration
   history. Its edge functions are deployed from there too.
@@ -82,12 +83,19 @@ What else is true today:
 ## Auth configuration
 
 The remote auth settings are what the dashboard and earlier pushes left behind.
-No repo currently holds an accurate copy of them. As of today, `site_url` is
-`https://mafk-web.jonas-268.workers.dev` (this site's Worker URL, inherited
-from the retired web app), and the app signs in with Apple and Google through
-native ID tokens. The admin-login step reconciles this: it reads the live
-settings, decides the web sign-in method, and adds this site's callback to
-`additional_redirect_urls` as one reviewed change.
+No repo currently holds an accurate copy of them. What is known (2026-09-19):
+
+- `site_url` is `https://mafk-web.jonas-268.workers.dev` (this site's Worker
+  URL, inherited from the retired web app).
+- The app signs in with Apple and Google through native ID tokens. The Google
+  provider has **no OAuth secret**, so Google sign-in does not work on the web
+  as configured (`/auth/v1/authorize` answers "missing OAuth secret").
+- The email provider is on, **sign-up is open and `mailer_autoconfirm` is on**.
+  Anyone can create an account, which is why a session alone never opens
+  `/admin`: the gate also checks `profiles.is_admin`.
+- The site's admin signs in with **email and password** through that existing
+  provider (step 2). That needed no auth config change and has no callback URL.
+  The password is set with `pnpm admin:password <email>`.
 
 ## Leftovers from the retired web app
 

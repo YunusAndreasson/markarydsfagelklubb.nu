@@ -1,11 +1,14 @@
 ---
+import { Button } from "@/components/ui/button"
 import Layout from "@/layouts/main.astro"
+import { LOGOUT_PATH } from "@/lib/admin-access"
 
 interface Props {
   title: string
 }
 
 const { title } = Astro.props
+const { isAdmin, user } = Astro.locals
 ---
 
 <Layout title={`${title} · Administration · Markaryds Fågelklubb`}>
@@ -14,6 +17,18 @@ const { title } = Astro.props
       <div class="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
         <a href="/admin" class="text-sm font-semibold tracking-tight">Markaryds Fågelklubb</a>
         <span class="text-muted-foreground text-sm">Administration</span>
+        {
+          isAdmin && (
+            <div class="ml-auto flex items-center gap-3">
+              <span class="text-muted-foreground hidden text-sm sm:inline">{user?.email}</span>
+              <form method="POST" action={LOGOUT_PATH}>
+                <Button type="submit" variant="outline" className="h-11">
+                  Logga ut
+                </Button>
+              </form>
+            </div>
+          )
+        }
       </div>
     </header>
 

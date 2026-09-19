@@ -40,7 +40,11 @@
       "Bash(supabase functions deploy *)",
       "Bash(supabase functions delete *)",
       "Bash(wrangler delete *)",
-      "Bash(pnpm exec wrangler delete *)"
+      "Bash(pnpm exec wrangler delete *)",
+      "Bash(pnpm admin:password *)",
+      "Bash(pnpm admin:password)",
+      "Bash(pnpm run admin:password *)",
+      "Bash(node scripts/set-admin-password.mjs *)"
     ]
   }
 }
