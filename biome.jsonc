@@ -1,0 +1,65 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  // .jsonc, not .json: Biome parses `biome.json` as strict JSON, and a comment
+  // in it fails silently — the config is discarded and every default applies,
+  // which shows up as thousands of diagnostics from dist/.
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      "!dist",
+      "!.astro",
+      "!.wrangler",
+      "!.claude",
+      "!public",
+      // Tailwind v4 puts `@theme` / `@custom-variant` in CSS, which Biome's CSS
+      // parser rejects. Tailwind owns this file.
+      "!**/*.css",
+      "!worker-configuration.d.ts"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "asNeeded",
+      "trailingCommas": "es5"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": { "preset": "recommended" }
+  },
+  "assist": {
+    "actions": { "source": { "organizeImports": "on" } }
+  },
+  "overrides": [
+    {
+      // shadcn generates these. Reformatting them fights the CLI on every `shadcn add`.
+      "includes": ["src/components/ui/**"],
+      "formatter": { "enabled": false },
+      "linter": { "enabled": false },
+      "assist": { "enabled": false }
+    },
+    {
+      // Biome parses only the frontmatter of an .astro file, never the template
+      // below it — so every import and prop used purely in markup reads as
+      // unused. These two rules are pure false positives here; `astro check`
+      // (which does understand the template) covers the same ground.
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    }
+  ]
+}

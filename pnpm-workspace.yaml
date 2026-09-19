@@ -1,0 +1,9 @@
+packages: []
+
+# workerd must be allowed to run its postinstall or `wrangler dev` cannot boot
+# the local Workers runtime — `pnpm preview` is the only way to exercise the
+# production headers and the Worker entrypoint together.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true

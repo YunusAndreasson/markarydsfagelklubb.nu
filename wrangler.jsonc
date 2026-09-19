@@ -1,0 +1,64 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+
+  // Takes over the Worker of the retired TanStack app (../mafk). The URL
+  // https://mafk-web.jonas-268.workers.dev is also the shared Supabase project's
+  // auth `site_url`, so keeping the name keeps that setting valid.
+  "name": "mafk-web",
+
+  // The adapter's Worker entrypoint. Astro builds the SSR bundle into ./dist
+  // and this module dispatches to it.
+  "main": "@astrojs/cloudflare/entrypoints/server",
+
+  // Pinned to the installed workerd build (1.20260918). Must be >= 2025-04-01
+  // so navigation requests can skip the Worker when a static asset matches.
+  "compatibility_date": "2026-09-18",
+  "compatibility_flags": ["nodejs_compat", "enable_request_signal"],
+
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
+
+  // workers.dev stays on: it is the only public URL until the custom domain
+  // cutover, and PR preview URLs (`wrangler versions upload --preview-alias`)
+  // live under it.
+  "workers_dev": true,
+  "preview_urls": true,
+
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+
+    // Astro emits a real 404.html. This is the SSG mode — NOT
+    // "single-page-application", which would 200 every unmatched path.
+    "not_found_handling": "404-page",
+
+    // ARRAY form on purpose. `run_worker_first: true` routes every asset
+    // through the Worker, burns the free-tier invocation budget and returns
+    // 429s instead of falling back to the asset.
+    //
+    // Only /admin and /api are server-rendered, so only they need the Worker.
+    // "/admin" is listed on its own because "/admin/*" does not match the bare
+    // path: without it, /admin is an asset miss and serves the 404 page.
+    // Static asset requests are free and unlimited, so the entire public site
+    // costs nothing to serve.
+    "run_worker_first": ["/admin", "/admin/*", "/api/*"]
+  },
+
+  // Both values are public by design: the publishable key ships to the browser
+  // and Postgres RLS is the security boundary. Keeping them here (not as
+  // secrets) means a build-time prerender needs no CI secret, and there is one
+  // source of truth for local, preview and production. `src/lib/env.ts` refuses
+  // to start if a `sb_secret_*` key ever lands in the publishable slot.
+  "vars": {
+    "SUPABASE_URL": "https://zgnmajovyqibgxlcomvb.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_S96c9usYadiz4ryo1zEK4Q_SOmsVyVG"
+  }
+
+  // NOTE: once this file exists it is the SOURCE OF TRUTH for bindings.
+  // Anything configured in the Cloudflare dashboard stops applying on the next
+  // deploy. Secrets are NOT declared here — set them with `wrangler secret put`
+  // and locally in .dev.vars (see .dev.vars.example). Step 1 needs none.
+}
