@@ -100,7 +100,12 @@ Plus, from step 1: an admin interface, since this replaces WordPress.
   objects, 86 MB, about 0.5 MB each. The app shows photos through signed URLs.
 - `species.rarity` (0 = rarest … 5 = most common) is set on 229 of 231 species.
 - **Auth:** 46 users. Identities: email 19 (from the retired web app's magic
-  link), Google 18, Apple 14. **0 admins.**
+  link), Google 18, Apple 14. One admin since step 2.
+- **Open issue in the app, not this site:** sign-up is open with
+  `mailer_autoconfirm` on. Anyone can create an account with any email address,
+  unconfirmed, and any signed-in account can read every member's profile
+  (phone numbers included) and all observations. Raised 2026-09-19 and not
+  changed, since it's the live app's configuration. Discuss with the club.
 - **No PostGIS**, no `pg_trgm`, no `pg_cron`, no `pg_net`.
 - **Members-only today.** Every existing table is readable by `authenticated`
   only, and the photo bucket is private. Nothing is readable anonymously, so
