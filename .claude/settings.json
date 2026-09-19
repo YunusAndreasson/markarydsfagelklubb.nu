@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm check)",
+      "Bash(pnpm check:fix)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm build)",
+      "Bash(pnpm verify)",
+      "Bash(pnpm types:cf)",
+      "Bash(pnpm exec astro check)",
+      "Bash(pnpm exec biome *)",
+      "Bash(pnpm exec vitest *)",
+      "Bash(supabase migration list *)"
+    ],
+    "ask": [
+      "Bash(supabase db push *)",
+      "Bash(supabase db push)",
+      "Bash(supabase db query *)",
+      "Bash(supabase migration repair *)",
+      "Bash(wrangler deploy *)",
+      "Bash(wrangler deploy)",
+      "Bash(pnpm deploy)",
+      "Bash(pnpm exec wrangler deploy *)",
+      "Bash(wrangler secret *)",
+      "Bash(pnpm exec wrangler secret *)"
+    ],
+    "deny": [
+      "Bash(supabase config push *)",
+      "Bash(supabase config push)",
+      "Bash(supabase db reset *)",
+      "Bash(supabase db reset)",
+      "Bash(supabase db pull *)",
+      "Bash(supabase db pull)",
+      "Bash(supabase functions deploy *)",
+      "Bash(supabase functions delete *)",
+      "Bash(wrangler delete *)",
+      "Bash(pnpm exec wrangler delete *)"
+    ]
+  }
+}

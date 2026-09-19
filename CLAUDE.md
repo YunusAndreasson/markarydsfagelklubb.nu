@@ -1,0 +1,145 @@
+# mafk-web
+
+The website for **Markaryds Fågelklubb**. It replaces the WordPress site at
+markarydsfagelklubb.nu with a public site and an admin area (the CMS). All UI
+copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
+comments and docs are English.
+
+**Status: step 1 — foundations only.** The repo has the stack, the Supabase
+wiring, CI/CD and agent context. It has no features yet: no login, no content
+tables, no real pages. Don't build features ahead of the step you've been
+asked for.
+
+Sibling repos: `../mafk-mobie` is the **live** Expo app that uses the same
+database. `../mafk` is the old TanStack web app, now retired, whose Worker
+name this site took over; don't copy from it. `../mhf` is the reference stack
+that this repo mirrors.
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Astro 7, `output: "static"` + per-route `export const prerender = false` |
+| Host | Cloudflare **Workers** (static assets + SSR) via `@astrojs/cloudflare` |
+| UI | shadcn/ui on **Base UI** (`base-luma`), Tailwind 4, React 19 islands, lucide icons |
+| Data | Supabase, **shared with the live app**: project `zgnmajovyqibgxlcomvb` |
+| Tooling | pnpm 11, Biome, Vitest, `astro check`, TypeScript 6 (7 breaks `@astrojs/check`) |
+
+## Commands
+
+| Command | What |
+|---|---|
+| `pnpm dev` | Astro dev server |
+| `pnpm preview` | `astro build && wrangler dev`, which serves `public/_headers` and the real Worker. Use it for anything header-, CSP- or routing-related |
+| `pnpm verify` | Biome + `wrangler types` + `astro check` + Vitest + build. **Run it before calling anything done**; CI runs exactly this |
+| `pnpm check:fix` | Biome autofix |
+| `pnpm test` | Vitest (pure modules in `src/**/*.test.ts`) |
+| `pnpm types:db` | Regenerate `src/lib/database.types.ts` from the shared project (generated: never hand-edit) |
+| `scripts/smoke-test.sh <url>` | Home page + `/api/health` must be ok; CI runs it after every deploy |
+
+Deploys go through CI (`.github/workflows/ci.yml`): push to `main` deploys to
+production at https://mafk-web.jonas-268.workers.dev, and a PR gets a preview
+URL at `pr-<n>-mafk-web.jonas-268.workers.dev`. Don't run `wrangler deploy`
+by hand unless the user asks.
+
+## The shared database — read before touching data
+
+The live app's members report birds and receive **bird alerts** through this
+database. Deploying the site can't affect them, but changing the database can.
+**Read `docs/shared-database.md` before any schema, RLS or Supabase work.**
+In short:
+
+- **Never alter, drop, rename or re-policy an existing object** (`profiles`,
+  `species`, `locations`, `observations`, `alerts`, `expo_push_tokens`, the
+  `user-uploads` bucket, `private.is_admin()`, the edge functions) without the
+  user's explicit approval for that specific change.
+- New tables for the site live in `supabase/migrations/`, as plain idempotent
+  SQL, applied by a human with `supabase db push`. **CI never migrates.** Use
+  `/new-migration`.
+- **Never run** `supabase config push` (it would switch off the app's sign-in),
+  `supabase db reset`, or `supabase functions deploy|delete`. They are denied
+  in `.claude/settings.json`.
+- Admin authorisation reuses the existing `private.is_admin()`
+  (`profiles.is_admin`). No second admin concept.
+
+## Non-negotiables
+
+**Supabase keys and auth**
+
+- New API keys only: `sb_publishable_*` goes to the browser and lives in
+  `wrangler.jsonc` `vars`; `sb_secret_*` belongs only in Worker secrets, and
+  step 1 has none. New keys go on the `apikey` header, never
+  `Authorization: Bearer`.
+- Verify sessions with `getClaims()` (local JWT check), not `getUser()`
+  (an Auth round trip per request).
+- **Never default a missing value.** `src/lib/env.ts` reports problems, and
+  callers return 500 `server_misconfigured` and log which value. No
+  `SECRET || publishable` fallbacks. It also refuses a secret key in the
+  publishable slot.
+- One server client **per request** (`src/lib/supabase-server.ts`). Copy its
+  `authResponseHeaders` onto the response, or a CDN can serve one user's session
+  to the next.
+
+**Platform**
+
+- `wrangler.jsonc` is the **source of truth for bindings**; dashboard config
+  stops applying once it exists. Secrets go through `wrangler secret put`,
+  never the file.
+- Bindings come from `import { env } from "cloudflare:workers"`, wrapped in
+  `src/lib/worker-env.ts`. `Astro.locals.runtime` was removed.
+- `run_worker_first` stays the **array** form. Any new server-rendered prefix
+  must be added there, **bare path included**: `/admin/*` does not match
+  `/admin`.
+- Astro sessions are off (`session: false`) and images compile at build
+  (`imageService: "compile"`). The adapter defaults would provision a KV
+  namespace and a billable Images binding.
+- Every network call gets a deadline (`createFetchWithTimeout` in
+  `src/lib/fetch.ts`). Neither `fetch` nor supabase-js has one.
+- Security headers exist twice, in `public/_headers` for static assets and in
+  `src/lib/security-headers.ts` for Worker responses. A test keeps them
+  identical, so change both together.
+
+**Gotchas already paid for in sibling repos**
+
+- Supabase caps API responses at **1000 rows**. Page with keysets, not offsets.
+- `request.json()` resolves for `null`, so reject non-objects explicitly.
+- A path regex is not an open-redirect guard: `//evil.example/x` matches
+  `^/[\w\-./]*$`. Resolve `next` against the origin and compare `.origin`.
+- Sign-out and other state changes are **POST**, never GET.
+
+## Rendering discipline
+
+Public pages are `.astro` and prerendered, with **zero client JS by default**.
+Hydrate only the narrowest interactive leaf, using `client:visible` or
+`client:idle` (`client:load` only when it must be immediate). `/admin/*` and
+`/api/*` are SSR, get `Cache-Control: private, no-store` (admin), and pass
+through `src/middleware.ts`. UI conventions (shadcn, Base UI, tokens) are in
+`.claude/rules/ui.md` and load when you touch components or pages.
+
+Until launch, every page carries `noindex` and `public/robots.txt` disallows
+all. Both come out together at the domain cutover.
+
+## Definition of done
+
+1. `pnpm verify` passes.
+2. For anything visible, or anything about headers/CSP/routing: check it with
+   `pnpm preview` **in Zen (Gecko)**, the browser the user actually uses (see
+   `~/.claude/rules/browser.md`). Chromium is a second data point, never the
+   only one.
+3. For schema work: `get_advisors` (security + performance) shows nothing new,
+   and types are regenerated.
+
+## Skills
+
+Project skills live in `.claude/skills/`. Third-party ones are tracked in
+`skills-lock.json` (the cache is gitignored; restore with
+`npx skills experimental_install`, update with `npx skills update`):
+`supabase`, `supabase-postgres-best-practices`, `shadcn`, and the Astro set
+(`astro-best-practices`, `docs-lookup`, `create-component`, `add-integration`,
+`migrate`). Authored here: `/new-migration`.
+
+**Load `supabase-postgres-best-practices` before writing any migration, RLS
+policy or index. Load `shadcn` before writing UI.** The global `cloudflare`,
+`wrangler`, `workers-best-practices`, `web-perf` and `frontend-design` skills
+apply too. Prefer retrieval over memory for Astro, Cloudflare and Supabase
+APIs, because all three move fast.
