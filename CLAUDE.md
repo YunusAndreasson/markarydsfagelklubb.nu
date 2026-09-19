@@ -5,12 +5,15 @@ markarydsfagelklubb.nu with a public site and an admin area (the CMS). All UI
 copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
 comments and docs are English.
 
-**Status: step 2 — admin sign-in.** The repo has the stack, the Supabase
-wiring, CI, local shipping, agent context, and a gated `/admin` that exactly
-one administrator signs in to (email + password). It has no content tables and
-no real pages yet. Don't build features ahead of the step you've been asked
-for. The full agenda, the open decisions and the proposed step order are in
-`docs/roadmap.md`; plan a step from its section there.
+**Status: step 3 — content core.** On top of the stack, the Supabase wiring,
+CI, local shipping and the gated `/admin` that exactly one administrator signs
+in to (email + password), the site now has its own tables (pages, articles,
+categories, media) and the `site-media` bucket. `/admin` edits them with a
+Tiptap editor, and the public site renders them. The content is dummy
+(`exempel-` slugs) until the WordPress import in step 8. Don't build features
+ahead of the step you've been asked for. The full agenda, the decisions and
+the step order are in `docs/roadmap.md`; plan a step from its section there.
+The public site's design is in `docs/design.md`.
 
 **Admin access**: `src/lib/admin-access.ts` holds the whole policy (unit
 tested), `src/middleware.ts` applies it to every `/admin*` request. A session
@@ -46,6 +49,7 @@ that this repo mirrors.
 | `pnpm ship` | **The only deploy path.** Needs a clean `main`; runs verify, `wrangler deploy` (logged-in OAuth), then the smoke test. Only when the user asks |
 | `scripts/smoke-test.sh <url>` | Home page + `/api/health` must be ok |
 | `pnpm admin:password <email>` | Set the admin's password. **The user runs it** in their own terminal (hidden prompts); never run it or handle the password yourself |
+| `supabase db query --linked -f scripts/dummy-content.sql` | Load the dummy articles and pages (`exempel-` slugs). `dummy-content-delete.sql` removes them, and runs before the WordPress import. Writes only this repo's tables |
 
 Production is https://mafk-web.jonas-268.workers.dev, shipped **from the
 developer's machine only**. CI (`.github/workflows/ci.yml`) runs `pnpm verify`
@@ -98,9 +102,11 @@ In short:
   never the file.
 - Bindings come from `import { env } from "cloudflare:workers"`, wrapped in
   `src/lib/worker-env.ts`. `Astro.locals.runtime` was removed.
-- `run_worker_first` stays the **array** form. Any new server-rendered prefix
-  must be added there, **bare path included**: `/admin/*` does not match
-  `/admin`.
+- `run_worker_first` stays the **array** form: `["/*", "!/_astro/*", …]`.
+  Every page runs the Worker first; the static files are excluded, one `!`
+  entry each. **A new file in `public/` needs its own exclusion**, or every
+  request for it costs a Worker invocation. `_redirects` never applies to
+  Worker responses, so old-URL redirects live in the Worker (roadmap D6).
 - Astro sessions are off (`session: false`) and images compile at build
   (`imageService: "compile"`). The adapter defaults would provision a KV
   namespace and a billable Images binding.
@@ -120,11 +126,21 @@ In short:
 
 ## Rendering discipline
 
-Public pages are `.astro` and prerendered, with **zero client JS by default**.
-Hydrate only the narrowest interactive leaf, using `client:visible` or
-`client:idle` (`client:load` only when it must be immediate). `/admin/*` and
-`/api/*` are SSR, get `Cache-Control: private, no-store` (admin), and pass
-through `src/middleware.ts`. UI conventions (shadcn, Base UI, tokens) are in
+Public pages are `.astro`, **server-rendered from the database** through the
+Worker (roadmap D4), with **zero client JS by default**. They read with
+`locals.db`, the publishable key and no session, so what they can see is
+exactly what the `to anon` policies allow, and they send
+`Cache-Control: public, max-age=60`. Only the 404 is prerendered, and it must
+never query. Hydrate only the narrowest interactive leaf, using
+`client:visible` or `client:idle` (`client:load` only when it must be
+immediate); today the only islands are the admin's editor and uploader
+(`client:only`). `/admin/*` is SSR with `Cache-Control: private, no-store`.
+Everything but prerendered pages passes through `src/middleware.ts`.
+
+Article and page bodies are **sanitized on save** (`src/lib/sanitize.ts`), never
+on render. The sanitizer's allowlist and the editor's extensions
+(`src/components/admin/editor-extensions.ts`) must match, and
+`editor-roundtrip.test.ts` checks that they do. UI conventions (shadcn, Base UI, tokens) are in
 `.claude/rules/ui.md` and load when you touch components or pages.
 
 Until launch, every page carries `noindex` and `public/robots.txt` disallows

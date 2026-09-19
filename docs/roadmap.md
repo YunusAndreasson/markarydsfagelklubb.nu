@@ -305,8 +305,13 @@ app's photos, which stay in `user-uploads`.
 - **Consequence for redirects:** Cloudflare applies `_redirects` only to
   requests served as assets, **never to requests the Worker serves**. The old
   URLs are therefore redirected by the Worker (see D6).
-- Caching rendered pages at the edge (Cache API) only works on a custom
-  domain; `cache.put` is a no-op on `workers.dev`. It becomes useful at launch.
+- **Caching.** Step 3 sends `Cache-Control: public, max-age=60` and caches
+  nothing at the edge. Astro 7's route cache with the Cloudflare provider
+  (`cacheCloudflare()`, Workers Cache) could serve cached pages without
+  running the Worker and purge by tag on publish. It works on `workers.dev`,
+  but once enabled it bills **every** request against the Workers quota,
+  static assets included (checked 2026-09-19). Decide at launch, with real
+  traffic numbers.
 - **Watch:** Workers Free allows 100 000 requests a day, plenty for a club
   site. The $5 plan removes the CPU and request caps if needed.
 
@@ -329,6 +334,10 @@ source view.
     real need turns up.
   - The two one-off embeds in old posts (natursidan.se, smof.se) become plain
     links at import.
+- **The sanitizer is `sanitize-html`** (measured 2026-09-19): about 0.8 ms
+  for a 6 KB article once warm, and 24 ms cold for a deliberately huge 89 KB
+  page in workerd. Workers Free allows 10 ms of CPU, so saving an enormous
+  page could be refused; `xss` is about 2.5× faster if that ever happens.
 - **Decided 2026-09-19: drafts + scheduled publishing, no revision history.**
   Every article and page has a status (draft or published) and a publish time,
   which may be in the future; the item stays hidden until then. With server

@@ -31,7 +31,15 @@ component.
 - **Hydration discipline**: public pages are `.astro` with zero client
   directives by default. Islands are small leaves, `client:visible` or
   `client:idle`. A shadcn component that never needs interactivity renders
-  statically, with no directive.
+  statically, with no directive. The admin's forms are plain POSTs, so their
+  controls must work unhydrated: `NativeSelect`, a native checkbox,
+  `Textarea` with `defaultValue`. Only the editor and the image uploader are
+  islands (`client:only`).
+- **The public site follows `docs/design.md`.** Its layout is `site.astro`
+  (menu as a prop; it queries nothing), its type scale is the `type-*`
+  utilities in `global.css`, and article and page bodies are styled by
+  `src/styles/content.css` (`.content`), which the editor shares. Dates sit in
+  a 7rem margin column from `md` up.
 - **Swedish copy**, written for club members: plain, warm, no jargon. Dates
   use `sv-SE`.
 - **Mobile first**: design at 360 px, touch targets ≥ 44 px, and no horizontal

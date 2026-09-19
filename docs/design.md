@@ -196,9 +196,10 @@ description.
 
 ### Footer
 
-The club's name, `webmaster@markarydsfagelklubb.nu`, and links to Medlemskap
-and Kontaktpersoner. It's quiet, and muted text on the page background, with no
-band of colour.
+The club's name, the tagline and `webmaster@markarydsfagelklubb.nu`, aligned
+with the reading column, in muted text on the page background, with no band of
+colour. Links to Medlemskap and Kontaktpersoner come with the real page tree
+(step 8); until then, those pages don't exist.
 
 ## Menu proposal (for sign-off)
 
