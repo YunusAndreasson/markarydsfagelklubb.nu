@@ -1,0 +1,62 @@
+---
+export const prerender = false
+
+import SiteLayout from "@/layouts/site.astro"
+import { resolvePath } from "@/lib/page-tree"
+import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
+import { isValidSlug, RESERVED_TOP_LEVEL_SLUGS } from "@/lib/slug"
+
+// Pages at their WordPress paths (docs/roadmap.md, D6), found in the page tree.
+// This route matches everything no other route does, /admin/… and /api/…
+// included, and every bot probe: anything that can't be a page is a 404
+// before a single query runs.
+const segments = (Astro.params.path ?? "").split("/")
+const { db } = Astro.locals
+if (
+  !db ||
+  segments.length === 0 ||
+  !segments.every(isValidSlug) ||
+  RESERVED_TOP_LEVEL_SLUGS.has(segments[0] ?? "")
+) {
+  return new Response(null, { status: 404 })
+}
+
+const navigation = await loadNavigation(db)
+const node = resolvePath(navigation.tree, segments)
+if (!node) return new Response(null, { status: 404 })
+
+const page = await loadPageBody(db, node.id)
+if (page === "error") return new Response("Sidan kunde inte läsas just nu.", { status: 503 })
+if (!page) return new Response(null, { status: 404 })
+
+// A section page lists what's in it.
+const children = node.children as (typeof node & Pick<PublicPageRow, "description">)[]
+---
+
+<SiteLayout title={page.title} description={page.description || undefined} menu={navigation.menu}>
+  <article class="flex flex-col gap-8 md:pl-[7rem]">
+    <header class="flex flex-col gap-4">
+      <h1 class="type-title">{page.title}</h1>
+      {page.description && <p class="type-ingress text-muted-foreground max-w-[38rem]">{page.description}</p>}
+    </header>
+    {page.body_html && <div class="content" set:html={page.body_html} />}
+
+    {
+      children.length > 0 && (
+        <section aria-labelledby="avsnitt" class="flex max-w-[38rem] flex-col gap-4">
+          <h2 id="avsnitt" class="text-lg font-semibold">I det här avsnittet</h2>
+          <ul class="flex flex-col gap-4">
+            {children.map((child) => (
+              <li class="flex flex-col gap-0.5">
+                <a href={child.kind === "link" ? (child.link_url ?? "/") : child.path} class="text-primary font-medium underline underline-offset-4">
+                  {child.title}
+                </a>
+                {child.description && <p class="text-muted-foreground">{child.description}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</SiteLayout>

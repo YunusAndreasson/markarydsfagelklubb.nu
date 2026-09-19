@@ -1,0 +1,42 @@
+---
+export const prerender = false
+
+import ArticleList from "@/components/site/ArticleList.astro"
+import ArticleView from "@/components/site/ArticleView.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { listPublishedArticles, loadNavigation, loadPublishedArticle } from "@/lib/public-content"
+import { isValidSlug } from "@/lib/slug"
+
+const { db } = Astro.locals
+const slug = Astro.params.slug ?? ""
+if (!db || !isValidSlug(slug)) return new Response(null, { status: 404 })
+
+const [navigation, article] = await Promise.all([
+  loadNavigation(db),
+  loadPublishedArticle(db, slug),
+])
+if (article === "error") return new Response("Artikeln kunde inte läsas just nu.", { status: 503 })
+if (!article) return new Response(null, { status: 404 })
+
+// "Mer i <kategori>": the three newest others in the same category.
+const related =
+  article.category_id === null
+    ? null
+    : await listPublishedArticles(db, { limit: 4, categoryId: article.category_id })
+const more = (related?.articles ?? []).filter((other) => other.id !== article.id).slice(0, 3)
+---
+
+<SiteLayout title={article.title} description={article.excerpt || undefined} menu={navigation.menu}>
+  <div class="flex flex-col gap-16">
+    <ArticleView article={article} />
+
+    {
+      article.category && more.length > 0 && (
+        <section aria-labelledby="mer" class="flex flex-col gap-6">
+          <h2 id="mer" class="text-lg font-semibold md:pl-[7rem]">Mer i {article.category.name}</h2>
+          <ArticleList articles={more} headingLevel={3} years="other-years" />
+        </section>
+      )
+    }
+  </div>
+</SiteLayout>

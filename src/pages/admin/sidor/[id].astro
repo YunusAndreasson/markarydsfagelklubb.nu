@@ -1,0 +1,336 @@
+---
+export const prerender = false
+
+import PublishBadge from "@/components/admin/PublishBadge.astro"
+import { RichTextEditor } from "@/components/admin/RichTextEditor"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { Textarea } from "@/components/ui/textarea"
+import AdminLayout from "@/layouts/admin.astro"
+import {
+  type AdminPageRow,
+  deletePage,
+  listPageRows,
+  loadPage,
+  savePage,
+  WRITE_MESSAGES,
+} from "@/lib/admin-content"
+import {
+  type FieldErrors,
+  LIMITS,
+  parseLinkForm,
+  parsePageForm,
+  parseRouteId,
+} from "@/lib/content-form"
+import { buildPageTree, descendantIds, flattenTree } from "@/lib/page-tree"
+import { parsePublishIntent, publishStateOf, resolvePublication } from "@/lib/publish-state"
+import { sanitizeContent } from "@/lib/sanitize"
+import { formatDate, toStockholmInputValue } from "@/lib/stockholm-time"
+
+const { supabase, supabaseBrowser } = Astro.locals
+if (!supabase || !supabaseBrowser) return new Response(null, { status: 503 })
+
+const isNew = Astro.params.id === "ny"
+const id = isNew ? null : parseRouteId(Astro.params.id)
+if (!isNew && id === null) return new Response(null, { status: 404 })
+
+let page: Awaited<ReturnType<typeof loadPage>>["data"] = null
+if (id !== null) {
+  const { data, error } = await loadPage(supabase, id)
+  if (error) {
+    console.error(`mafk-web: load page failed — ${error.message}`)
+    return new Response("Sidan kunde inte läsas just nu.", { status: 503 })
+  }
+  if (!data) return new Response(null, { status: 404 })
+  page = data
+}
+
+const kind = page?.kind ?? (Astro.url.searchParams.get("typ") === "lank" ? "link" : "page")
+const isLink = kind === "link"
+
+const { data: rows } = await listPageRows(supabase)
+const tree = buildPageTree((rows ?? []) as AdminPageRow[])
+// A page can't move under itself or anything below it.
+const forbiddenParentIds = new Set<number>(id === null ? [] : [id, ...descendantIds(tree, id)])
+const parentChoices = flattenTree(tree).filter(
+  (node) => node.kind === "page" && !forbiddenParentIds.has(node.id)
+)
+
+const now = new Date()
+let values = {
+  title: page?.title ?? "",
+  slug: page?.slug ?? "",
+  parent_id: page?.parent_id ? String(page.parent_id) : (Astro.url.searchParams.get("under") ?? ""),
+  show_in_menu: page?.show_in_menu ?? true,
+  description: page?.description ?? "",
+  link_url: page?.link_url ?? "",
+  publish_at: page?.published_at ? toStockholmInputValue(page.published_at) : "",
+  body_html: page?.body_html ?? "",
+}
+let errors: FieldErrors = {}
+let formError: string | null = null
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const intent = form.get("intent")
+
+  if (intent === "delete" && id !== null) {
+    const result = await deletePage(supabase, id)
+    if (result.ok) return Astro.redirect("/admin/sidor?borttagen=1", 303)
+    formError =
+      result.reason === "in_use"
+        ? "Sidan har undersidor. Flytta eller ta bort dem först."
+        : WRITE_MESSAGES.failed
+  } else {
+    const field = (name: string) => String(form.get(name) ?? "")
+    values = {
+      title: field("title"),
+      slug: field("slug"),
+      parent_id: field("parent_id"),
+      show_in_menu: form.get("show_in_menu") === "on",
+      description: field("description"),
+      link_url: field("link_url"),
+      publish_at: field("publish_at"),
+      body_html: form.has("body_html") ? field("body_html") : values.body_html,
+    }
+
+    let saving: Parameters<typeof savePage>[2] | null = null
+    if (isLink) {
+      const parsed = parseLinkForm(form, { forbiddenParentIds })
+      if (!parsed.ok) errors = parsed.errors
+      // A link has nothing to draft: it is in the menu as soon as it is saved.
+      else
+        saving = {
+          ...parsed.value,
+          kind: "link",
+          ...resolvePublication(
+            "publish",
+            page,
+            page?.published_at ? new Date(page.published_at) : null,
+            now
+          ),
+        }
+    } else {
+      const parsed = parsePageForm(form, { forbiddenParentIds })
+      if (!parsed.ok) errors = parsed.errors
+      else {
+        const input = parsed.value
+        saving = {
+          kind: "page",
+          title: input.title,
+          slug: input.slug,
+          parent_id: input.parent_id,
+          show_in_menu: input.show_in_menu,
+          description: input.description,
+          ...(input.body_html !== null && { body_html: sanitizeContent(input.body_html) }),
+          ...resolvePublication(parsePublishIntent(intent) ?? "save", page, input.publish_at, now),
+        }
+      }
+    }
+
+    if (saving) {
+      const result = await savePage(supabase, id, saving)
+      if (result.ok) {
+        const saved = isLink ? "save" : (parsePublishIntent(intent) ?? "save")
+        return Astro.redirect(`/admin/sidor/${result.value}?sparad=${saved}`, 303)
+      }
+      if (result.reason === "duplicate") {
+        errors.slug = `Det finns redan en sida med adressen ”${saving.slug}” på samma ställe. Välj en annan.`
+      } else {
+        formError = WRITE_MESSAGES[result.reason]
+      }
+    }
+  }
+}
+
+const state = page ? publishStateOf(page, now) : "draft"
+const saved = Astro.url.searchParams.get("sparad")
+const savedMessage =
+  saved === "publish"
+    ? state === "scheduled" && page?.published_at
+      ? `Schemalagd. Sidan syns på webbplatsen ${formatDate(page.published_at, "dateTime")}.`
+      : "Publicerad. Sidan syns nu på webbplatsen."
+    : saved === "unpublish"
+      ? "Avpublicerad. Sidan är nu ett utkast och syns inte på webbplatsen."
+      : saved === "save"
+        ? "Sparad."
+        : null
+
+const parentPath = values.parent_id ? (tree.byId.get(Number(values.parent_id))?.path ?? "") : ""
+const confirmDelete = !isNew && Astro.url.searchParams.has("ta-bort")
+const noun = isLink ? "länk" : "sida"
+const nounDefinite = isLink ? "länken" : "sidan"
+const title = isNew ? `Ny ${noun}` : values.title || (isLink ? "Länk" : "Sida")
+const hasErrors = Object.keys(errors).length > 0
+---
+
+<AdminLayout title={title} wide={!isLink}>
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="/admin/sidor" class="text-muted-foreground text-sm underline-offset-4 hover:underline">Sidor</a>
+      {page && !isLink && <PublishBadge status={page.status} publishedAt={page.published_at} now={now} />}
+    </div>
+    <h1 class="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+
+    {savedMessage && !formError && !hasErrors && (
+      <Alert>
+        <AlertDescription>{savedMessage}</AlertDescription>
+      </Alert>
+    )}
+    {formError && (
+      <Alert variant="destructive">
+        <AlertDescription>{formError}</AlertDescription>
+      </Alert>
+    )}
+    {hasErrors && (
+      <Alert variant="destructive">
+        <AlertDescription>Inget sparades. Rätta det som är markerat nedan.</AlertDescription>
+      </Alert>
+    )}
+
+    {
+      confirmDelete && page && (
+        <Alert variant="destructive">
+          <AlertTitle>Ta bort ”{page.title}”?</AlertTitle>
+          <AlertDescription>
+            <p>
+              {isLink
+                ? "Länken försvinner ur menyn."
+                : "Sidan försvinner från webbplatsen och kan inte återställas."}
+            </p>
+            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+              <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">
+                Ta bort {nounDefinite}
+              </Button>
+              <a href={`/admin/sidor/${page.id}`} class={buttonVariants({ variant: "ghost", className: "h-11" })}>
+                Avbryt
+              </a>
+            </form>
+          </AlertDescription>
+        </Alert>
+      )
+    }
+
+    <form method="POST" class:list={["grid gap-8", !isLink && "lg:grid-cols-[minmax(0,1fr)_18rem]"]}>
+      <div class="flex min-w-0 flex-col gap-7">
+        <FieldGroup>
+          <Field data-invalid={errors.title ? true : undefined}>
+            <FieldLabel htmlFor="title">{isLink ? "Text i menyn" : "Rubrik"}</FieldLabel>
+            <Input id="title" name="title" value={values.title} maxLength={LIMITS.title} required className="h-11 text-base" aria-invalid={errors.title ? true : undefined} />
+            <FieldError>{errors.title}</FieldError>
+          </Field>
+
+          {isLink && (
+            <Field data-invalid={errors.link_url ? true : undefined}>
+              <FieldLabel htmlFor="link_url">Länk till</FieldLabel>
+              <Input id="link_url" name="link_url" value={values.link_url} required className="h-11" placeholder="https://" spellCheck={false} aria-invalid={errors.link_url ? true : undefined} />
+              <FieldDescription>En hel adress, eller en sida här som börjar med /, till exempel /artiklar.</FieldDescription>
+              <FieldError>{errors.link_url}</FieldError>
+            </Field>
+          )}
+
+          {!isLink && (
+            <Field data-invalid={errors.description ? true : undefined}>
+              <FieldLabel htmlFor="description">Beskrivning</FieldLabel>
+              <Textarea id="description" name="description" rows={2} maxLength={LIMITS.description} defaultValue={values.description} aria-invalid={errors.description ? true : undefined} />
+              <FieldDescription>En mening om vad sidan handlar om. Visas i avsnittets lista och i sökmotorer.</FieldDescription>
+              <FieldError>{errors.description}</FieldError>
+            </Field>
+          )}
+        </FieldGroup>
+
+        {!isLink && (
+          <div class="flex flex-col gap-3">
+            <span class="text-sm font-medium">Brödtext</span>
+            <RichTextEditor
+              client:only="react"
+              name="body_html"
+              initialHtml={values.body_html}
+              supabaseUrl={supabaseBrowser.url}
+              supabasePublishableKey={supabaseBrowser.publishableKey}
+              label="Brödtext"
+            >
+              <p slot="fallback" class="text-muted-foreground rounded-2xl border p-4 text-sm">Laddar editorn …</p>
+            </RichTextEditor>
+          </div>
+        )}
+      </div>
+
+      <aside class="flex flex-col gap-7">
+        {!isLink && (
+          <section aria-labelledby="publish-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+            <h2 id="publish-heading" class="text-sm font-semibold">Publicering</h2>
+            <Field data-invalid={errors.publish_at ? true : undefined}>
+              <FieldLabel htmlFor="publish_at">Publiceringstid</FieldLabel>
+              <Input id="publish_at" name="publish_at" type="datetime-local" value={values.publish_at} className="h-11" aria-invalid={errors.publish_at ? true : undefined} />
+              <FieldDescription>Svensk tid. Lämna tomt för att publicera direkt.</FieldDescription>
+              <FieldError>{errors.publish_at}</FieldError>
+            </Field>
+            <div class="flex flex-col gap-2">
+              {state === "draft" ? (
+                <>
+                  <Button type="submit" name="intent" value="save" variant="outline" className="h-11">Spara utkast</Button>
+                  <Button type="submit" name="intent" value="publish" className="h-11">Publicera</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="submit" name="intent" value="save" className="h-11">Spara ändringar</Button>
+                  <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">Avpublicera</Button>
+                </>
+              )}
+            </div>
+            {page && state === "published" && (
+              <a href={tree.byId.get(page.id)?.path ?? "/"} class="text-primary text-sm underline-offset-4 hover:underline">
+                Visa på webbplatsen
+              </a>
+            )}
+          </section>
+        )}
+
+        <FieldGroup>
+          <Field data-invalid={errors.parent_id ? true : undefined}>
+            <FieldLabel htmlFor="parent_id">Ligger under</FieldLabel>
+            <NativeSelect id="parent_id" name="parent_id" className="w-full" defaultValue={values.parent_id} aria-invalid={errors.parent_id ? true : undefined}>
+              <NativeSelectOption value="">Ingen: överst i menyn</NativeSelectOption>
+              {parentChoices.map((node) => (
+                <NativeSelectOption value={String(node.id)}>{`${"– ".repeat(node.depth)}${node.title}`}</NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <FieldError>{errors.parent_id}</FieldError>
+          </Field>
+
+          <Field data-invalid={errors.slug ? true : undefined}>
+            <FieldLabel htmlFor="slug">Adress</FieldLabel>
+            <Input id="slug" name="slug" value={values.slug} className="h-11" spellCheck={false} aria-invalid={errors.slug ? true : undefined} />
+            <FieldDescription>
+              {isLink
+                ? "Syns inte någonstans. Lämna tomt så skapas den från texten."
+                : `${parentPath}/${values.slug || "…"}. Lämna tomt så skapas adressen från rubriken.`}
+            </FieldDescription>
+            <FieldError>{errors.slug}</FieldError>
+          </Field>
+
+          <Field orientation="horizontal">
+            <input id="show_in_menu" name="show_in_menu" type="checkbox" checked={values.show_in_menu} class="accent-primary size-5 shrink-0" />
+            <FieldLabel htmlFor="show_in_menu">Visa i menyn</FieldLabel>
+          </Field>
+        </FieldGroup>
+
+        {isLink && (
+          <div>
+            <Button type="submit" name="intent" value="save" className="h-11">Spara</Button>
+          </div>
+        )}
+
+        {page && !confirmDelete && (
+          <a href={`/admin/sidor/${page.id}?ta-bort`} class="text-destructive text-sm underline-offset-4 hover:underline">
+            Ta bort {nounDefinite}
+          </a>
+        )}
+      </aside>
+    </form>
+  </div>
+</AdminLayout>

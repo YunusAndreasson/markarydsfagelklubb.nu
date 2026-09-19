@@ -1,0 +1,124 @@
+---
+export const prerender = false
+
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
+import PublishBadge from "@/components/admin/PublishBadge.astro"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Button, buttonVariants } from "@/components/ui/button"
+import AdminLayout from "@/layouts/admin.astro"
+import { type AdminPageRow, listPageRows, movePage, WRITE_MESSAGES } from "@/lib/admin-content"
+import { parseRouteId } from "@/lib/content-form"
+import { buildPageTree, flattenTree } from "@/lib/page-tree"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+const client = supabase
+
+async function readTree() {
+  const { data, error } = await listPageRows(client)
+  if (error) console.error(`mafk-web: list pages failed — ${error.message}`)
+  const rows = (data ?? []) as AdminPageRow[]
+  return { rows, tree: buildPageTree(rows), failed: Boolean(error) }
+}
+
+let { rows, tree, failed } = await readTree()
+let moveError: string | null = null
+
+// Up/Ner: a POST per click, then back here (303) so a refresh can't repeat it.
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const id = parseRouteId(String(form.get("id") ?? ""))
+  const direction = form.get("direction")
+  if (id !== null && (direction === "up" || direction === "down")) {
+    const result = await movePage(supabase, tree, id, direction)
+    if (result.ok) return Astro.redirect("/admin/sidor", 303)
+    moveError =
+      result.reason === "duplicate" ? WRITE_MESSAGES.failed : WRITE_MESSAGES[result.reason]
+    ;({ rows, tree, failed } = await readTree())
+  }
+}
+
+const statusById = new Map(rows.map((row) => [row.id, row]))
+const nodes = flattenTree(tree)
+const siblingsOf = (parentId: number | null) =>
+  parentId === null ? tree.roots : (tree.byId.get(parentId)?.children ?? [])
+const now = new Date()
+const deleted = Astro.url.searchParams.has("borttagen")
+---
+
+<AdminLayout title="Sidor">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight">Sidor och meny</h1>
+      <div class="flex flex-wrap gap-2">
+        <a href="/admin/sidor/ny?typ=lank" class={buttonVariants({ variant: "outline", className: "h-11" })}>Ny länk</a>
+        <a href="/admin/sidor/ny" class={buttonVariants({ className: "h-11" })}>Ny sida</a>
+      </div>
+    </div>
+    <p class="text-muted-foreground max-w-prose leading-7">
+      Sidorna bildar webbplatsens meny i den här ordningen. En sida under en annan hamnar i
+      samma avsnitt. En länk är ett menyval som pekar någon annanstans, till exempel Artportalen.
+    </p>
+
+    {deleted && (
+      <Alert>
+        <AlertDescription>Sidan är borttagen.</AlertDescription>
+      </Alert>
+    )}
+    {(failed || moveError) && (
+      <Alert variant="destructive">
+        <AlertDescription>{moveError ?? "Sidorna kunde inte läsas just nu. Ladda om sidan om en stund."}</AlertDescription>
+      </Alert>
+    )}
+    {tree.unreachable.length > 0 && (
+      <Alert variant="destructive">
+        <AlertDescription>
+          {tree.unreachable.length} sidor ligger under en sida som inte finns längre och visas inte.
+        </AlertDescription>
+      </Alert>
+    )}
+
+    {nodes.length === 0 && !failed && (
+      <p class="text-muted-foreground max-w-prose leading-7">Inga sidor ännu. Börja med ”Ny sida”.</p>
+    )}
+
+    {
+      nodes.length > 0 && (
+        <ul class="flex flex-col divide-y rounded-2xl border">
+          {nodes.map((node) => {
+            const siblings = siblingsOf(node.parent_id)
+            const position = siblings.findIndex((sibling) => sibling.id === node.id)
+            const row = statusById.get(node.id)
+            return (
+              <li class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" style={`padding-left: ${0.75 + node.depth * 1.5}rem`}>
+                <div class="flex min-w-0 flex-1 flex-col">
+                  <a href={`/admin/sidor/${node.id}`} class="truncate font-medium underline-offset-4 hover:underline">
+                    {node.title}
+                  </a>
+                  <span class="text-muted-foreground truncate text-sm">
+                    {node.kind === "link" ? node.link_url : node.path}
+                  </span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  {node.kind === "link" && <Badge variant="outline">Länk</Badge>}
+                  {!node.show_in_menu && <Badge variant="outline">Inte i menyn</Badge>}
+                  {row && <PublishBadge status={row.status} publishedAt={row.published_at} now={now} />}
+                  <form method="POST" class="flex">
+                    <input type="hidden" name="id" value={node.id} />
+                    <Button type="submit" name="direction" value="up" variant="ghost" size="icon" className="size-11" aria-label={`Flytta ”${node.title}” uppåt`} disabled={position <= 0}>
+                      <ArrowUpIcon />
+                    </Button>
+                    <Button type="submit" name="direction" value="down" variant="ghost" size="icon" className="size-11" aria-label={`Flytta ”${node.title}” nedåt`} disabled={position === siblings.length - 1}>
+                      <ArrowDownIcon />
+                    </Button>
+                  </form>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )
+    }
+  </div>
+</AdminLayout>

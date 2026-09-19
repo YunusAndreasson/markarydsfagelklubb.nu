@@ -1,26 +1,43 @@
 ---
 import { Button } from "@/components/ui/button"
 import BaseLayout from "@/layouts/base.astro"
-import { LOGOUT_PATH } from "@/lib/admin-access"
+import { ADMIN_HOME, LOGOUT_PATH } from "@/lib/admin-access"
 
 interface Props {
   title: string
+  /** Wider main column, for the editor. */
+  wide?: boolean
 }
 
-const { title } = Astro.props
+const { title, wide = false } = Astro.props
 const { isAdmin, user } = Astro.locals
+const { pathname } = Astro.url
+
+const sections = [
+  { href: ADMIN_HOME, label: "Översikt" },
+  { href: "/admin/artiklar", label: "Artiklar" },
+  { href: "/admin/sidor", label: "Sidor" },
+  { href: "/admin/kategorier", label: "Kategorier" },
+  { href: "/admin/bilder", label: "Bilder" },
+]
+
+const isCurrent = (href: string) =>
+  href === ADMIN_HOME ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
 ---
 
 <BaseLayout title={`${title} · Administration · Markaryds Fågelklubb`}>
   <div class="flex min-h-svh flex-col">
     <header class="border-b">
-      <div class="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
-        <a href="/admin" class="text-sm font-semibold tracking-tight">Markaryds Fågelklubb</a>
+      <div class="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
+        <a href={ADMIN_HOME} class="text-sm font-semibold tracking-tight">Markaryds Fågelklubb</a>
         <span class="text-muted-foreground text-sm">Administration</span>
         {
           isAdmin && (
             <div class="ml-auto flex items-center gap-3">
-              <span class="text-muted-foreground hidden text-sm sm:inline">{user?.email}</span>
+              <a href="/" class="text-muted-foreground text-sm underline-offset-4 hover:underline">
+                Visa webbplatsen
+              </a>
+              <span class="text-muted-foreground hidden text-sm lg:inline">{user?.email}</span>
               <form method="POST" action={LOGOUT_PATH}>
                 <Button type="submit" variant="outline" className="h-11">
                   Logga ut
@@ -30,9 +47,28 @@ const { isAdmin, user } = Astro.locals
           )
         }
       </div>
+      {
+        isAdmin && (
+          <nav aria-label="Administration" class="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <ul class="-mb-px flex gap-1 overflow-x-auto">
+              {sections.map((section) => (
+                <li>
+                  <a
+                    href={section.href}
+                    aria-current={isCurrent(section.href) ? "page" : undefined}
+                    class="text-muted-foreground hover:text-foreground aria-[current=page]:border-primary aria-[current=page]:text-foreground flex h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium"
+                  >
+                    {section.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
     </header>
 
-    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
+    <main class:list={["mx-auto w-full flex-1 px-4 py-8 sm:px-6", wide ? "max-w-6xl" : "max-w-5xl"]}>
       <slot />
     </main>
   </div>

@@ -1,0 +1,94 @@
+---
+export const prerender = false
+
+import PublishBadge from "@/components/admin/PublishBadge.astro"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { buttonVariants } from "@/components/ui/button"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import AdminLayout from "@/layouts/admin.astro"
+import { ADMIN_LIST_LIMIT, listArticles } from "@/lib/admin-content"
+import { formatDate } from "@/lib/stockholm-time"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+
+const { data: articles, error } = await listArticles(supabase)
+if (error) console.error(`mafk-web: list articles failed — ${error.message}`)
+const now = new Date()
+const deleted = Astro.url.searchParams.has("borttagen")
+---
+
+<AdminLayout title="Artiklar">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight">Artiklar</h1>
+      <a href="/admin/artiklar/ny" class={buttonVariants({ className: "h-11" })}>Ny artikel</a>
+    </div>
+
+    {deleted && (
+      <Alert>
+        <AlertDescription>Artikeln är borttagen.</AlertDescription>
+      </Alert>
+    )}
+    {error && (
+      <Alert variant="destructive">
+        <AlertDescription>Artiklarna kunde inte läsas just nu. Ladda om sidan om en stund.</AlertDescription>
+      </Alert>
+    )}
+
+    {
+      articles && articles.length === 0 && (
+        <p class="text-muted-foreground max-w-prose leading-7">
+          Här hamnar klubbens artiklar. Skriv den första med ”Ny artikel”.
+        </p>
+      )
+    }
+
+    {
+      articles && articles.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Rubrik</TableHead>
+              <TableHead className="hidden sm:table-cell">Kategori</TableHead>
+              <TableHead className="hidden md:table-cell">Datum</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {articles.map((article) => (
+              <TableRow>
+                <TableCell className="max-w-[24rem] whitespace-normal">
+                  <a href={`/admin/artiklar/${article.id}`} class="font-medium underline-offset-4 hover:underline">
+                    {article.title}
+                  </a>
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden sm:table-cell">
+                  {article.categories?.name ?? "–"}
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden tabular-nums md:table-cell">
+                  {article.published_at ? formatDate(article.published_at, "long") : "–"}
+                </TableCell>
+                <TableCell>
+                  <PublishBadge status={article.status} publishedAt={article.published_at} now={now} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )
+    }
+    {
+      articles && articles.length === ADMIN_LIST_LIMIT && (
+        <p class="text-muted-foreground text-sm">Visar de {ADMIN_LIST_LIMIT} senaste artiklarna.</p>
+      )
+    }
+  </div>
+</AdminLayout>

@@ -1,0 +1,372 @@
+---
+export const prerender = false
+
+import { CoverImage } from "@/components/admin/CoverImage"
+import type { UploadedImage } from "@/components/admin/ImageUpload"
+import PublishBadge from "@/components/admin/PublishBadge.astro"
+import { RichTextEditor } from "@/components/admin/RichTextEditor"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { Textarea } from "@/components/ui/textarea"
+import AdminLayout from "@/layouts/admin.astro"
+import {
+  deleteArticle,
+  listCategories,
+  loadArticle,
+  saveArticle,
+  WRITE_MESSAGES,
+} from "@/lib/admin-content"
+import { type FieldErrors, LIMITS, parseArticleForm, parseRouteId } from "@/lib/content-form"
+import type { MediaFormat } from "@/lib/media"
+import { parsePublishIntent, publishStateOf, resolvePublication } from "@/lib/publish-state"
+import { sanitizeContent } from "@/lib/sanitize"
+import { formatDate, toStockholmInputValue } from "@/lib/stockholm-time"
+
+const { supabase, supabaseBrowser } = Astro.locals
+if (!supabase || !supabaseBrowser) return new Response(null, { status: 503 })
+
+const isNew = Astro.params.id === "ny"
+const id = isNew ? null : parseRouteId(Astro.params.id)
+if (!isNew && id === null) return new Response(null, { status: 404 })
+
+const now = new Date()
+let article: Awaited<ReturnType<typeof loadArticle>>["data"] = null
+if (id !== null) {
+  const { data, error } = await loadArticle(supabase, id)
+  if (error) {
+    console.error(`mafk-web: load article failed — ${error.message}`)
+    return new Response("Artikeln kunde inte läsas just nu.", { status: 503 })
+  }
+  if (!data) return new Response(null, { status: 404 })
+  article = data
+}
+
+const { data: categories } = await listCategories(supabase)
+
+const toUploaded = (media: NonNullable<typeof article>["cover"]): UploadedImage | null =>
+  media ? { ...media, format: media.format as MediaFormat } : null
+
+// What the form shows: the saved article, or what was just submitted.
+let values = {
+  title: article?.title ?? "",
+  slug: article?.slug ?? "",
+  excerpt: article?.excerpt ?? "",
+  author_name: article?.author_name ?? "",
+  category_id: article?.category_id ? String(article.category_id) : "",
+  publish_at: article?.published_at ? toStockholmInputValue(article.published_at) : "",
+  body_html: article?.body_html ?? "",
+}
+let cover = toUploaded(article?.cover ?? null)
+let errors: FieldErrors = {}
+let formError: string | null = null
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const intent = form.get("intent")
+
+  if (intent === "delete" && id !== null) {
+    const result = await deleteArticle(supabase, id)
+    if (result.ok) return Astro.redirect("/admin/artiklar?borttagen=1", 303)
+    formError =
+      result.reason === "duplicate" ? WRITE_MESSAGES.failed : WRITE_MESSAGES[result.reason]
+  } else {
+    const publishIntent = parsePublishIntent(intent) ?? "save"
+    const parsed = parseArticleForm(form)
+    const field = (name: string) => String(form.get(name) ?? "")
+    values = {
+      title: field("title"),
+      slug: field("slug"),
+      excerpt: field("excerpt"),
+      author_name: field("author_name"),
+      category_id: field("category_id"),
+      publish_at: field("publish_at"),
+      body_html: form.has("body_html") ? field("body_html") : values.body_html,
+    }
+
+    if (!parsed.ok) {
+      errors = parsed.errors
+    } else {
+      const input = parsed.value
+      const publication = resolvePublication(publishIntent, article, input.publish_at, now)
+      const result = await saveArticle(supabase, id, {
+        title: input.title,
+        slug: input.slug,
+        excerpt: input.excerpt,
+        author_name: input.author_name,
+        category_id: input.category_id,
+        ...(input.cover_media_id !== undefined && { cover_media_id: input.cover_media_id }),
+        ...(input.body_html !== null && { body_html: sanitizeContent(input.body_html) }),
+        ...publication,
+      })
+      if (result.ok) {
+        return Astro.redirect(`/admin/artiklar/${result.value}?sparad=${publishIntent}`, 303)
+      }
+      if (result.reason === "duplicate") {
+        errors.slug = `Det finns redan en artikel med adressen ”${input.slug}”. Välj en annan.`
+      } else {
+        formError = WRITE_MESSAGES[result.reason]
+      }
+    }
+
+    // Keep a newly chosen cover on screen while the errors are fixed.
+    const submittedCover = parsed.ok ? parsed.value.cover_media_id : undefined
+    if (submittedCover === null) cover = null
+    else if (submittedCover !== undefined && submittedCover !== cover?.id) {
+      const { data } = await supabase
+        .from("media")
+        .select("id, storage_prefix, format, widths, width, height, alt")
+        .eq("id", submittedCover)
+        .maybeSingle()
+      cover = data ? { ...data, format: data.format as MediaFormat } : cover
+    }
+  }
+}
+
+const state = article ? publishStateOf(article, now) : "draft"
+const saved = Astro.url.searchParams.get("sparad")
+const savedMessage =
+  saved === "publish"
+    ? state === "scheduled" && article?.published_at
+      ? `Schemalagd. Artikeln syns på webbplatsen ${formatDate(article.published_at, "dateTime")}.`
+      : "Publicerad. Artikeln syns nu på webbplatsen."
+    : saved === "unpublish"
+      ? "Avpublicerad. Artikeln är nu ett utkast och syns inte på webbplatsen."
+      : saved === "save"
+        ? "Sparad."
+        : null
+const confirmDelete = !isNew && Astro.url.searchParams.has("ta-bort")
+const title = isNew ? "Ny artikel" : values.title || "Artikel"
+---
+
+<AdminLayout title={title} wide>
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="/admin/artiklar" class="text-muted-foreground text-sm underline-offset-4 hover:underline">
+        Artiklar
+      </a>
+      {article && <PublishBadge status={article.status} publishedAt={article.published_at} now={now} />}
+    </div>
+    <h1 class="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+
+    {
+      savedMessage && !formError && Object.keys(errors).length === 0 && (
+        <Alert>
+          <AlertDescription>{savedMessage}</AlertDescription>
+        </Alert>
+      )
+    }
+    {
+      formError && (
+        <Alert variant="destructive">
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )
+    }
+    {
+      Object.keys(errors).length > 0 && (
+        <Alert variant="destructive">
+          <AlertDescription>Artikeln sparades inte. Rätta det som är markerat nedan.</AlertDescription>
+        </Alert>
+      )
+    }
+
+    {
+      confirmDelete && article && (
+        <Alert variant="destructive">
+          <AlertTitle>Ta bort ”{article.title}”?</AlertTitle>
+          <AlertDescription>
+            <p>Artikeln försvinner från webbplatsen och kan inte återställas. Bilderna finns kvar under Bilder.</p>
+            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+              <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">
+                Ta bort artikeln
+              </Button>
+              <a href={`/admin/artiklar/${article.id}`} class={buttonVariants({ variant: "ghost", className: "h-11" })}>
+                Avbryt
+              </a>
+            </form>
+          </AlertDescription>
+        </Alert>
+      )
+    }
+
+    <form method="POST" class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div class="flex min-w-0 flex-col gap-7">
+        <FieldGroup>
+          <Field data-invalid={errors.title ? true : undefined}>
+            <FieldLabel htmlFor="title">Rubrik</FieldLabel>
+            <Input
+              id="title"
+              name="title"
+              value={values.title}
+              maxLength={LIMITS.title}
+              required
+              className="h-11 text-base"
+              aria-invalid={errors.title ? true : undefined}
+            />
+            <FieldError>{errors.title}</FieldError>
+          </Field>
+          <Field data-invalid={errors.excerpt ? true : undefined}>
+            <FieldLabel htmlFor="excerpt">Ingress</FieldLabel>
+            <Textarea
+              id="excerpt"
+              name="excerpt"
+              rows={3}
+              maxLength={LIMITS.excerpt}
+              defaultValue={values.excerpt}
+              aria-invalid={errors.excerpt ? true : undefined}
+            />
+            <FieldDescription>Ett par meningar som sammanfattar artikeln. Visas i listor och överst i artikeln.</FieldDescription>
+            <FieldError>{errors.excerpt}</FieldError>
+          </Field>
+        </FieldGroup>
+
+        <div class="flex flex-col gap-3">
+          <span class="text-sm font-medium" id="body-label">Brödtext</span>
+          <RichTextEditor
+            client:only="react"
+            name="body_html"
+            initialHtml={values.body_html}
+            supabaseUrl={supabaseBrowser.url}
+            supabasePublishableKey={supabaseBrowser.publishableKey}
+            label="Brödtext"
+          >
+            <p slot="fallback" class="text-muted-foreground rounded-2xl border p-4 text-sm">Laddar editorn …</p>
+          </RichTextEditor>
+        </div>
+      </div>
+
+      <aside class="flex flex-col gap-7">
+        <section aria-labelledby="publish-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+          <h2 id="publish-heading" class="text-sm font-semibold">Publicering</h2>
+          <Field data-invalid={errors.publish_at ? true : undefined}>
+            <FieldLabel htmlFor="publish_at">Publiceringstid</FieldLabel>
+            <Input
+              id="publish_at"
+              name="publish_at"
+              type="datetime-local"
+              value={values.publish_at}
+              className="h-11"
+              aria-invalid={errors.publish_at ? true : undefined}
+            />
+            <FieldDescription>
+              Svensk tid. Lämna tomt för att publicera direkt. En tid framåt schemalägger artikeln.
+            </FieldDescription>
+            <FieldError>{errors.publish_at}</FieldError>
+          </Field>
+          {/* The first submit button is what Enter presses: never publishing. */}
+          <div class="flex flex-col gap-2">
+            {
+              state === "draft" ? (
+                <>
+                  <Button type="submit" name="intent" value="save" variant="outline" className="h-11">
+                    Spara utkast
+                  </Button>
+                  <Button type="submit" name="intent" value="publish" className="h-11">
+                    Publicera
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button type="submit" name="intent" value="save" className="h-11">
+                    Spara ändringar
+                  </Button>
+                  <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">
+                    Avpublicera
+                  </Button>
+                </>
+              )
+            }
+          </div>
+          {
+            article && (
+              <div class="flex flex-col gap-1 text-sm">
+                <a href={`/admin/artiklar/${article.id}/forhandsvisning`} class="text-primary underline-offset-4 hover:underline">
+                  Förhandsgranska
+                </a>
+                {state === "published" && (
+                  <a href={`/artiklar/${article.slug}`} class="text-primary underline-offset-4 hover:underline">
+                    Visa på webbplatsen
+                  </a>
+                )}
+              </div>
+            )
+          }
+        </section>
+
+        <FieldGroup>
+          <Field data-invalid={errors.slug ? true : undefined}>
+            <FieldLabel htmlFor="slug">Adress</FieldLabel>
+            <Input
+              id="slug"
+              name="slug"
+              value={values.slug}
+              className="h-11"
+              spellCheck={false}
+              aria-invalid={errors.slug ? true : undefined}
+            />
+            <FieldDescription>
+              /artiklar/{values.slug || "…"}. Lämna tomt så skapas adressen från rubriken.
+              {state !== "draft" && " Ändrar du den slutar gamla länkar att fungera."}
+            </FieldDescription>
+            <FieldError>{errors.slug}</FieldError>
+          </Field>
+          <Field data-invalid={errors.category_id ? true : undefined}>
+            <FieldLabel htmlFor="category_id">Kategori</FieldLabel>
+            <NativeSelect
+              id="category_id"
+              name="category_id"
+              className="w-full"
+              defaultValue={values.category_id}
+              aria-invalid={errors.category_id ? true : undefined}
+            >
+              <NativeSelectOption value="">Ingen kategori</NativeSelectOption>
+              {
+                (categories ?? []).map((category) => (
+                  <NativeSelectOption value={String(category.id)}>
+                    {category.name}
+                  </NativeSelectOption>
+                ))
+              }
+            </NativeSelect>
+            <FieldError>{errors.category_id}</FieldError>
+          </Field>
+          <Field data-invalid={errors.author_name ? true : undefined}>
+            <FieldLabel htmlFor="author_name">Skriven av</FieldLabel>
+            <Input
+              id="author_name"
+              name="author_name"
+              value={values.author_name}
+              maxLength={LIMITS.author}
+              className="h-11"
+              aria-invalid={errors.author_name ? true : undefined}
+            />
+            <FieldDescription>Visas som ”Text: …”. Lämna tomt för att inte visa någon.</FieldDescription>
+            <FieldError>{errors.author_name}</FieldError>
+          </Field>
+          <Field>
+            <span class="text-sm font-medium">Omslagsbild</span>
+            <CoverImage
+              client:only="react"
+              supabaseUrl={supabaseBrowser.url}
+              supabasePublishableKey={supabaseBrowser.publishableKey}
+              initial={cover}
+            >
+              <p slot="fallback" class="text-muted-foreground text-sm">Laddar …</p>
+            </CoverImage>
+          </Field>
+        </FieldGroup>
+
+        {
+          article && !confirmDelete && (
+            <a href={`/admin/artiklar/${article.id}?ta-bort`} class="text-destructive text-sm underline-offset-4 hover:underline">
+              Ta bort artikeln
+            </a>
+          )
+        }
+      </aside>
+    </form>
+  </div>
+</AdminLayout>

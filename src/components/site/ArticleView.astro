@@ -1,0 +1,62 @@
+---
+import { mediaFallbackUrl, mediaSrcset } from "@/lib/media"
+import type { FullArticle } from "@/lib/public-content"
+import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+
+interface Props {
+  article: FullArticle
+}
+
+// The article page and the admin's preview render the same thing.
+const { article } = Astro.props
+const published = article.published_at
+---
+
+<article class="flex flex-col gap-8">
+  <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
+    <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
+      <a href="/artiklar" class="hover:text-foreground underline-offset-4 hover:underline">Artiklar</a>
+      {
+        article.category && (
+          <>
+            <span aria-hidden="true"> / </span>
+            <a href={`/artiklar/kategori/${article.category.slug}`} class="hover:text-foreground underline-offset-4 hover:underline">
+              {article.category.name}
+            </a>
+          </>
+        )
+      }
+    </nav>
+    <h1 class="type-title md:col-start-2">{article.title}</h1>
+    <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
+      {
+        published && (
+          <time datetime={isoDateTime(published)} class="flex flex-wrap gap-x-1 md:flex-col">
+            <span>{formatDate(published, "weekdayName")}</span>
+            <span>{formatDate(published, "dayMonth")}</span>
+            <span>{stockholmYear(published)}</span>
+          </time>
+        )
+      }
+      {article.author_name && <span class="mt-1">Text: {article.author_name}</span>}
+    </div>
+    {article.excerpt && <p class="type-ingress text-muted-foreground md:col-start-2 md:row-start-3">{article.excerpt}</p>}
+  </header>
+
+  {
+    article.cover && (
+      <img
+        src={mediaFallbackUrl(article.cover)}
+        srcset={mediaSrcset(article.cover)}
+        sizes="(min-width: 48rem) 45rem, 100vw"
+        width={article.cover.width}
+        height={article.cover.height}
+        alt={article.cover.alt}
+        fetchpriority="high"
+        class="h-auto w-full max-w-[45rem] rounded-[4px]"
+      />
+    )
+  }
+
+  <div class="content md:ml-[7rem]" set:html={article.body_html} />
+</article>

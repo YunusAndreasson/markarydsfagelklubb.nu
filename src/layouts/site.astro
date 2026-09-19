@@ -1,0 +1,106 @@
+---
+import BaseLayout from "@/layouts/base.astro"
+import { isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
+
+interface Props {
+  /** The page's own title; the club's name is appended. */
+  title?: string
+  description?: string
+  /** From the page tree. Each route loads it; the layout queries nothing. */
+  menu: MenuEntry[]
+}
+
+const SITE_NAME = "Markaryds Fågelklubb"
+const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
+
+const { title, description, menu } = Astro.props
+const { pathname } = Astro.url
+const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" : undefined)
+---
+
+<BaseLayout title={title ? `${title} · ${SITE_NAME}` : SITE_NAME} description={description ?? TAGLINE}>
+  <a
+    href="#innehall"
+    class="bg-background focus:ring-ring sr-only z-10 rounded-md px-4 py-3 focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:ring-2"
+  >
+    Till innehållet
+  </a>
+
+  <header class="relative border-b">
+    <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-4 sm:px-6 md:items-end md:py-7">
+      <div class="flex flex-col gap-1">
+        <a href="/" class="text-lg font-semibold tracking-tight md:text-xl">{SITE_NAME}</a>
+        <p class="text-muted-foreground hidden text-sm md:block">{TAGLINE}</p>
+      </div>
+
+      {
+        menu.length > 0 && (
+          <nav aria-label="Huvudmeny" class="hidden md:block">
+            <ul class="flex flex-wrap justify-end gap-x-6 gap-y-2">
+              {menu.map((entry) => (
+                <li>
+                  <a
+                    href={entry.href}
+                    aria-current={current(entry)}
+                    class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+                  >
+                    {entry.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
+
+      {
+        menu.length > 0 && (
+          <details class="group md:hidden">
+            <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
+              <span class="group-open:hidden">Meny</span>
+              <span class="hidden group-open:inline">Stäng</span>
+            </summary>
+            <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6">
+              <ul class="flex flex-col">
+                {menu.map((entry) => (
+                  <li class="border-b last:border-b-0">
+                    <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:text-primary flex min-h-12 items-center text-lg font-medium">
+                      {entry.title}
+                    </a>
+                    {entry.children.length > 0 && (
+                      <ul class="flex flex-col pb-3 pl-4">
+                        {entry.children.map((child) => (
+                          <li>
+                            <a href={child.href} aria-current={pathname === child.href ? "page" : undefined} class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center">
+                              {child.title}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </details>
+        )
+      }
+    </div>
+  </header>
+
+  <main id="innehall" class="mx-auto w-full max-w-[64rem] px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
+    <slot />
+  </main>
+
+  <footer class="mx-auto w-full max-w-[64rem] px-4 pb-12 sm:px-6">
+    <div class="text-muted-foreground flex flex-col gap-1 text-sm md:pl-[7rem]">
+      <p class="text-foreground font-medium">{SITE_NAME}</p>
+      <p>{TAGLINE}</p>
+      <p>
+        <a href="mailto:webmaster@markarydsfagelklubb.nu" class="hover:text-foreground underline underline-offset-4">
+          webmaster@markarydsfagelklubb.nu
+        </a>
+      </p>
+    </div>
+  </footer>
+</BaseLayout>

@@ -1,0 +1,117 @@
+---
+export const prerender = false
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import AdminLayout from "@/layouts/admin.astro"
+import { deleteCategory, listCategories, saveCategory, WRITE_MESSAGES } from "@/lib/admin-content"
+import { type FieldErrors, parseCategoryForm, parseRouteId } from "@/lib/content-form"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+
+// One form per row, plus one for a new category; `id` says which was sent.
+let errors: FieldErrors = {}
+let errorFor: number | "new" | null = null
+let formError: string | null = null
+let draftName = ""
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const id = parseRouteId(String(form.get("id") ?? ""))
+  const intent = form.get("intent")
+
+  if (intent === "delete" && id !== null) {
+    const result = await deleteCategory(supabase, id)
+    if (result.ok) return Astro.redirect("/admin/kategorier?borttagen=1", 303)
+    formError = WRITE_MESSAGES.failed
+  } else {
+    const parsed = parseCategoryForm(form)
+    if (parsed.ok) {
+      const result = await saveCategory(supabase, id, parsed.value)
+      if (result.ok) return Astro.redirect("/admin/kategorier?sparad=1", 303)
+      errors =
+        result.reason === "duplicate"
+          ? { name: `Det finns redan en kategori som heter ”${parsed.value.name}”.` }
+          : {}
+      if (result.reason !== "duplicate") formError = WRITE_MESSAGES[result.reason]
+    } else {
+      errors = parsed.errors
+    }
+    errorFor = id ?? "new"
+    if (id === null) draftName = String(form.get("name") ?? "")
+  }
+}
+
+const { data: categories, error } = await listCategories(supabase)
+if (error) console.error(`mafk-web: list categories failed — ${error.message}`)
+const nameError = errors.name ?? errors.slug
+const confirmId = parseRouteId(Astro.url.searchParams.get("ta-bort") ?? undefined)
+const confirming = (categories ?? []).find((category) => category.id === confirmId)
+---
+
+<AdminLayout title="Kategorier">
+  <div class="flex max-w-2xl flex-col gap-6">
+    <h1 class="text-2xl font-semibold tracking-tight">Kategorier</h1>
+    <p class="text-muted-foreground leading-7">
+      Artiklarna sorteras i kategorier på webbplatsen. Tar du bort en kategori finns dess artiklar
+      kvar, utan kategori.
+    </p>
+
+    {Astro.url.searchParams.has("sparad") && (
+      <Alert><AlertDescription>Sparad.</AlertDescription></Alert>
+    )}
+    {Astro.url.searchParams.has("borttagen") && (
+      <Alert><AlertDescription>Kategorin är borttagen.</AlertDescription></Alert>
+    )}
+    {(formError || error) && (
+      <Alert variant="destructive">
+        <AlertDescription>{formError ?? "Kategorierna kunde inte läsas just nu."}</AlertDescription>
+      </Alert>
+    )}
+
+    {confirming && (
+      <Alert variant="destructive">
+        <AlertDescription>
+          <p>Ta bort kategorin ”{confirming.name}”? Artiklarna i den finns kvar, utan kategori.</p>
+          <form method="POST" class="mt-3 flex flex-wrap gap-2">
+            <input type="hidden" name="id" value={confirming.id} />
+            <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">Ta bort kategorin</Button>
+            <a href="/admin/kategorier" class={buttonVariants({ variant: "ghost", className: "h-11" })}>Avbryt</a>
+          </form>
+        </AlertDescription>
+      </Alert>
+    )}
+
+    <ul class="flex flex-col divide-y rounded-2xl border">
+      {(categories ?? []).map((category) => (
+        <li class="p-3">
+          <form method="POST" class="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="id" value={category.id} />
+            <Field className="min-w-48 flex-1" data-invalid={errorFor === category.id && nameError ? true : undefined}>
+              <FieldLabel htmlFor={`name-${category.id}`} className="sr-only">Namn</FieldLabel>
+              <Input id={`name-${category.id}`} name="name" value={category.name} className="h-11" required aria-invalid={errorFor === category.id && nameError ? true : undefined} />
+              {errorFor === category.id && <FieldError>{nameError}</FieldError>}
+            </Field>
+            <Button type="submit" name="intent" value="save" variant="outline" className="h-11">Byt namn</Button>
+            <a href={`/admin/kategorier?ta-bort=${category.id}`} class={buttonVariants({ variant: "destructive", className: "h-11" })}>Ta bort</a>
+          </form>
+        </li>
+      ))}
+      {categories && categories.length === 0 && (
+        <li class="text-muted-foreground p-3 text-sm">Inga kategorier ännu.</li>
+      )}
+    </ul>
+
+    <form method="POST" class="flex flex-wrap items-end gap-2">
+      <Field className="min-w-48 flex-1" data-invalid={errorFor === "new" && nameError ? true : undefined}>
+        <FieldLabel htmlFor="name-new">Ny kategori</FieldLabel>
+        <Input id="name-new" name="name" value={draftName} className="h-11" required aria-invalid={errorFor === "new" && nameError ? true : undefined} />
+        {errorFor === "new" && <FieldError>{nameError}</FieldError>}
+      </Field>
+      <Button type="submit" name="intent" value="save" className="h-11">Lägg till</Button>
+    </form>
+  </div>
+</AdminLayout>

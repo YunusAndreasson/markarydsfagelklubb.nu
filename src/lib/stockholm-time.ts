@@ -98,6 +98,14 @@ const FORMATS = {
     day: "numeric",
     month: "long",
   }),
+  /** "lördag" */
+  weekdayName: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, weekday: "long" }),
+  /** "19 september" */
+  dayMonth: new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TIME_ZONE,
+    day: "numeric",
+    month: "long",
+  }),
   /** "19 sep." */
   short: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric", month: "short" }),
   /** "19 sep. 2026 10:05" */

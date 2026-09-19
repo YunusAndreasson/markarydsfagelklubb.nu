@@ -7,6 +7,11 @@ import { parseStockholmInputValue } from "./stockholm-time"
  * for safety (slug shape, `link_url`), so neither side trusts the other.
  *
  * Bodies come back as typed: the page sanitizes them before saving.
+ *
+ * The body and the cover come from islands that exist only once JavaScript
+ * has run. A form posted without them (JS blocked, still loading) must not
+ * erase what is saved, so a missing field reads as `null`/`undefined`:
+ * "leave it as it is".
  */
 
 /** Field name → message, in the same words the form shows. */
@@ -41,10 +46,10 @@ function text(form: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : ""
 }
 
-/** The raw body: surrounding whitespace is fine, the sanitizer normalises it. */
-function body(form: FormData): string {
+/** The raw body, or null when the editor never sent one. */
+function body(form: FormData): string | null {
   const value = form.get("body_html")
-  return typeof value === "string" ? value : ""
+  return typeof value === "string" ? value : null
 }
 
 /** "" → null; a positive integer → itself; anything else → undefined (invalid). */
@@ -112,8 +117,10 @@ export type ArticleForm = {
   excerpt: string
   author_name: string
   category_id: number | null
-  cover_media_id: number | null
-  body_html: string
+  /** undefined: the cover picker wasn't there, keep the saved cover. */
+  cover_media_id: number | null | undefined
+  /** null: the editor wasn't there, keep the saved body. */
+  body_html: string | null
   publish_at: Date | null
 }
 
@@ -133,7 +140,9 @@ export function parseArticleForm(form: FormData): Parsed<ArticleForm> {
     excerpt,
     author_name,
     category_id: checkId(text(form, "category_id"), "category_id", errors),
-    cover_media_id: checkId(text(form, "cover_media_id"), "cover_media_id", errors),
+    cover_media_id: form.has("cover_media_id")
+      ? checkId(text(form, "cover_media_id"), "cover_media_id", errors)
+      : undefined,
     body_html: body(form),
     publish_at: checkPublishAt(text(form, "publish_at"), errors),
   })
@@ -158,7 +167,8 @@ export type PageForm = {
   parent_id: number | null
   show_in_menu: boolean
   description: string
-  body_html: string
+  /** null: the editor wasn't there, keep the saved body. */
+  body_html: string | null
   publish_at: Date | null
 }
 
@@ -219,4 +229,9 @@ export function parseCategoryForm(form: FormData): Parsed<CategoryForm> {
   checkTitle(name, errors, "name")
   const slug = checkSlug(text(form, "slug"), name, new Set(), errors)
   return done(errors, { name, slug })
+}
+
+/** A row id from a route parameter, or null for anything that isn't one. */
+export function parseRouteId(value: string | undefined): number | null {
+  return value !== undefined && /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null
 }

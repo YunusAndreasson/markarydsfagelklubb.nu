@@ -1,0 +1,69 @@
+---
+export const prerender = false
+
+import ArticleView from "@/components/site/ArticleView.astro"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import SiteLayout from "@/layouts/site.astro"
+import { type AdminPageRow, listCategories, listPageRows, loadArticle } from "@/lib/admin-content"
+import { parseRouteId } from "@/lib/content-form"
+import type { MediaFormat } from "@/lib/media"
+import { buildMenu, buildPageTree } from "@/lib/page-tree"
+import type { FullArticle } from "@/lib/public-content"
+import { publishStateOf } from "@/lib/publish-state"
+import { formatDate } from "@/lib/stockholm-time"
+
+// The public article page, rendered with the admin's session so a draft or a
+// scheduled article can be read before anyone else can. Under /admin, so the
+// gate and `Cache-Control: private, no-store` apply.
+const { supabase } = Astro.locals
+const id = parseRouteId(Astro.params.id)
+if (!supabase || id === null) return new Response(null, { status: 404 })
+
+const now = new Date()
+const [{ data: stored }, { data: categories }, { data: pageRows }] = await Promise.all([
+  loadArticle(supabase, id),
+  listCategories(supabase),
+  listPageRows(supabase),
+])
+if (!stored) return new Response(null, { status: 404 })
+
+// The menu a visitor would see: published pages only.
+const visible = ((pageRows ?? []) as AdminPageRow[]).filter(
+  (row) => publishStateOf(row, now) === "published"
+)
+const menu = buildMenu(buildPageTree(visible))
+
+const category = (categories ?? []).find((candidate) => candidate.id === stored.category_id)
+const article: FullArticle = {
+  id: stored.id,
+  slug: stored.slug,
+  title: stored.title,
+  excerpt: stored.excerpt,
+  // A draft has no date yet; show today's, which is what publishing now gives.
+  published_at: stored.published_at ?? now.toISOString(),
+  author_name: stored.author_name,
+  body_html: stored.body_html,
+  category_id: stored.category_id,
+  category: category ? { name: category.name, slug: category.slug } : null,
+  cover: stored.cover ? { ...stored.cover, format: stored.cover.format as MediaFormat } : null,
+}
+const state = publishStateOf(stored, now)
+---
+
+<SiteLayout title={`Förhandsvisning: ${article.title}`} menu={menu}>
+  <div class="mb-10 flex flex-col gap-3 md:ml-[7rem] md:max-w-[38rem]">
+    <Alert>
+      <AlertDescription>
+        {
+          state === "published"
+            ? "Förhandsvisning. Artikeln är publicerad och ser ut så här för alla."
+            : state === "scheduled" && stored.published_at
+              ? `Förhandsvisning. Artikeln syns för alla ${formatDate(stored.published_at, "dateTime")}.`
+              : "Förhandsvisning. Artikeln är ett utkast och syns bara för dig."
+        }{" "}
+        <a href={`/admin/artiklar/${id}`} class="underline underline-offset-4">Tillbaka till redigeringen</a>
+      </AlertDescription>
+    </Alert>
+  </div>
+  <ArticleView article={article} />
+</SiteLayout>

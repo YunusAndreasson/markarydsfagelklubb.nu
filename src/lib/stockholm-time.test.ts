@@ -68,6 +68,8 @@ describe("formatDate", () => {
     expect(formatDate(date, "long")).toBe("19 september 2026")
     expect(formatDate(date, "weekday")).toBe("lördag 19 september")
     expect(formatDate(date, "short")).toBe("19 sep.")
+    expect(formatDate(date, "weekdayName")).toBe("lördag")
+    expect(formatDate(date, "dayMonth")).toBe("19 september")
     expect(formatDate(date, "dateTime")).toBe("19 sep. 2026 10:05")
   })
 

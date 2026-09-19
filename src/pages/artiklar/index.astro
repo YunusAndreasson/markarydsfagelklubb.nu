@@ -1,0 +1,29 @@
+---
+export const prerender = false
+
+import ArticleIndex from "@/components/site/ArticleIndex.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { decodeCursor } from "@/lib/keyset"
+import { listPublicCategories, listPublishedArticles, loadNavigation } from "@/lib/public-content"
+
+const PAGE_SIZE = 20
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 503 })
+
+const params = Astro.url.searchParams
+const [navigation, categories, page] = await Promise.all([
+  loadNavigation(db),
+  listPublicCategories(db),
+  listPublishedArticles(db, {
+    limit: PAGE_SIZE,
+    before: decodeCursor(params.get("fore")),
+    after: decodeCursor(params.get("efter")),
+  }),
+])
+if (!page) return new Response("Artiklarna kunde inte läsas just nu.", { status: 503 })
+---
+
+<SiteLayout title="Artiklar" description="Nyheter och reseberättelser från Markaryds Fågelklubb." menu={navigation.menu}>
+  <ArticleIndex heading="Artiklar" basePath="/artiklar" categories={categories} currentCategory={null} page={page} />
+</SiteLayout>

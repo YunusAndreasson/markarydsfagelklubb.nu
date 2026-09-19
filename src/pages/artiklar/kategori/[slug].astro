@@ -1,0 +1,38 @@
+---
+export const prerender = false
+
+import ArticleIndex from "@/components/site/ArticleIndex.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { decodeCursor } from "@/lib/keyset"
+import { listPublicCategories, listPublishedArticles, loadNavigation } from "@/lib/public-content"
+import { isValidSlug } from "@/lib/slug"
+
+const PAGE_SIZE = 20
+
+const { db } = Astro.locals
+const slug = Astro.params.slug ?? ""
+if (!db || !isValidSlug(slug)) return new Response(null, { status: 404 })
+
+const [navigation, categories] = await Promise.all([loadNavigation(db), listPublicCategories(db)])
+const category = categories.find((candidate) => candidate.slug === slug)
+if (!category) return new Response(null, { status: 404 })
+
+const params = Astro.url.searchParams
+const page = await listPublishedArticles(db, {
+  limit: PAGE_SIZE,
+  categoryId: category.id,
+  before: decodeCursor(params.get("fore")),
+  after: decodeCursor(params.get("efter")),
+})
+if (!page) return new Response("Artiklarna kunde inte läsas just nu.", { status: 503 })
+---
+
+<SiteLayout title={category.name} menu={navigation.menu}>
+  <ArticleIndex
+    heading={category.name}
+    basePath={`/artiklar/kategori/${category.slug}`}
+    categories={categories}
+    currentCategory={category.slug}
+    page={page}
+  />
+</SiteLayout>

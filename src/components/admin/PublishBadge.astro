@@ -1,0 +1,21 @@
+---
+import { Badge } from "@/components/ui/badge"
+import { PUBLISH_STATE_LABELS, publishStateOf } from "@/lib/publish-state"
+import { formatDate } from "@/lib/stockholm-time"
+
+interface Props {
+  status: string
+  publishedAt: string | null
+  now: Date
+}
+
+const { status, publishedAt, now } = Astro.props
+const state = publishStateOf({ status, published_at: publishedAt }, now)
+const variant = state === "published" ? "default" : state === "scheduled" ? "secondary" : "outline"
+---
+
+<Badge variant={variant}>
+  {PUBLISH_STATE_LABELS[state]}{
+    state === "scheduled" && publishedAt ? ` ${formatDate(publishedAt, "dateTime")}` : ""
+  }
+</Badge>

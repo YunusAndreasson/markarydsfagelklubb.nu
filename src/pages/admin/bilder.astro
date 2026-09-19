@@ -1,0 +1,98 @@
+---
+export const prerender = false
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import AdminLayout from "@/layouts/admin.astro"
+import { deleteMedia, listMedia, WRITE_MESSAGES } from "@/lib/admin-content"
+import { parseRouteId } from "@/lib/content-form"
+import { type MediaFormat, mediaUrl } from "@/lib/media"
+import { formatDate } from "@/lib/stockholm-time"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+
+let formError: string | null = null
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const id = parseRouteId(String(form.get("id") ?? ""))
+  if (form.get("intent") === "delete" && id !== null) {
+    const { data: media } = await supabase
+      .from("media")
+      .select("id, storage_prefix, format, widths")
+      .eq("id", id)
+      .maybeSingle()
+    if (media) {
+      const result = await deleteMedia(supabase, media)
+      if (result.ok) return Astro.redirect("/admin/bilder?borttagen=1", 303)
+      formError = WRITE_MESSAGES.failed
+    }
+  }
+}
+
+const { data: images, error } = await listMedia(supabase)
+if (error) console.error(`mafk-web: list media failed — ${error.message}`)
+
+const confirmId = parseRouteId(Astro.url.searchParams.get("ta-bort") ?? undefined)
+const confirming = (images ?? []).find((image) => image.id === confirmId)
+const kilobytes = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} kB`
+---
+
+<AdminLayout title="Bilder">
+  <div class="flex flex-col gap-6">
+    <h1 class="text-2xl font-semibold tracking-tight">Bilder</h1>
+    <p class="text-muted-foreground max-w-prose leading-7">
+      Alla bilder som laddats upp till artiklar och sidor. Nya bilder lägger du till i editorn.
+      Tar du bort en bild här försvinner den överallt där den används.
+    </p>
+
+    {Astro.url.searchParams.has("borttagen") && (
+      <Alert><AlertDescription>Bilden är borttagen.</AlertDescription></Alert>
+    )}
+    {(formError || error) && (
+      <Alert variant="destructive">
+        <AlertDescription>{formError ?? "Bilderna kunde inte läsas just nu."}</AlertDescription>
+      </Alert>
+    )}
+
+    {confirming && (
+      <Alert variant="destructive">
+        <AlertDescription>
+          <p>Ta bort bilden ”{confirming.alt}”? Den försvinner från alla artiklar och sidor där den används.</p>
+          <form method="POST" class="mt-3 flex flex-wrap gap-2">
+            <input type="hidden" name="id" value={confirming.id} />
+            <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">Ta bort bilden</Button>
+            <a href="/admin/bilder" class={buttonVariants({ variant: "ghost", className: "h-11" })}>Avbryt</a>
+          </form>
+        </AlertDescription>
+      </Alert>
+    )}
+
+    {images && images.length === 0 && (
+      <p class="text-muted-foreground">Inga bilder ännu.</p>
+    )}
+
+    <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      {(images ?? []).map((image) => (
+        <li class="flex flex-col gap-2">
+          <img
+            src={mediaUrl(image.storage_prefix, Math.min(...image.widths), image.format as MediaFormat)}
+            alt={image.alt}
+            width={image.width}
+            height={image.height}
+            loading="lazy"
+            class="bg-muted aspect-[4/3] w-full rounded-lg object-cover"
+          />
+          <p class="line-clamp-2 text-sm">{image.alt}</p>
+          <p class="text-muted-foreground text-xs tabular-nums">
+            {image.width} × {image.height} · {kilobytes(image.bytes)} · {formatDate(image.created_at, "long")}
+          </p>
+          <a href={`/admin/bilder?ta-bort=${image.id}`} class={buttonVariants({ variant: "destructive", className: "h-11 w-fit" })}>
+            Ta bort
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</AdminLayout>

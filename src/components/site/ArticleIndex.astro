@@ -1,0 +1,71 @@
+---
+import ArticleList from "@/components/site/ArticleList.astro"
+import { encodeCursor } from "@/lib/keyset"
+import type { ArticlePage } from "@/lib/public-content"
+
+interface Props {
+  heading: string
+  /** Where "Äldre" and "Nyare" link to: /artiklar or a category's page. */
+  basePath: string
+  categories: { slug: string; name: string }[]
+  /** The category being shown, or null for all. */
+  currentCategory: string | null
+  page: ArticlePage
+}
+
+const { heading, basePath, categories, currentCategory, page } = Astro.props
+const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0]) =>
+  `${basePath}?${new URLSearchParams({ [param]: encodeCursor(cursor) })}`
+const tab = (active: boolean) => (active ? "page" : undefined)
+---
+
+<div class="flex flex-col gap-10">
+  <header class="flex flex-col gap-5 md:pl-[7rem]">
+    <h1 class="type-title">{heading}</h1>
+    {
+      categories.length > 0 && (
+        <nav aria-label="Kategorier">
+          <ul class="flex flex-wrap gap-x-5">
+            <li>
+              <a href="/artiklar" aria-current={tab(currentCategory === null)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                Alla
+              </a>
+            </li>
+            {categories.map((category) => (
+              <li>
+                <a href={`/artiklar/kategori/${category.slug}`} aria-current={tab(currentCategory === category.slug)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                  {category.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+  </header>
+
+  {
+    page.articles.length === 0 ? (
+      <p class="text-muted-foreground max-w-prose md:pl-[7rem]">Här finns inga artiklar ännu.</p>
+    ) : (
+      <ArticleList articles={page.articles} headingLevel={2} years="changes" />
+    )
+  }
+
+  {
+    (page.older || page.newer) && (
+      <nav aria-label="Fler artiklar" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+        {page.newer && (
+          <a href={link("efter", page.newer)} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+            Nyare artiklar
+          </a>
+        )}
+        {page.older && (
+          <a href={link("fore", page.older)} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+            Äldre artiklar
+          </a>
+        )}
+      </nav>
+    )
+  }
+</div>

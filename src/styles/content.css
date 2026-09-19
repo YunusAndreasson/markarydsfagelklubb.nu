@@ -1,0 +1,161 @@
+/* Rendered article and page bodies (docs/design.md, "Rendered content").
+   Scoped to .content. The admin's Tiptap editor uses the same class, so what
+   the admin sees while writing is what gets published. Colours come from the
+   theme tokens only. */
+
+@layer components {
+  .content {
+    font-size: 1rem;
+    line-height: 1.65;
+    max-width: 38rem;
+    overflow-wrap: break-word;
+  }
+
+  @media (min-width: 40rem) {
+    .content {
+      font-size: 1.0625rem;
+    }
+  }
+
+  .content > * + * {
+    margin-top: 1em;
+  }
+
+  /* A heading binds to the section it opens: more room above than below. */
+  .content h2,
+  .content h3,
+  .content h4 {
+    font-weight: 600;
+    text-wrap: balance;
+  }
+  .content h2 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    margin-top: 1.6em;
+  }
+  .content h3 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin-top: 1.4em;
+  }
+  .content h4 {
+    font-size: 1.0625rem;
+    line-height: 1.4;
+    margin-top: 1.3em;
+  }
+  .content h2 + *,
+  .content h3 + *,
+  .content h4 + * {
+    margin-top: 0.5em;
+  }
+  .content > :first-child {
+    margin-top: 0;
+  }
+
+  .content p {
+    text-wrap: pretty;
+  }
+
+  /* In body text a link has to look like one. */
+  .content a {
+    color: var(--primary);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+  .content a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  .content strong {
+    font-weight: 600;
+  }
+  .content em {
+    font-style: italic;
+  }
+
+  .content ul,
+  .content ol {
+    padding-left: 1.5em;
+  }
+  .content ul {
+    list-style: disc outside;
+  }
+  .content ol {
+    list-style: decimal outside;
+  }
+  .content li + li {
+    margin-top: 0.35em;
+  }
+  .content li > p + p {
+    margin-top: 0.5em;
+  }
+
+  .content blockquote {
+    padding-left: 1.5em;
+    color: var(--muted-foreground);
+  }
+
+  .content hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 2em 0;
+  }
+
+  .content img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+  }
+
+  /* Tables scroll inside themselves at 360 px; the page never does. */
+  .content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+  }
+  .content th,
+  .content td {
+    padding: 0.5em 1em 0.5em 0;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .content th {
+    font-weight: 600;
+  }
+  .content th p,
+  .content td p {
+    margin: 0;
+  }
+
+  .content iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 0;
+    border-radius: 4px;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+  }
+
+  /* Editor only: the selected image or embed, and cells being selected. */
+  .content .ProseMirror-selectednode {
+    outline: 3px solid color-mix(in oklch, var(--ring) 40%, transparent);
+  }
+  .content .selectedCell {
+    background: color-mix(in oklch, var(--primary) 12%, transparent);
+  }
+  .content .tableWrapper {
+    overflow-x: auto;
+  }
+}

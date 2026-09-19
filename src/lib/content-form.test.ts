@@ -6,6 +6,7 @@ import {
   parseCategoryForm,
   parseLinkForm,
   parsePageForm,
+  parseRouteId,
 } from "./content-form"
 
 function form(fields: Record<string, string>): FormData {
@@ -69,6 +70,12 @@ describe("parseArticleForm", () => {
     const result = parseArticleForm(form({ title: "Kategori" }))
     expect(result.ok).toBe(false)
     expect(!result.ok && result.errors.slug).toBe(MESSAGES.slugReserved("kategori"))
+  })
+
+  it("leaves the body and cover alone when their islands never loaded", () => {
+    const result = parseArticleForm(form({ title: "Utan JavaScript" }))
+    expect(result.ok && result.value.body_html).toBeNull()
+    expect(result.ok && result.value.cover_media_id).toBeUndefined()
   })
 
   it("asks for a slug when the title gives none", () => {
@@ -138,5 +145,14 @@ describe("parseCategoryForm", () => {
       ok: false,
       errors: { name: MESSAGES.nameMissing },
     })
+  })
+})
+
+describe("parseRouteId", () => {
+  it("accepts positive integers only", () => {
+    expect(parseRouteId("12")).toBe(12)
+    for (const bad of [undefined, "", "0", "-1", "1.5", "12abc", "ny"]) {
+      expect(parseRouteId(bad), String(bad)).toBeNull()
+    }
   })
 })

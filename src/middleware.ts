@@ -64,6 +64,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     result.env.supabasePublishableKey
   )
   context.locals.supabase = supabase
+  context.locals.supabaseBrowser = {
+    url: result.env.supabaseUrl,
+    publishableKey: result.env.supabasePublishableKey,
+  }
 
   // getClaims() verifies the JWT locally against the project's asymmetric
   // signing keys. getUser() would be an Auth-server round trip per request.

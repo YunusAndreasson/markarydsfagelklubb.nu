@@ -1,27 +1,85 @@
 ---
-import { buttonVariants } from "@/components/ui/button"
-import BaseLayout from "@/layouts/base.astro"
+export const prerender = false
 
-// Prerendered, zero client JS. A placeholder until the first public pages land.
+import ArticleList from "@/components/site/ArticleList.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { mediaFallbackUrl, mediaSrcset } from "@/lib/media"
+import { listPublishedArticles, loadNavigation } from "@/lib/public-content"
+import { formatDate, isoDateTime } from "@/lib/stockholm-time"
+
+// Members first (docs/design.md): the newest article leads, loud; the rest
+// follow as a quiet dated list. Larm (step 4) and the program (step 5) get
+// their places here when they exist, not before.
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 503 })
+
+const [navigation, page] = await Promise.all([
+  loadNavigation(db),
+  listPublishedArticles(db, { limit: 9 }),
+])
+const [lead, ...earlier] = page?.articles ?? []
 ---
 
-<BaseLayout
-  title="Markaryds Fågelklubb"
-  description="Markaryds Fågelklubbs nya webbplats är under uppbyggnad."
->
-  <main class="mx-auto flex min-h-svh w-full max-w-2xl flex-col justify-center gap-6 px-4 py-12 sm:px-6">
-    <p class="text-primary text-sm font-medium">Under uppbyggnad</p>
-    <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-      Markaryds Fågelklubb
-    </h1>
-    <p class="text-muted-foreground max-w-prose text-lg leading-8 text-pretty">
-      Vi bygger en ny webbplats för klubben. Till dess finns allt som vanligt på den nuvarande
-      sidan.
-    </p>
-    <div>
-      <a class={buttonVariants({ size: "lg" })} href="https://www.markarydsfagelklubb.nu">
-        Till markarydsfagelklubb.nu
-      </a>
-    </div>
-  </main>
-</BaseLayout>
+<SiteLayout menu={navigation.menu}>
+  <h1 class="sr-only">Markaryds Fågelklubb</h1>
+
+  {
+    !lead && (
+      <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+        {page ? "Här kommer klubbens nyheter att synas." : "Nyheterna kunde inte läsas just nu. Ladda om sidan om en stund."}
+      </p>
+    )
+  }
+
+  {
+    lead && (
+      <article class="flex flex-col gap-6 md:gap-8">
+        {lead.cover && (
+          <img
+            src={mediaFallbackUrl(lead.cover)}
+            srcset={mediaSrcset(lead.cover)}
+            sizes="(min-width: 64rem) 61rem, 100vw"
+            width={lead.cover.width}
+            height={lead.cover.height}
+            alt={lead.cover.alt}
+            fetchpriority="high"
+            class="-mx-4 h-auto w-[calc(100%+2rem)] max-w-none sm:mx-0 sm:w-full sm:rounded-[4px]"
+          />
+        )}
+        <div class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,1fr)]">
+          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3 md:flex-col md:gap-y-1.5 md:pt-[0.9rem]">
+            <time datetime={isoDateTime(lead.published_at)} class="flex flex-wrap gap-x-1 md:flex-col">
+              <span>{formatDate(lead.published_at, "weekdayName")}</span>
+              <span>{formatDate(lead.published_at, "dayMonth")}</span>
+            </time>
+            {lead.category && (
+              <a href={`/artiklar/kategori/${lead.category.slug}`} class="hover:text-foreground underline-offset-4 hover:underline">
+                {lead.category.name}
+              </a>
+            )}
+          </p>
+          <div class="flex flex-col gap-4">
+            <h2 class="type-display">
+              <a href={`/artiklar/${lead.slug}`} class="decoration-primary underline-offset-[0.12em] hover:underline hover:decoration-4">
+                {lead.title}
+              </a>
+            </h2>
+            {lead.excerpt && <p class="type-ingress text-muted-foreground max-w-[38rem]">{lead.excerpt}</p>}
+          </div>
+        </div>
+      </article>
+    )
+  }
+
+  {
+    earlier.length > 0 && (
+      <section aria-labelledby="tidigare" class="mt-16 flex flex-col gap-7 md:mt-24">
+        <h2 id="tidigare" class="text-lg font-semibold md:pl-[7rem]">Tidigare</h2>
+        <ArticleList articles={earlier} headingLevel={3} years="other-years" />
+        <a href="/artiklar" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4 md:ml-[7rem]">
+          Alla artiklar
+        </a>
+      </section>
+    )
+  }
+</SiteLayout>

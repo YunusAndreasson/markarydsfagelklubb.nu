@@ -1,7 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
+/* The optical-size axis gives large headings Inter's display cut automatically
+   (docs/design.md). +25 KB over the plain variable file for the Latin subset. */
+@import "@fontsource-variable/inter/opsz.css";
+@import "./content.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -136,4 +139,32 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* The public site's type scale (docs/design.md, "Type"). Sizes from 32 px up
+   get Inter's display cut through the opsz axis on their own. */
+@utility type-display {
+  font-size: clamp(2.5rem, 1.3rem + 5.2vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+@utility type-title {
+  font-size: clamp(2rem, 1.5rem + 2.4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  font-weight: 650;
+  text-wrap: balance;
+}
+@utility type-ingress {
+  font-size: 1.1875rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+@utility type-meta {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
