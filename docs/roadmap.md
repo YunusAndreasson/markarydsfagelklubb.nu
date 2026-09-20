@@ -820,7 +820,7 @@ Proposed order. Each step is one plan and ends shipped with `pnpm ship`.
 | 3 | ~~**Innehållsgrund:** pages, articles, media bucket, editor, sanitizing, public rendering, navigation, dummy articles (F1 + F2), and the design pass~~ — done 2026-09-19 | D3–D6, F1 menu | **new tables + bucket**, applied 2026-09-19 |
 | 4 | ~~**Larm på webben** (F4: public, display only)~~ — shipped 2026-09-20 | D1 | **new table `hidden_alerts`**, applied 2026-09-20; first Worker secret |
 | 5 | ~~**Kalender** (F3)~~ — shipped 2026-09-20 | F3 answered 2026-09-20 | **new table `events`**, applied 2026-09-20 |
-| 6 | **Lokaler** map (F5) — built 2026-09-20, awaiting `pnpm ship` | F5 answered 2026-09-20 | no |
+| 6 | ~~**Lokaler** map (F5)~~ — shipped 2026-09-20 | F5 answered 2026-09-20 | no |
 | 7 | ~~**Larmligan** (F6)~~ — **folded into step 9** as an Artportalen link, decided 2026-09-20 | — | no |
 | 8 | **WordPress import** and the redirect map; dummy articles deleted (F2) | F2 open questions | writes new tables only |
 | 9 | **Lansering:** the domain cutover (see below). Artportalen lists as links (F7 phase A) | — | auth `site_url` changes |
