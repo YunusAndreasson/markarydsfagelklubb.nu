@@ -437,8 +437,31 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
 - **The import (later)** is a one-off, idempotent script (`scripts/wp-import/`,
   keyed on the WP id) that:
   - reads the public REST API **one request at a time, with a pause between
-    requests**, because the host blocks bursts. Drafts and private posts need
-    an application password.
+    requests**, because the host blocks bursts.
+  - **No credentials are needed for anything published.** Verified anonymously
+    2026-09-20: `/wp-json/wp/v2/posts`, `/pages`, `/media` and `/categories`
+    all answer 200 and report `X-WP-Total` 353, 39, 852 and 46 — the same
+    numbers as the research above. Media files are public URLs, so the 0.45 GB
+    downloads without auth too. **Only drafts, private, trashed and
+    password-protected posts need an application password**, and the anonymous
+    API omits them so completely that we cannot even count them: if the club
+    wants unpublished work carried over, that is the one reason to ask for a
+    password.
+  - **A WordPress export (WXR) is not the answer for the images.** The export
+    file contains post content and *references* to attachments, never the files
+    themselves, so the 0.45 GB still has to be fetched from URLs either way.
+    It would only add the drafts.
+  - **The REST API is the better content source regardless.** `content.rendered`
+    comes back as clean HTML with the Gutenberg block comments already
+    resolved (checked 2026-09-20 on a real post: no `<!-- wp:` markers, `<img>`
+    intact), which is what a visitor sees today and what we want to keep. A WXR
+    export carries the *raw* `post_content` instead, so the 131 Gutenberg posts
+    would arrive full of block markup for us to strip.
+  - **For the images, ask for the files, not an export.** A zip of
+    `wp-content/uploads` from Oderland's cPanel or over FTP would sidestep
+    roughly 800 HTTP requests through the firewall that already blocked this IP
+    once (2026-09-19). Worth doing if it is easy to get; the URL download is
+    the fallback and works, just slowly and politely.
   - downloads own-host images into `site-media` in three widths;
   - rewrites `<img>` URLs;
   - sanitizes the HTML;
@@ -466,9 +489,31 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
     `/admin` was rejected: there is no member login (D2), so members who use
     the archive would simply lose it.)
   - **Original publish dates and authors are kept.**
-- **Open, before the import:** the **category mapping** — 45 WordPress
-  categories down to a handful. It needs the club's sign-off, so it has lead
-  time and should be raised with them now.
+- **Category mapping, signed off 2026-09-20.** Read live from the WP REST API
+  the same day: **46 categories, 391 assignments across 353 posts**, so some
+  posts carry several. `articles.category_id` is a single nullable FK, so the
+  import picks one.
+
+  | Category | Posts | Absorbs |
+  |---|---|---|
+  | Föreningsaktuellt | 131 | årsmöte, styrelsen, medlemsmöten, medlemsmöte, medlemsträff, redaktion, medlemsskap, upprop, försäljning, föreningstips, fågelholkar, larmapp, svalan, veteranerna, fågellarm, `+` |
+  | Referat | 93 | från fältet, uppsnappat, uppsnappat på fältet, sträckräkning, höstflyttning, inventering, skådartips, fenelogi, örngruppen |
+  | Tävlingar | 58 | smålandsrallyt, vinterfågelrally, vinterfåglar inpå knuten, allhelgonarallyt, lokalkampen |
+  | Exkursioner | 33 | uggletider, föreläsning, fågelskådningens dag, ejderskådning, nattfåglar, fotoutställning, arrengemang, mötesplats lokasjön |
+  | Mötesplats Ekebacken | 25 | — |
+  | Program | 18 | program 2025, program 2026 |
+
+  - **"Okategoriserade" (32 posts) gets no category at all.** `category_id`
+    stays null: guessing would assert something of 32 posts that WordPress
+    never said. They still appear under "Alla" and can be assigned in `/admin`.
+  - **When a post has several categories, the most specific wins**, in this
+    order: **Tävlingar > Program > Mötesplats Ekebacken > Exkursioner > Referat
+    > Föreningsaktuellt.** So a post tagged both Referat and Smålandsrallyt is
+    about the rally and files there, and the catch-all only wins when nothing
+    else applies.
+  - The four zero-post categories (`svalan`, `veteranerna`, `+`, `fågellarm`)
+    are absorbed above and simply never appear.
+- **Nothing is open for the import any more.**
 
 ### F3 — Kalender (events)
 
@@ -567,7 +612,12 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
 - Rarity is shown as a **word, only from "Ovanlig" up**, coloured only for the
   two rarest levels. Nothing in the first 238 larm was level 0 or 1, and 191
   were level 4–5, so a badge on every row would have meant nothing.
-- **Open:** the protected-species list, before launch (see D1 and step 9).
+- **The protected-species list, decided 2026-09-20:** start from **Artportalen's
+  skyddsklassade arter and keep the species plausible in Markaryd** — the
+  kommun has 229 species recorded ever, so the list stays short enough to
+  maintain by hand and carries nothing irrelevant. Still to do before launch:
+  compile it and resolve each name to a `species.id`, since
+  `PLACE_SUPPRESSED_SPECIES` is a set of ids.
 
 ### F5 — Lokaler (map)
 
@@ -790,7 +840,7 @@ time.
 | D6 | URLs | **Pages keep their WP paths; articles at `/artiklar/<slug>`** with the WP slug; old post URLs 301 from a **Worker map** (`_redirects` doesn't apply to Worker responses) | 2026-09-19 |
 | F1 | Menu | **Built from the page tree** (parent, order, "visa i menyn", link-only entries). **Signed off 2026-09-20**: the six sections in `docs/design.md`, including the moved paths — Medlemskap to `/om-foreningen/medlemskap`, and `/svalan/` and `/listor/` to `/obsar` — whose old URLs join step 8's redirect map | 2026-09-19, signed off 2026-09-20 |
 | D7 | Kommun boundary; league from observations or alerts | **Boundary: built in step 4** — `isInsideKommun` ray-casts against OSM relation 935621 (`src/data/markaryd-boundary.json`), no PostGIS. **The league half is moot**: Larmligan comes from Artportalen (F6), so nothing is computed from the club's own reports | boundary 2026-09-20, league moot 2026-09-20 |
-| F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile. **Answered 2026-09-20:** hotlinked images copied when they still answer and dropped when dead; unattached media imported only where the content references them; the 57 Cinclus PDFs public as today; original dates and authors kept. *Still open:* the category mapping, which needs the club | 2026-09-19, mostly answered 2026-09-20 |
+| F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile. **Answered 2026-09-20:** hotlinked images copied when they still answer and dropped when dead; unattached media imported only where the content references them; the 57 Cinclus PDFs public as today; original dates and authors kept. **Category mapping signed off 2026-09-20**: 46 WP categories onto six (Föreningsaktuellt, Referat, Tävlingar, Exkursioner, Mötesplats Ekebacken, Program), "Okategoriserade" left with no category, and the most specific category winning when a post has several | 2026-09-19, answered 2026-09-20 |
 | F3 | Kalender | **No recurring events** (copy one instead); old Program posts **stay articles**; **iCal feed now** (`/kalender.ics`); built so the **app can read events later** (`to anon`). Route `/kalender`, menu item "Program"; a **fixed type list**; a **month-grouped list**, no grid; place is free text; no cover image | 2026-09-20 |
 | F4 | Larm scope | **Display only.** The site never sends alerts | 2026-09-19 |
 | F5 | Lokaler | **All 61 lokaler pinned**, active ones marked (the app's 14-day rule), **no clustering, never a larm pin**; a page per lokal at `/lokaler/<slug>` listing larm as **"På lokalen" (300 m, the app's rule) and "I närheten" (3 km, `NEAR_KM`)**; the **9 WP lokal pages 301 there** and their text becomes `locations.description`, carried over by hand; **Leaflet + OpenStreetMap** raster tiles | 2026-09-20 |
