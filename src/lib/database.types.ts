@@ -189,6 +189,27 @@ export type Database = {
         }
         Relationships: []
       }
+      hidden_alerts: {
+        Row: {
+          alert_id: string
+          hidden_at: string
+          hidden_by: string | null
+          reason: string
+        }
+        Insert: {
+          alert_id: string
+          hidden_at?: string
+          hidden_by?: string | null
+          reason?: string
+        }
+        Update: {
+          alert_id?: string
+          hidden_at?: string
+          hidden_by?: string | null
+          reason?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           created_at: string
