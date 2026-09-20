@@ -165,6 +165,60 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          all_day: boolean
+          body_html: string
+          created_at: string
+          ends_at: string | null
+          id: number
+          kind: string
+          place: string
+          published_at: string | null
+          registration_url: string | null
+          slug: string
+          starts_at: string
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          body_html?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: never
+          kind?: string
+          place?: string
+          published_at?: string | null
+          registration_url?: string | null
+          slug: string
+          starts_at: string
+          status?: string
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          body_html?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: never
+          kind?: string
+          place?: string
+          published_at?: string | null
+          registration_url?: string | null
+          slug?: string
+          starts_at?: string
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expo_push_tokens: {
         Row: {
           created_at: string
