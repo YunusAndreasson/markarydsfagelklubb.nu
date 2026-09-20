@@ -45,7 +45,10 @@ Plus, from step 1: an admin interface, since this replaces WordPress.
   `/<slug>/`.
   - 229 have inline images, 14 have a featured image, 6 have a gallery and 2 an
     iframe.
-  - 131 are Gutenberg HTML and 222 are classic-editor HTML. No shortcodes.
+  - ~~131 are Gutenberg HTML and 222 are classic-editor HTML.~~ **Corrected
+    2026-09-20 from the WXR export: 201 of the 353 carry Gutenberg block
+    markup and 152 do not.** The earlier count was measured against rendered
+    output, where the block comments are already gone. No shortcodes.
   - Inline images are mostly on the site itself. A few are hotlinked from
     `vinterfaglar.se`, `obj.fotosidan.se`, `tetrix.se` and `protelo.simpleit.nu`,
     and may already be dead.
@@ -450,7 +453,21 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
   - **A WordPress export (WXR) is not the answer for the images.** The export
     file contains post content and *references* to attachments, never the files
     themselves, so the 0.45 GB still has to be fetched from URLs either way.
-    It would only add the drafts.
+    What it does add is the unpublished content.
+  - **An export was taken 2026-09-20** (`markarydsfgelklubb.WordPress.2026-09-20.xml`,
+    3.3 MB, WXR 1.2) and holds 1 314 items: 852 attachments, 353 published
+    posts, 39 published pages, **32 drafts, 2 private pages**, 34
+    `nav_menu_item`s, one Contact Form 7 form and one reusable block. The
+    published counts match the REST API exactly, so the export's only unique
+    content is the unpublished material and the stored menu structure.
+  - **The drafts are skipped, decided 2026-09-20.** Of the 32, eleven are empty
+    or untitled scraps, two are duplicates of the same "Stormig utflykt", and
+    one is WordPress's own "Välkommen till Gutenberg-redigeraren" sample. The
+    import takes **published posts and pages only**. Anything worth rescuing —
+    "Markaryds Fågelklubb 40 år", "Lyckad Fågeldag i hemmamarker", the
+    "Tävlingsregler för Vinterfågelrally" page — is in the export, which is
+    archived alongside the originals, and can be written by hand in `/admin`
+    later.
   - **The REST API is the better content source regardless.** `content.rendered`
     comes back as clean HTML with the Gutenberg block comments already
     resolved (checked 2026-09-20 on a real post: no `<!-- wp:` markers, `<img>`
@@ -462,7 +479,29 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
     roughly 800 HTTP requests through the firewall that already blocked this IP
     once (2026-09-19). Worth doing if it is easy to get; the URL download is
     the fallback and works, just slowly and politely.
-  - downloads own-host images into `site-media` in three widths;
+  - **downloads each image to this machine, converts it locally, then uploads
+    the results** to `site-media`. Decided 2026-09-20, and it is the whole
+    media pipeline:
+
+    | Kind | What happens |
+    |---|---|
+    | Images (732 JPEG, 30 PNG/GIF) | `sharp` → **WebP at quality 82**, widths `[480, 960, 1600]` capped at the original, written to `<prefix>/<width>.webp` |
+    | The 57 PDFs | copied byte-for-byte, public, never converted |
+    | A few Office files | skipped unless a body links to one |
+
+    Quality 82 and those widths are **not new**: `src/lib/media.ts` and the
+    admin's browser uploader (`image-variants.ts`) already encode exactly that,
+    so an imported image and one the administrator uploads tomorrow are
+    indistinguishable.
+
+    The saving is in what gets **served**, not in the bucket: three widths per
+    image land near WordPress's 0.45 GB, but a visitor receives a ~100 KB
+    960 px WebP instead of an original averaging 540 KB, some of them 6 000 px
+    wide.
+
+    **Re-encoding is one-way and WordPress is being switched off**, so the
+    untouched originals (the `wp-content/uploads` zip) are archived offline
+    before the import, not left to die with the hosting.
   - rewrites `<img>` URLs;
   - sanitizes the HTML;
   - writes the old-URL redirect map that the Worker serves (D6).
