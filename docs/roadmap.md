@@ -621,7 +621,7 @@ Proposed order. Each step is one plan and ends shipped with `pnpm ship`.
 | 2 | ~~**Admin-inloggning:** one administrator, the `/admin` shell and gate~~ — done 2026-09-19 | D2 | no schema or auth config change; `is_admin` granted to one account |
 | 3 | ~~**Innehållsgrund:** pages, articles, media bucket, editor, sanitizing, public rendering, navigation, dummy articles (F1 + F2), and the design pass~~ — done 2026-09-19 | D3–D6, F1 menu | **new tables + bucket**, applied 2026-09-19 |
 | 4 | ~~**Larm på webben** (F4: public, display only)~~ — shipped 2026-09-20 | D1 | **new table `hidden_alerts`**, applied 2026-09-20; first Worker secret |
-| 5 | **Kalender** (F3) | F3 open questions | new table |
+| 5 | ~~**Kalender** (F3)~~ — shipped 2026-09-20 | F3 answered 2026-09-20 | **new table `events`**, applied 2026-09-20 |
 | 6 | **Lokaler** map (F5) | F5 open questions | no |
 | 7 | **Larmligan** (F6) | D1 (names), D7 | no |
 | 8 | **WordPress import** and the redirect map; dummy articles deleted (F2) | F2 open questions | writes new tables only |
