@@ -237,11 +237,28 @@ goes public:
     URLs. A signed URL would expose the storage path, which contains the
     member's user id, and would expire while a cached page still points at it.
   - Responses are cached for about a minute.
-- **Open:**
-  - the policy wording, and whether older reports are included;
-  - whether observer names are shown (on the feed and in Larmligan);
-  - the protected-species list;
-  - how precise a pin may be.
+- **Answered 2026-09-20, when step 4 was built:**
+  - **The policy update is not a blocker for shipping**, because the site is an
+    unlisted `workers.dev` URL carrying `noindex` and a `robots.txt` that
+    disallows everything. It moves to the [launch checklist](#launch-checklist-step-9)
+    and must go out **before the domain cutover**.
+  - **Observer names are public**, read live from `profiles.display_name`. Never
+    from `alerts.observer_name`: the alert log keeps that name after an account
+    is deleted, so publishing it would keep publishing the name of someone who
+    asked to be erased. A missing profile renders "En medlem".
+    (`src/lib/alert-observer.ts`.)
+  - **All 238 larm are published**, and the administrator can hide any single
+    one at `/admin/larm` — an opt-out, a protected species or a mistake. It
+    disappears from the feed, the home page and the photo route.
+  - **Place: lokal name → nearest lokal within 3 km ("Nära Köphultasjö") →
+    "Markaryds kommun" → "Utanför kommunen".** An exact coordinate is never
+    published. Measured on the live data, that puts 190 of 238 larm on the
+    "nära" rung and only 7 on the vague kommun rung.
+  - **The protected-species list is still empty**, and the hook that uses it is
+    wired up (`PLACE_SUPPRESSED_SPECIES` in `src/lib/alert-place.ts`): a species
+    in it never gets a place finer than the kommun, lokal name included. The
+    list itself needs the club's input, following Artportalen's skyddsklassade
+    arter, **before launch**.
 
 ### D2 — Admin sign-in
 
@@ -368,11 +385,17 @@ inbound links, search results, and the app's legal links.
 Larmligan counts species seen **in Markaryds kommun**, but observations carry
 free coordinates from anywhere.
 
-- **Recommendation:** a point-in-polygon check against the kommun boundary,
-  done in the Worker.
-  - Use a simplified GeoJSON of kommun 0767 kept in the repo. The SOS API
-    exports the exact polygon (`/Areas/Municipality/767/Export`); Lantmäteriet
-    and SCB open data are alternatives.
+- **Built in step 4, and already in the repo:** `isInsideKommun` in
+  `src/lib/alert-place.ts`, a ray-casting check against
+  `src/data/markaryd-boundary.json`.
+  - That file is **OSM relation 935621** (`admin_level=7`, `ref:scb=0767`),
+    fetched from Overpass, its main ring simplified to about 30 m, **plus the
+    kommun's three sub-kilometre exclaves**, which a coarser simplification
+    erased entirely. 8 KB, ODbL, © OpenStreetMap contributors. The SOS export
+    (`/Areas/Municipality/767/Export`) was the first choice and needs an API key
+    we don't have.
+  - Verified against Markaryd, Strömsnäsbruk, Traryd and Timsfors (inside) and
+    Älmhult, Ljungby, Hässleholm, Osby, Malmö and Dublin (outside).
   - Hundreds of points a year need no PostGIS. Enabling an extension on the
     shared database is avoidable.
   - Observations at a named lokal count if the lokal is inside.
@@ -462,9 +485,29 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
   curated fields, and photos through a Worker route. It's all existing data,
   with **no migration**.
 - Keyset paging, since Supabase caps responses at 1 000 rows.
-- **Depends on:** D1, including the club's privacy-policy update, which must go
-  out **before** this ships.
-- **Open:** D1's questions.
+
+**Shipped 2026-09-20.** How it ended up:
+
+- `/larm` (12 per page, keyset on `(sent_at, id)`), `/larm/<uuid>`,
+  `/larm/bild/<uuid>` for the photo, and the four newest on the home page.
+- The public routes read through **`src/lib/public-alerts.ts`, the only module
+  that imports the secret key** (`src/lib/supabase-secret.ts`). Pages get
+  `PublicAlert` DTOs and never hold the RLS-bypassing client.
+  `secret-key-scope.test.ts` fails the build if that stops being true, if an
+  island reaches it, or if a larm route forgets `prerender = false` — which
+  matters because `astro build` prerenders inside workerd with `.dev.vars`
+  loaded, so a prerendered larm page would bake member data into `dist/`.
+- `alert-dto.test.ts` pins the published field set and the `select` string, and
+  asserts that sentinel values for user id, `image_path` and the coordinates
+  don't survive `JSON.stringify`.
+- The photo route **streams** the object out of the private `user-uploads`
+  bucket (not `storage.download()`, which buffers up to 3 MB) and answers one
+  identical 404 for a bad id, an unknown larm, a hidden larm, a report without a
+  picture and a missing object, so it is not an oracle for what has been hidden.
+- Rarity is shown as a **word, only from "Ovanlig" up**, coloured only for the
+  two rarest levels. Nothing in the first 238 larm was level 0 or 1, and 191
+  were level 4–5, so a badge on every row would have meant nothing.
+- **Open:** the protected-species list, before launch (see D1 and step 9).
 
 ### F5 — Lokaler (map)
 
@@ -531,7 +574,7 @@ Proposed order. Each step is one plan and ends shipped with `pnpm ship`.
 | 1 | ~~Foundations~~ — done 2026-09-19 | — | no |
 | 2 | ~~**Admin-inloggning:** one administrator, the `/admin` shell and gate~~ — done 2026-09-19 | D2 | no schema or auth config change; `is_admin` granted to one account |
 | 3 | ~~**Innehållsgrund:** pages, articles, media bucket, editor, sanitizing, public rendering, navigation, dummy articles (F1 + F2), and the design pass~~ — done 2026-09-19 | D3–D6, F1 menu | **new tables + bucket**, applied 2026-09-19 |
-| 4 | **Larm på webben** (F4: public, display only) | D1, and the club's policy update | no schema change; first Worker secret |
+| 4 | ~~**Larm på webben** (F4: public, display only)~~ — done 2026-09-20 | D1 | **new table `hidden_alerts`**, applied 2026-09-20; first Worker secret |
 | 5 | **Kalender** (F3) | F3 open questions | new table |
 | 6 | **Lokaler** map (F5) | F5 open questions | no |
 | 7 | **Larmligan** (F6) | D1 (names), D7 | no |
@@ -566,6 +609,12 @@ time.
   the other). Remove `noindex` and `robots.txt` `Disallow` together.
 - **Auth.** Supabase auth `site_url` becomes the new domain. (The admin signs
   in with a password, so there's no sign-in redirect URL to update.)
+- **Privacy policy (D1).** The club updates the app's privacy policy and tells
+  the members which larm details the website publishes — species, count, time, a
+  coarse place, the photo and the observer's display name. This is the step that
+  was deferred from step 4 on the grounds that the site was unlisted; going to
+  the real domain is what makes it public. **The protected-species list
+  (`PLACE_SUPPRESSED_SPECIES`) is filled in here too.**
 - **Checks.** The legal pages (with D1's updated privacy policy) resolve at both
   old URLs. A sample of old post URLs 301 to the right article. No dummy
   article is left.
@@ -578,7 +627,7 @@ time.
 
 | # | Decision | Answer | Date |
 |---|---|---|---|
-| D1 | What the public sees of the app's data | **Public**, since only the admin signs in (follows from D2). *Open:* the policy update, the fields shown, observer names, protected species, pin precision | 2026-09-19 (partly) |
+| D1 | What the public sees of the app's data | **Public**, since only the admin signs in (follows from D2). Observer names **shown**, resolved live from `profiles`; **all** larm published, with a per-larm hide in `/admin`; place coarsened to the nearest lokal within 3 km, never a coordinate; the policy update moved to the launch checklist. *Open:* the protected-species list | 2026-09-19, completed 2026-09-20 |
 | D2 | Web sign-in | **One administrator** (yunus@edenmind.com), **email + password**; no member login | 2026-09-19 |
 | D3 | Site media storage | **Public Supabase bucket `site-media`** (Pro plan; the library is ~0.45 GB, so no R2), **three pre-generated widths** served with `srcset`. *Open until step 8:* PDFs public | 2026-09-19 |
 | D4 | Rendering and routing | **All public HTML through the Worker** (`["/*", "!/_astro/*", …]`), DB content server-rendered with a short cache; the 404 and legal pages stay prerendered | 2026-09-19 |

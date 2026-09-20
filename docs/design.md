@@ -188,6 +188,50 @@ Text: Anna A.
   then "Text: …" on the next line. There are no middle-dot strings.
 - After the body comes "Mer i Referat": three links, the same list pattern.
 
+### Larm (`/larm`, `/larm/<id>`)
+
+A larm has no headline. It has a species, a count, a place and a time — which is
+the notebook entry the direction above describes, almost literally. So the row
+is built from those and nothing else:
+
+```
+desktop
+19 sep.        Kungsörn  2 ex.  Mycket sällsynt     ← species is the link
+2026           Nära Hualtet    Anna Andersson      ← place, then observer
+08:15          [ photo ]
+```
+
+- **The margin carries the clock**, which articles don't have: date, year when
+  it changes, then the time. `tabular-nums`, as everywhere.
+- **Place and observer are two elements in one flex row**, separated by a gap.
+  Not a `·` string — the same reason the article meta is split into lines.
+- **`N ex.` only when N > 1.** "1 ex." is noise, and "ex." is how a birder
+  writes it.
+- **Rarity is a word, and only when it means something.** It prints from
+  "Ovanlig" (level 2) up and is silent below, so its presence is the
+  information. It takes the `--rarity` colour only at levels 0–1. Nothing in the
+  first 238 larm was level 0 or 1 and 191 were level 4–5, so a coloured badge on
+  every row — which is what the app does, correctly, in a dense phone feed —
+  would have been decoration here. The word itself comes from the app
+  (`Mycket sällsynt` … `Allmän`), so a bird reads the same in both places.
+- **Photos.** Member uploads carry no stored dimensions, so both pages reserve a
+  3:2 box and nothing shifts as they load. The feed **crops** (`object-cover`)
+  to keep the list's rhythm; the detail page shows the photo **whole**
+  (`object-contain`), portrait or landscape, which is where the brief's
+  "uncropped where the layout allows" actually applies. The feed is 12 per page,
+  not 20, and lazy-loads: originals average 0.5 MB and there is no transform
+  service.
+- **Photos appear on `/larm` and on a larm's own page — nowhere else.** The
+  home page's "Senaste larmen" and the detail page's "Fler larm" are
+  photo-free lists (`photos={false}`). The first draft showed them everywhere,
+  and four full-width member photos under the home page's lead article made the
+  larm section the largest thing on the page, against the rule that the lead is
+  the one loud thing — and cost 1.5 MB. Quiet lists also give "Alla larm"
+  something to promise.
+- **The page says the place is approximate**, under the heading on `/larm` and
+  again on the detail page. Readers deserve to know that "Nära Hualtet" is a
+  deliberate blur, not a measurement.
+
 ### Page
 
 The page title and body, in the same column. A section page (one with children)
@@ -208,6 +252,7 @@ out to Artportalen. The proposal is **five sections**, members' things first:
 
 ```
 Artiklar              /artiklar                 (link entry)
+Larm                  /larm                     (link entry, added in step 4)
 Program               /program                  Allmänt, Årsprogram 2026 (kalender from step 5)
 Obsar                 /obsar                    one section for today's "Obsar" and "Listor":
                                                   Rapportera på Artportalen, Kommunobservationer,
@@ -219,6 +264,9 @@ Klubben               /om-foreningen            Verksamhet, Cinclus, Medlemskap,
                                                   Fågelholkar, Länkar
 ```
 
+- **Larm is its own top-level section**, not filed under Obsar, because the
+  agenda calls it *"viktig funktion"* and because Obsar is where the club sends
+  people *out* to Artportalen, while Larm is the club's own material.
 - **Moved pages change path.** Medlemskap moves from `/medlemsskap/` to
   `/om-foreningen/medlemskap`, and `/svalan/` and `/listor/` become `/obsar`.
   Their old URLs go into step 8's redirect map along with the posts'.
@@ -270,8 +318,12 @@ editor loads it too, so the admin sees what gets published.
 
 ## Notes for later passes
 
-- Larm (step 4) brings the first colour beyond green: rarity. Design it then,
-  from the app's own rarity scale.
+- ~~Larm (step 4) brings the first colour beyond green: rarity.~~ Done: a
+  `--rarity` token (`oklch(0.536 0.191 29)` light, `oklch(0.62 0.19 29.2)`
+  dark), taken from the app's `RarityScale` 0–1 (`#C42A20` / `#D23B2E`) and
+  lifted in dark mode to clear AA as text, the same lift `--primary` gets. It is
+  deliberately **not** `--destructive`, which means "this will break something".
+  Spent on rarity levels 0–1 only.
 - If the display lead ever feels too loud for a trivial post (e.g. "Inställt
   arbetsmöte"), consider an editor option "visa inte som huvudnyhet". Don't
   build it until it's needed.

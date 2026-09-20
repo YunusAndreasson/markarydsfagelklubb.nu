@@ -5,15 +5,24 @@ markarydsfagelklubb.nu with a public site and an admin area (the CMS). All UI
 copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
 comments and docs are English.
 
-**Status: step 3 — content core.** On top of the stack, the Supabase wiring,
+**Status: step 4 — larm på webben.** On top of the stack, the Supabase wiring,
 CI, local shipping and the gated `/admin` that exactly one administrator signs
-in to (email + password), the site now has its own tables (pages, articles,
-categories, media) and the `site-media` bucket. `/admin` edits them with a
-Tiptap editor, and the public site renders them. The content is dummy
-(`exempel-` slugs) until the WordPress import in step 8. Don't build features
-ahead of the step you've been asked for. The full agenda, the decisions and
-the step order are in `docs/roadmap.md`; plan a step from its section there.
-The public site's design is in `docs/design.md`.
+in to (email + password), the site has its own tables (pages, articles,
+categories, media) and the `site-media` bucket; `/admin` edits them with a
+Tiptap editor, and the public site renders them. The article and page content
+is dummy (`exempel-` slugs) until the WordPress import in step 8. **Step 4
+added the public larm feed** (`/larm`), which publishes the live app's alert
+log — real member data, read with the site's first Worker secret. Don't build
+features ahead of the step you've been asked for. The full agenda, the
+decisions and the step order are in `docs/roadmap.md`; plan a step from its
+section there. The public site's design is in `docs/design.md`.
+
+**The larm feed is the one place this site publishes members' own data.** Read
+the secret-key section of `docs/shared-database.md` before touching anything
+under `src/lib/{public-alerts,supabase-secret,alert-*}.ts` or `src/pages/larm/`.
+Two tests hold the line — `secret-key-scope.test.ts` (who may reach the key)
+and `alert-dto.test.ts` (what may be published) — and neither should be relaxed
+to make a change compile.
 
 **Admin access**: `src/lib/admin-access.ts` holds the whole policy (unit
 tested), `src/middleware.ts` applies it to every `/admin*` request. A session
@@ -82,9 +91,13 @@ In short:
 **Supabase keys and auth**
 
 - New API keys only: `sb_publishable_*` goes to the browser and lives in
-  `wrangler.jsonc` `vars`; `sb_secret_*` belongs only in Worker secrets, and
-  step 1 has none. New keys go on the `apikey` header, never
-  `Authorization: Bearer`.
+  `wrangler.jsonc` `vars`; `sb_secret_*` belongs only in Worker secrets
+  (`SUPABASE_SECRET_KEY`, added in step 4 for the larm feed — see
+  `docs/shared-database.md`). The publishable key goes on the `apikey` header,
+  **never** `Authorization: Bearer`, where Auth would read it as a user JWT.
+  The one exception is the secret key on a raw Storage or REST call, which
+  carries both headers because that is what supabase-js itself sends
+  (`src/lib/supabase-secret.ts`).
 - Verify sessions with `getClaims()` (local JWT check), not `getUser()`
   (an Auth round trip per request).
 - **Never default a missing value.** `src/lib/env.ts` reports problems, and

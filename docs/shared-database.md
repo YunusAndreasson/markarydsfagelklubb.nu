@@ -41,6 +41,19 @@ applied 2026-09-19). The app doesn't read any of it.
 | `private.touch_updated_at()` | — | trigger function on `articles` and `pages`; EXECUTE revoked from everyone |
 | storage bucket `site-media` (public) | the admin's browser | public URLs need no policy. `site_media_{select,insert,delete}_admin` on `storage.objects`, each scoped to `bucket_id = 'site-media'`. WebP/JPEG only, 5 MB per file |
 
+Created by `supabase/migrations/20260919221326_hidden_alerts.sql` (step 4,
+applied 2026-09-20):
+
+| Object | Written by | Access (RLS) |
+|---|---|---|
+| `public.hidden_alerts` | the admin | read/insert/delete: `private.is_admin()`. **No `to anon` policy and no grant to anon**, so which larm the club has taken down is not anonymously enumerable. No UPDATE at all: hiding is an insert, showing again is a delete |
+
+`hidden_alerts` has **no foreign keys**, on purpose. `alert_id → public.alerts`
+would put a constraint on the app's own table and change what happens when a row
+there is deleted; `hidden_by → auth.users` would block deleting the account of
+anyone who had ever hidden a larm, breaking the app's `delete-account` function.
+The cost is a row that may outlive its larm and hide nothing, which is harmless.
+
 The new tables start from `revoke all … from anon, authenticated`, because the
 project's default privileges would otherwise give both every privilege,
 TRUNCATE included, which RLS doesn't cover. anon then gets `select`, and
@@ -65,6 +78,44 @@ What else is true today:
 - The mobile repo keeps its own SQL under `../mafk-mobie/supabase/` and applies
   it with `supabase db query --linked -f …`. That writes **no** migration
   history. Its edge functions are deployed from there too.
+
+## The secret key (step 4)
+
+The public larm feed publishes data from `alerts`, `observations`, `species`,
+`locations` and `profiles`. **None of those is readable anonymously and their RLS
+is not ours to change**, so the Worker reads them with a Supabase **secret key**
+(`SUPABASE_SECRET_KEY`, an `sb_secret_*` value) — set with
+`wrangler secret put`, and locally in `.dev.vars`. Never in `wrangler.jsonc`.
+
+That key **bypasses RLS on this whole database**: every member's phone number,
+every observation and every private storage object. What contains it:
+
+- **One module holds it.** `src/lib/supabase-secret.ts` returns a client and a
+  download function, never the key string, so it can't reach a log or a DTO.
+- **One module uses it.** `src/lib/public-alerts.ts`, which returns `PublicAlert`
+  DTOs and nothing else. It is never put on `App.Locals`, because an ambient
+  client would be reachable from `/admin` requests, whose responses carry auth
+  cookies.
+- **Two tests enforce that.** `secret-key-scope.test.ts` walks `src/` and fails
+  if anything else reaches the key, if a React island does, or if a larm route
+  omits `prerender = false` — `astro build` prerenders inside workerd with
+  `.dev.vars` loaded, so a prerendered larm page would read the real key on a
+  developer's machine and write member data into `dist/` as a public asset.
+  `alert-dto.test.ts` pins the published fields and the `select` string, and
+  asserts that sentinel values for a user id, `image_path` and the coordinates
+  don't survive serialisation.
+- **The admin screen does not use it.** `/admin/larm` reads with the admin's own
+  session (`alerts` is readable by `authenticated`) and writes `hidden_alerts`
+  the same way, so RLS stays the boundary there.
+- **Storage:** the key goes on both `apikey` and `Authorization: Bearer` for the
+  Storage REST call, which is what supabase-js itself sends for REST and Storage.
+  The "new keys never use Bearer" rule in `CLAUDE.md` is about the *publishable*
+  key on Auth routes, where a Bearer is read as a user JWT.
+
+**Watch:** Workers Cache is off today, so hiding a larm propagates as soon as the
+short browser TTLs expire. Switching on D4's route cache (`cacheCloudflare()`)
+would let cached larm pages and photos survive a hide — that change has to purge
+by tag or opt these routes out.
 
 ## Rules for this repo
 
