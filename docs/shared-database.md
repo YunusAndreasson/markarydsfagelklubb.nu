@@ -86,6 +86,18 @@ The public larm feed publishes data from `alerts`, `observations`, `species`,
 is not ours to change**, so the Worker reads them with a Supabase **secret key**
 (`SUPABASE_SECRET_KEY`, an `sb_secret_*` value) — set with
 `wrangler secret put`, and locally in `.dev.vars`. Never in `wrangler.jsonc`.
+It replaced the retired app's leftover secret of the same name.
+
+Two ways of getting that value **look like they work and do not**:
+
+- `supabase projects api-keys` returns the secret **masked** — truncated and
+  ending in `·` (U+00B7). It passes the `sb_secret_*` check and then fails every
+  query with "Invalid API key". `scripts/set-admin-password.mjs` rejects it for
+  exactly this reason; that guard is correct. Take the value from the dashboard.
+- `wrangler secret put` run without a TTY reads EOF and **uploads an empty
+  string**, reporting success. The Worker then logs
+  `SUPABASE_SECRET_KEY is missing`. Run it in a real terminal and check it
+  prints `Enter a secret value:`.
 
 That key **bypasses RLS on this whole database**: every member's phone number,
 every observation and every private storage object. What contains it:
