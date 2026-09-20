@@ -19,6 +19,10 @@ you've been asked for. The full agenda, the
 decisions and the step order are in `docs/roadmap.md`; plan a step from its
 section there. The public site's design is in `docs/design.md`.
 
+**Step 8 is the WordPress import.** Its build spec is `docs/wp-import.md` —
+read it before touching `scripts/wp-import/`. The decisions behind it are in
+`docs/roadmap.md` (F2 and the decision log).
+
 **The larm feed is the one place this site publishes members' own data.** Read
 the secret-key section of `docs/shared-database.md` before touching anything
 under `src/lib/{public-alerts,supabase-secret,alert-*}.ts` or `src/pages/larm/`.
