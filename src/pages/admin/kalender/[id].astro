@@ -1,0 +1,397 @@
+---
+export const prerender = false
+
+import PublishBadge from "@/components/admin/PublishBadge.astro"
+import { RichTextEditor } from "@/components/admin/RichTextEditor"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { Textarea } from "@/components/ui/textarea"
+import AdminLayout from "@/layouts/admin.astro"
+import { deleteEvent, loadEvent, saveEvent, WRITE_MESSAGES } from "@/lib/admin-content"
+import { type FieldErrors, LIMITS, parseEventForm, parseRouteId } from "@/lib/content-form"
+import { EVENT_KIND_LABELS, EVENT_KINDS } from "@/lib/event-kind"
+import { parsePublishIntent, publishStateOf, resolvePublication } from "@/lib/publish-state"
+import { sanitizeContent } from "@/lib/sanitize"
+import { formatDate, toStockholmInputValue } from "@/lib/stockholm-time"
+
+const { supabase, supabaseBrowser } = Astro.locals
+if (!supabase || !supabaseBrowser) return new Response(null, { status: 503 })
+
+const isNew = Astro.params.id === "ny"
+const id = isNew ? null : parseRouteId(Astro.params.id)
+if (!isNew && id === null) return new Response(null, { status: 404 })
+
+const now = new Date()
+let event: Awaited<ReturnType<typeof loadEvent>>["data"] = null
+if (id !== null) {
+  const { data, error } = await loadEvent(supabase, id)
+  if (error) {
+    console.error(`mafk-web: load event failed — ${error.message}`)
+    return new Response("Evenemanget kunde inte läsas just nu.", { status: 503 })
+  }
+  if (!data) return new Response(null, { status: 404 })
+  event = data
+}
+
+// What the form shows: the saved event, or what was just submitted.
+let values = {
+  title: event?.title ?? "",
+  slug: event?.slug ?? "",
+  summary: event?.summary ?? "",
+  place: event?.place ?? "",
+  kind: event?.kind ?? "ovrigt",
+  registration_url: event?.registration_url ?? "",
+  starts_at: event?.starts_at ? toStockholmInputValue(event.starts_at) : "",
+  ends_at: event?.ends_at ? toStockholmInputValue(event.ends_at) : "",
+  all_day: event?.all_day ?? false,
+  publish_at: event?.published_at ? toStockholmInputValue(event.published_at) : "",
+  body_html: event?.body_html ?? "",
+}
+let errors: FieldErrors = {}
+let formError: string | null = null
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const intent = form.get("intent")
+
+  if (intent === "delete" && id !== null) {
+    const result = await deleteEvent(supabase, id)
+    if (result.ok) return Astro.redirect("/admin/kalender?borttagen=1", 303)
+    formError =
+      result.reason === "duplicate" ? WRITE_MESSAGES.failed : WRITE_MESSAGES[result.reason]
+  } else {
+    const publishIntent = parsePublishIntent(intent) ?? "save"
+    const parsed = parseEventForm(form)
+    const field = (name: string) => String(form.get(name) ?? "")
+    values = {
+      title: field("title"),
+      slug: field("slug"),
+      summary: field("summary"),
+      place: field("place"),
+      kind: field("kind"),
+      registration_url: field("registration_url"),
+      starts_at: field("starts_at"),
+      ends_at: field("ends_at"),
+      all_day: form.get("all_day") === "on",
+      publish_at: field("publish_at"),
+      body_html: form.has("body_html") ? field("body_html") : values.body_html,
+    }
+
+    if (!parsed.ok) {
+      errors = parsed.errors
+    } else {
+      const input = parsed.value
+      const publication = resolvePublication(publishIntent, event, input.publish_at, now)
+      const result = await saveEvent(supabase, id, {
+        title: input.title,
+        slug: input.slug,
+        summary: input.summary,
+        place: input.place,
+        kind: input.kind,
+        registration_url: input.registration_url,
+        starts_at: input.starts_at.toISOString(),
+        ends_at: input.ends_at?.toISOString() ?? null,
+        all_day: input.all_day,
+        ...(input.body_html !== null && { body_html: sanitizeContent(input.body_html) }),
+        ...publication,
+      })
+      if (result.ok) {
+        return Astro.redirect(`/admin/kalender/${result.value}?sparad=${publishIntent}`, 303)
+      }
+      if (result.reason === "duplicate") {
+        errors.slug = `Det finns redan ett evenemang med adressen ”${input.slug}”. Välj en annan.`
+      } else {
+        formError = WRITE_MESSAGES[result.reason]
+      }
+    }
+  }
+}
+
+const state = event ? publishStateOf(event, now) : "draft"
+const saved = Astro.url.searchParams.get("sparad")
+const savedMessage =
+  saved === "publish"
+    ? state === "scheduled" && event?.published_at
+      ? `Schemalagt. Evenemanget syns på webbplatsen ${formatDate(event.published_at, "dateTime")}.`
+      : "Publicerat. Evenemanget syns nu på webbplatsen."
+    : saved === "unpublish"
+      ? "Avpublicerat. Evenemanget är nu ett utkast och syns inte på webbplatsen."
+      : saved === "save"
+        ? "Sparat."
+        : null
+const confirmDelete = !isNew && Astro.url.searchParams.has("ta-bort")
+const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
+---
+
+<AdminLayout title={title} wide>
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="/admin/kalender" class="text-muted-foreground text-sm underline-offset-4 hover:underline">
+        Kalender
+      </a>
+      {event && <PublishBadge status={event.status} publishedAt={event.published_at} now={now} />}
+    </div>
+    <h1 class="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+
+    {
+      savedMessage && !formError && Object.keys(errors).length === 0 && (
+        <Alert>
+          <AlertDescription>{savedMessage}</AlertDescription>
+        </Alert>
+      )
+    }
+    {
+      formError && (
+        <Alert variant="destructive">
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )
+    }
+    {
+      Object.keys(errors).length > 0 && (
+        <Alert variant="destructive">
+          <AlertDescription>Evenemanget sparades inte. Rätta det som är markerat nedan.</AlertDescription>
+        </Alert>
+      )
+    }
+
+    {
+      confirmDelete && event && (
+        <Alert variant="destructive">
+          <AlertTitle>Ta bort ”{event.title}”?</AlertTitle>
+          <AlertDescription>
+            <p>Evenemanget försvinner från kalendern och kan inte återställas. Det försvinner också för den som prenumererar på kalendern.</p>
+            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+              <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">
+                Ta bort evenemanget
+              </Button>
+              <a href={`/admin/kalender/${event.id}`} class={buttonVariants({ variant: "ghost", className: "h-11" })}>
+                Avbryt
+              </a>
+            </form>
+          </AlertDescription>
+        </Alert>
+      )
+    }
+
+    <form method="POST" class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div class="flex min-w-0 flex-col gap-7">
+        <FieldGroup>
+          <Field data-invalid={errors.title ? true : undefined}>
+            <FieldLabel htmlFor="title">Rubrik</FieldLabel>
+            <Input
+              id="title"
+              name="title"
+              value={values.title}
+              maxLength={LIMITS.title}
+              required
+              className="h-11 text-base"
+              aria-invalid={errors.title ? true : undefined}
+            />
+            <FieldError>{errors.title}</FieldError>
+          </Field>
+          <Field data-invalid={errors.summary ? true : undefined}>
+            <FieldLabel htmlFor="summary">Ingress</FieldLabel>
+            <Textarea
+              id="summary"
+              name="summary"
+              rows={3}
+              maxLength={LIMITS.excerpt}
+              defaultValue={values.summary}
+              aria-invalid={errors.summary ? true : undefined}
+            />
+            <FieldDescription>En eller två meningar som visas i programmet, till exempel var ni samlas.</FieldDescription>
+            <FieldError>{errors.summary}</FieldError>
+          </Field>
+        </FieldGroup>
+
+        <section aria-labelledby="when-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+          <h2 id="when-heading" class="text-sm font-semibold">När</h2>
+          <FieldGroup>
+            <Field data-invalid={errors.starts_at ? true : undefined}>
+              <FieldLabel htmlFor="starts_at">Börjar</FieldLabel>
+              <Input
+                id="starts_at"
+                name="starts_at"
+                type="datetime-local"
+                value={values.starts_at}
+                required
+                className="h-11"
+                aria-invalid={errors.starts_at ? true : undefined}
+              />
+              <FieldDescription>Svensk tid.</FieldDescription>
+              <FieldError>{errors.starts_at}</FieldError>
+            </Field>
+            <Field data-invalid={errors.ends_at ? true : undefined}>
+              <FieldLabel htmlFor="ends_at">Slutar</FieldLabel>
+              <Input
+                id="ends_at"
+                name="ends_at"
+                type="datetime-local"
+                value={values.ends_at}
+                className="h-11"
+                aria-invalid={errors.ends_at ? true : undefined}
+              />
+              <FieldDescription>Lämna tomt om ni inte bestämt något slut.</FieldDescription>
+              <FieldError>{errors.ends_at}</FieldError>
+            </Field>
+            <Field>
+              <label class="flex min-h-11 items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="all_day"
+                  checked={values.all_day}
+                  class="border-input text-primary focus-visible:ring-ring size-5 rounded-sm focus-visible:ring-2"
+                />
+                Heldag
+              </label>
+              <FieldDescription>Visar bara datum, ingen klockslag. Tiden ovan sparas som dygnets början.</FieldDescription>
+            </Field>
+          </FieldGroup>
+        </section>
+
+        <div class="flex flex-col gap-3">
+          <span class="text-sm font-medium" id="body-label">Beskrivning</span>
+          <RichTextEditor
+            client:only="react"
+            name="body_html"
+            initialHtml={values.body_html}
+            supabaseUrl={supabaseBrowser.url}
+            supabasePublishableKey={supabaseBrowser.publishableKey}
+            label="Beskrivning"
+          >
+            <p slot="fallback" class="text-muted-foreground rounded-2xl border p-4 text-sm">Laddar editorn …</p>
+          </RichTextEditor>
+        </div>
+      </div>
+
+      <aside class="flex flex-col gap-7">
+        <section aria-labelledby="publish-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+          <h2 id="publish-heading" class="text-sm font-semibold">Publicering</h2>
+          <Field data-invalid={errors.publish_at ? true : undefined}>
+            <FieldLabel htmlFor="publish_at">Publiceringstid</FieldLabel>
+            <Input
+              id="publish_at"
+              name="publish_at"
+              type="datetime-local"
+              value={values.publish_at}
+              className="h-11"
+              aria-invalid={errors.publish_at ? true : undefined}
+            />
+            <FieldDescription>
+              När evenemanget ska synas på webbplatsen, inte när det äger rum. Lämna tomt för direkt.
+            </FieldDescription>
+            <FieldError>{errors.publish_at}</FieldError>
+          </Field>
+          {/* The first submit button is what Enter presses: never publishing. */}
+          <div class="flex flex-col gap-2">
+            {
+              state === "draft" ? (
+                <>
+                  <Button type="submit" name="intent" value="save" variant="outline" className="h-11">
+                    Spara utkast
+                  </Button>
+                  <Button type="submit" name="intent" value="publish" className="h-11">
+                    Publicera
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button type="submit" name="intent" value="save" className="h-11">
+                    Spara ändringar
+                  </Button>
+                  <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">
+                    Avpublicera
+                  </Button>
+                </>
+              )
+            }
+          </div>
+          {
+            event && state === "published" && (
+              <div class="flex flex-col gap-1 text-sm">
+                <a href={`/kalender/${event.slug}`} class="text-primary underline-offset-4 hover:underline">
+                  Visa på webbplatsen
+                </a>
+              </div>
+            )
+          }
+        </section>
+
+        <FieldGroup>
+          <Field data-invalid={errors.place ? true : undefined}>
+            <FieldLabel htmlFor="place">Plats</FieldLabel>
+            <Input
+              id="place"
+              name="place"
+              value={values.place}
+              maxLength={LIMITS.place}
+              className="h-11"
+              aria-invalid={errors.place ? true : undefined}
+            />
+            <FieldDescription>Fritext, till exempel ”Samling vid Ekebacken”.</FieldDescription>
+            <FieldError>{errors.place}</FieldError>
+          </Field>
+          <Field data-invalid={errors.kind ? true : undefined}>
+            <FieldLabel htmlFor="kind">Typ</FieldLabel>
+            <NativeSelect
+              id="kind"
+              name="kind"
+              className="w-full"
+              defaultValue={values.kind}
+              aria-invalid={errors.kind ? true : undefined}
+            >
+              {
+                EVENT_KINDS.map((kind) => (
+                  <NativeSelectOption value={kind}>{EVENT_KIND_LABELS[kind]}</NativeSelectOption>
+                ))
+              }
+            </NativeSelect>
+            <FieldDescription>”Övrigt” visas inte för besökaren.</FieldDescription>
+            <FieldError>{errors.kind}</FieldError>
+          </Field>
+          <Field data-invalid={errors.slug ? true : undefined}>
+            <FieldLabel htmlFor="slug">Adress</FieldLabel>
+            <Input
+              id="slug"
+              name="slug"
+              value={values.slug}
+              className="h-11"
+              spellCheck={false}
+              aria-invalid={errors.slug ? true : undefined}
+            />
+            <FieldDescription>
+              /kalender/{values.slug || "…"}. Lämna tomt så skapas adressen från rubriken.
+              {state !== "draft" && " Ändrar du den slutar gamla länkar att fungera."}
+            </FieldDescription>
+            <FieldError>{errors.slug}</FieldError>
+          </Field>
+          <Field data-invalid={errors.registration_url ? true : undefined}>
+            <FieldLabel htmlFor="registration_url">Anmälan</FieldLabel>
+            <Input
+              id="registration_url"
+              name="registration_url"
+              value={values.registration_url}
+              className="h-11"
+              spellCheck={false}
+              aria-invalid={errors.registration_url ? true : undefined}
+            />
+            <FieldDescription>En länk eller mailto:-adress. Lämna tomt om anmälan inte behövs.</FieldDescription>
+            <FieldError>{errors.registration_url}</FieldError>
+          </Field>
+        </FieldGroup>
+
+        {
+          event && !confirmDelete && (
+            <a href={`/admin/kalender/${event.id}?ta-bort`} class="text-destructive text-sm underline-offset-4 hover:underline">
+              Ta bort evenemanget
+            </a>
+          )
+        }
+      </aside>
+    </form>
+  </div>
+</AdminLayout>

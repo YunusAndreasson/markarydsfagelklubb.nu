@@ -1,0 +1,104 @@
+---
+export const prerender = false
+
+import PublishBadge from "@/components/admin/PublishBadge.astro"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { buttonVariants } from "@/components/ui/button"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import AdminLayout from "@/layouts/admin.astro"
+import { ADMIN_LIST_LIMIT, listEvents } from "@/lib/admin-content"
+import { EVENT_KIND_LABELS, isEventKind } from "@/lib/event-kind"
+import { formatDate } from "@/lib/stockholm-time"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+
+const { data: events, error } = await listEvents(supabase)
+if (error) console.error(`mafk-web: list events failed — ${error.message}`)
+const now = new Date()
+const deleted = Astro.url.searchParams.has("borttagen")
+
+const when = (event: { starts_at: string; all_day: boolean }) =>
+  event.all_day
+    ? formatDate(event.starts_at, "long")
+    : `${formatDate(event.starts_at, "long")} ${formatDate(event.starts_at, "clock")}`
+---
+
+<AdminLayout title="Kalender">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight">Kalender</h1>
+      <a href="/admin/kalender/ny" class={buttonVariants({ className: "h-11" })}>Nytt evenemang</a>
+    </div>
+
+    {deleted && (
+      <Alert>
+        <AlertDescription>Evenemanget är borttaget.</AlertDescription>
+      </Alert>
+    )}
+    {error && (
+      <Alert variant="destructive">
+        <AlertDescription>Kalendern kunde inte läsas just nu. Ladda om sidan om en stund.</AlertDescription>
+      </Alert>
+    )}
+
+    {
+      events && events.length === 0 && (
+        <p class="text-muted-foreground max-w-prose leading-7">
+          Här hamnar klubbens program. Lägg in det första med ”Nytt evenemang”. Medlemmarna ser det
+          på /kalender och kan prenumerera på det i sin egen kalender.
+        </p>
+      )
+    }
+
+    {
+      events && events.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Rubrik</TableHead>
+              <TableHead className="hidden sm:table-cell">Typ</TableHead>
+              <TableHead className="hidden md:table-cell">När</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {events.map((event) => (
+              <TableRow>
+                <TableCell className="max-w-[24rem] whitespace-normal">
+                  <a href={`/admin/kalender/${event.id}`} class="font-medium underline-offset-4 hover:underline">
+                    {event.title}
+                  </a>
+                  {event.place && (
+                    <span class="text-muted-foreground block text-sm">{event.place}</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden sm:table-cell">
+                  {isEventKind(event.kind) ? EVENT_KIND_LABELS[event.kind] : "–"}
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden tabular-nums md:table-cell">
+                  {when(event)}
+                </TableCell>
+                <TableCell>
+                  <PublishBadge status={event.status} publishedAt={event.published_at} now={now} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )
+    }
+    {
+      events && events.length === ADMIN_LIST_LIMIT && (
+        <p class="text-muted-foreground text-sm">Visar {ADMIN_LIST_LIMIT} evenemang.</p>
+      )
+    }
+  </div>
+</AdminLayout>
