@@ -12,6 +12,7 @@ import type { SupabaseServerClient } from "./supabase-server"
 
 type Tables = Database["public"]["Tables"]
 export type ArticleRow = Tables["articles"]["Row"]
+export type EventRow = Tables["events"]["Row"]
 export type PageRecord = Tables["pages"]["Row"]
 export type CategoryRow = Tables["categories"]["Row"]
 export type MediaRow = Tables["media"]["Row"]
@@ -78,6 +79,48 @@ export async function deleteArticle(
 ): Promise<WriteResult> {
   const { error } = await supabase.from("articles").delete().eq("id", id)
   return error ? failure("delete article", error) : { ok: true, value: null }
+}
+
+// Events
+
+/**
+ * The programme, latest date first, so what the admin is planning sits at the
+ * top and last season sinks to the bottom. Drafts included, as everywhere in
+ * the admin: RLS decides, not the query.
+ */
+export async function listEvents(supabase: SupabaseServerClient) {
+  return supabase
+    .from("events")
+    .select("id, slug, title, kind, starts_at, all_day, place, status, published_at")
+    .order("starts_at", { ascending: false })
+    .limit(ADMIN_LIST_LIMIT)
+}
+
+export async function loadEvent(supabase: SupabaseServerClient, id: number) {
+  return supabase.from("events").select("*").eq("id", id).maybeSingle()
+}
+
+export async function saveEvent(
+  supabase: SupabaseServerClient,
+  id: number | null,
+  values: Tables["events"]["Update"] &
+    Pick<Tables["events"]["Insert"], "slug" | "title" | "starts_at">
+): Promise<WriteResult<number>> {
+  const query =
+    id === null
+      ? supabase.from("events").insert(values).select("id").single()
+      : supabase.from("events").update(values).eq("id", id).select("id").single()
+  const { data, error } = await query
+  if (error) return failure("save event", error)
+  return { ok: true, value: data.id }
+}
+
+export async function deleteEvent(
+  supabase: SupabaseServerClient,
+  id: number
+): Promise<WriteResult> {
+  const { error } = await supabase.from("events").delete().eq("id", id)
+  return error ? failure("delete event", error) : { ok: true, value: null }
 }
 
 // Categories

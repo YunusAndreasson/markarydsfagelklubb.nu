@@ -138,6 +138,102 @@ export async function loadPublishedArticle(
     : null
 }
 
+export type EventSummary = {
+  id: number
+  slug: string
+  title: string
+  summary: string
+  place: string
+  kind: string
+  starts_at: string
+  ends_at: string | null
+  all_day: boolean
+}
+
+const EVENT_COLUMNS = "id, slug, title, summary, place, kind, starts_at, ends_at, all_day"
+
+/**
+ * The programme, soonest first. "Upcoming" counts an event as upcoming until
+ * the day it happens is over, so a morning excursion doesn't vanish from the
+ * list while the members are still out.
+ */
+export async function listUpcomingEvents(
+  db: SupabasePublicClient,
+  options: { limit: number; from: Date }
+): Promise<EventSummary[] | null> {
+  const { data, error } = await db
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .gte("starts_at", options.from.toISOString())
+    .order("starts_at")
+    .order("id")
+    .limit(options.limit)
+  if (error) {
+    console.error(`mafk-web: list upcoming events failed — ${error.message}`)
+    return null
+  }
+  return data
+}
+
+/** One month of the programme, for /kalender/2026-10. */
+export async function listEventsInMonth(
+  db: SupabasePublicClient,
+  range: { start: Date; end: Date }
+): Promise<EventSummary[] | null> {
+  const { data, error } = await db
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .gte("starts_at", range.start.toISOString())
+    .lt("starts_at", range.end.toISOString())
+    .order("starts_at")
+    .order("id")
+  if (error) {
+    console.error(`mafk-web: list events in month failed — ${error.message}`)
+    return null
+  }
+  return data
+}
+
+export type FullEvent = EventSummary & { body_html: string; registration_url: string | null }
+
+export async function loadPublishedEvent(
+  db: SupabasePublicClient,
+  slug: string
+): Promise<FullEvent | null | "error"> {
+  const { data, error } = await db
+    .from("events")
+    .select(`${EVENT_COLUMNS}, body_html, registration_url`)
+    .eq("slug", slug)
+    .maybeSingle()
+  if (error) {
+    console.error(`mafk-web: load event failed — ${error.message}`)
+    return "error"
+  }
+  return data
+}
+
+/**
+ * What /kalender.ics publishes. It reaches a year back so a subscriber keeps
+ * the season just gone, and forward without limit: the club plans a year at a
+ * time, and the whole programme is a few dozen rows.
+ */
+export async function listEventsForFeed(
+  db: SupabasePublicClient,
+  options: { from: Date; limit: number }
+) {
+  const { data, error } = await db
+    .from("events")
+    .select(`${EVENT_COLUMNS}, updated_at`)
+    .gte("starts_at", options.from.toISOString())
+    .order("starts_at")
+    .limit(options.limit)
+  if (error) {
+    console.error(`mafk-web: list events for feed failed — ${error.message}`)
+    return null
+  }
+  return data
+}
+
 export async function listPublicCategories(db: SupabasePublicClient) {
   const { data, error } = await db
     .from("categories")
