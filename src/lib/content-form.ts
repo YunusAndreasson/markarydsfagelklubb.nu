@@ -1,5 +1,7 @@
+import { DEFAULT_EVENT_KIND, type EventKind, isEventKind } from "./event-kind"
+import { MONTH_KEY_PATTERN } from "./event-month"
 import { isValidSlug, RESERVED_ARTICLE_SLUGS, RESERVED_TOP_LEVEL_SLUGS, slugify } from "./slug"
-import { parseStockholmInputValue } from "./stockholm-time"
+import { parseStockholmInputValue, startOfStockholmDay } from "./stockholm-time"
 
 /**
  * The admin's edit forms, read and checked. Pure, so every rule is tested
@@ -19,7 +21,13 @@ export type FieldErrors = Record<string, string>
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; errors: FieldErrors }
 
-export const LIMITS = { title: 200, excerpt: 400, author: 100, description: 300 } as const
+export const LIMITS = {
+  title: 200,
+  excerpt: 400,
+  author: 100,
+  description: 300,
+  place: 120,
+} as const
 
 export const MESSAGES = {
   titleMissing: "Skriv en rubrik.",
@@ -33,6 +41,13 @@ export const MESSAGES = {
   authorTooLong: `Namnet får vara högst ${LIMITS.author} tecken.`,
   descriptionTooLong: `Beskrivningen får vara högst ${LIMITS.description} tecken.`,
   publishAtInvalid: "Ange datum och tid, till exempel 2026-09-19 10:00.",
+  placeTooLong: `Platsen får vara högst ${LIMITS.place} tecken.`,
+  startMissing: "Ange när det börjar.",
+  startInvalid: "Ange datum och tid, till exempel 2026-10-03 18:00.",
+  endInvalid: "Ange datum och tid, eller lämna tomt.",
+  endBeforeStart: "Sluttiden ligger före starttiden.",
+  slugMonthShape:
+    "Adressen får inte se ut som en månad (2026-10). Kalendern använder den formen för sina månadssidor.",
   choiceInvalid: "Välj ett av alternativen i listan.",
   parentInvalid: "En sida kan inte ligga under sig själv eller under sina egna undersidor.",
   linkUrlInvalid: "Länken måste börja med https://, http://, mailto: eller / för en sida här.",
@@ -145,6 +160,93 @@ export function parseArticleForm(form: FormData): Parsed<ArticleForm> {
       : undefined,
     body_html: body(form),
     publish_at: checkPublishAt(text(form, "publish_at"), errors),
+  })
+}
+
+export type EventForm = {
+  title: string
+  slug: string
+  summary: string
+  place: string
+  kind: EventKind
+  registration_url: string | null
+  starts_at: Date
+  ends_at: Date | null
+  all_day: boolean
+  /** null: the editor wasn't there, keep the saved description. */
+  body_html: string | null
+  publish_at: Date | null
+}
+
+/** A required datetime-local field, unlike the optional publish time. */
+function checkStart(raw: string, errors: FieldErrors): Date | null {
+  if (!raw) {
+    errors.starts_at = MESSAGES.startMissing
+    return null
+  }
+  const parsed = parseStockholmInputValue(raw)
+  if (!parsed) errors.starts_at = MESSAGES.startInvalid
+  return parsed
+}
+
+export function parseEventForm(form: FormData): Parsed<EventForm> {
+  const errors: FieldErrors = {}
+  const title = text(form, "title")
+  checkTitle(title, errors)
+
+  const slug = checkSlug(text(form, "slug"), title, new Set(), errors)
+  // /kalender/2026-10 is a month page, so an event can't be called that.
+  if (!errors.slug && MONTH_KEY_PATTERN.test(slug)) errors.slug = MESSAGES.slugMonthShape
+
+  const summary = text(form, "summary")
+  checkLength(summary, LIMITS.excerpt, "summary", MESSAGES.excerptTooLong, errors)
+  const place = text(form, "place")
+  checkLength(place, LIMITS.place, "place", MESSAGES.placeTooLong, errors)
+
+  const rawKind = text(form, "kind")
+  if (rawKind && !isEventKind(rawKind)) errors.kind = MESSAGES.choiceInvalid
+  const kind = isEventKind(rawKind) ? rawKind : DEFAULT_EVENT_KIND
+
+  const registrationUrl = text(form, "registration_url")
+  if (registrationUrl && !LINK_URL.test(registrationUrl)) {
+    errors.registration_url = MESSAGES.linkUrlInvalid
+  }
+
+  const allDay = form.get("all_day") === "on"
+  // An all-day event keeps whatever hour was left in the form out of the
+  // database: the day is the whole fact.
+  const atDay = (value: Date) => (allDay ? startOfStockholmDay(value) : value)
+
+  const start = checkStart(text(form, "starts_at"), errors)
+  const rawEnd = text(form, "ends_at")
+  let end: Date | null = null
+  if (rawEnd) {
+    end = parseStockholmInputValue(rawEnd)
+    if (!end) errors.ends_at = MESSAGES.endInvalid
+  }
+  if (start && end && atDay(end).getTime() < atDay(start).getTime()) {
+    errors.ends_at = MESSAGES.endBeforeStart
+  }
+
+  // Checked before the guard below, so a bad start time doesn't hide a bad
+  // publishing time: the form reports every problem at once.
+  const publishAt = checkPublishAt(text(form, "publish_at"), errors)
+
+  // The one field nothing can stand in for: without it there is no event.
+  if (!start) return { ok: false, errors }
+
+  return done(errors, {
+    title,
+    slug,
+    summary,
+    place,
+    kind,
+    registration_url: registrationUrl || null,
+    starts_at: atDay(start),
+    ends_at: end ? atDay(end) : null,
+    all_day: allDay,
+    body_html: body(form),
+    publish_at: publishAt,
   })
 }
 

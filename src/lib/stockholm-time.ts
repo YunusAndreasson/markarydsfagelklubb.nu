@@ -55,6 +55,22 @@ export function toStockholmInputValue(value: Date | string): string {
 
 const INPUT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 
+/** The instant a Stockholm wall clock reading names. */
+function instantOfWall(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number
+): Date {
+  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute)
+  // Two passes: the offset at the first guess can differ from the offset at
+  // the answer when the guess straddles a summer-time change.
+  let instant = wallAsUtc - offsetAt(wallAsUtc)
+  instant = wallAsUtc - offsetAt(instant)
+  return new Date(instant)
+}
+
 /**
  * The instant a `datetime-local` value means in Stockholm, or null if it isn't
  * one. A time skipped by the spring change (02:30 on the last Sunday in March)
@@ -75,12 +91,28 @@ export function parseStockholmInputValue(value: string): Date | null {
   // Reject 30 February rather than letting Date roll it into March.
   if (new Date(Date.UTC(year, month - 1, day)).getUTCDate() !== day) return null
 
-  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute)
-  // Two passes: the offset at the first guess can differ from the offset at
-  // the answer when the guess straddles a summer-time change.
-  let instant = wallAsUtc - offsetAt(wallAsUtc)
-  instant = wallAsUtc - offsetAt(instant)
-  return new Date(instant)
+  return instantOfWall(year, month, day, hour, minute)
+}
+
+/**
+ * Midnight at the start of the Stockholm day an instant falls in. An all-day
+ * event stores that, so "3 oktober" is one instant whatever hour the admin
+ * happened to leave in the form.
+ */
+export function startOfStockholmDay(value: Date | string): Date {
+  const p = stockholmParts(toDate(value))
+  return instantOfWall(p.year, p.month, p.day, 0, 0)
+}
+
+/** The Stockholm month an instant falls in, as "2026-10". */
+export function stockholmMonthKey(value: Date | string): string {
+  const p = stockholmParts(toDate(value))
+  return `${p.year}-${pad(p.month)}`
+}
+
+/** Midnight at the start of a Stockholm month, given its year and month. */
+export function startOfStockholmMonth(year: number, month: number): Date {
+  return instantOfWall(year, month, 1, 0, 0)
 }
 
 const FORMATS = {
@@ -108,6 +140,12 @@ const FORMATS = {
   }),
   /** "19 sep." */
   short: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric", month: "short" }),
+  /** "oktober 2026" — the heading over a month of the program. */
+  month: new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TIME_ZONE,
+    month: "long",
+    year: "numeric",
+  }),
   /** "08:15" — a larm has a time of day; an article doesn't. */
   clock: new Intl.DateTimeFormat("sv-SE", {
     timeZone: TIME_ZONE,

@@ -4,6 +4,7 @@ import {
   MESSAGES,
   parseArticleForm,
   parseCategoryForm,
+  parseEventForm,
   parseLinkForm,
   parsePageForm,
   parseRouteId,
@@ -154,5 +155,130 @@ describe("parseRouteId", () => {
     for (const bad of [undefined, "", "0", "-1", "1.5", "12abc", "ny"]) {
       expect(parseRouteId(bad), String(bad)).toBeNull()
     }
+  })
+})
+
+describe("parseEventForm", () => {
+  const fields = {
+    title: "Ugglespaning vid Hualtet",
+    slug: "",
+    summary: "Samling vid kyrkan.",
+    place: "Ekebacken",
+    kind: "exkursion",
+    registration_url: "",
+    starts_at: "2026-10-03T18:00",
+    ends_at: "",
+    body_html: "<p>Ta med kikare.</p>",
+    publish_at: "2026-09-20T10:00",
+  }
+
+  it("reads a complete event and makes the slug from the title", () => {
+    expect(parseEventForm(form(fields))).toEqual({
+      ok: true,
+      value: {
+        title: "Ugglespaning vid Hualtet",
+        slug: "ugglespaning-vid-hualtet",
+        summary: "Samling vid kyrkan.",
+        place: "Ekebacken",
+        kind: "exkursion",
+        registration_url: null,
+        starts_at: new Date("2026-10-03T16:00:00Z"),
+        ends_at: null,
+        all_day: false,
+        body_html: "<p>Ta med kikare.</p>",
+        publish_at: new Date("2026-09-20T08:00:00Z"),
+      },
+    })
+  })
+
+  it("falls back to the neutral kind when none was chosen", () => {
+    const result = parseEventForm(form({ ...fields, kind: "" }))
+    expect(result.ok && result.value.kind).toBe("ovrigt")
+  })
+
+  it("rejects a kind that isn't in the list", () => {
+    const result = parseEventForm(form({ ...fields, kind: "utflykt" }))
+    expect(!result.ok && result.errors.kind).toBe(MESSAGES.choiceInvalid)
+  })
+
+  it("moves an all-day event to midnight, Swedish time", () => {
+    const result = parseEventForm(
+      form({ ...fields, all_day: "on", starts_at: "2026-10-03T18:00", ends_at: "2026-10-05T09:00" })
+    )
+    expect(result.ok && result.value.starts_at.toISOString()).toBe("2026-10-02T22:00:00.000Z")
+    expect(result.ok && result.value.ends_at?.toISOString()).toBe("2026-10-04T22:00:00.000Z")
+    expect(result.ok && result.value.all_day).toBe(true)
+  })
+
+  it("keeps an all-day event that starts and ends the same day", () => {
+    const result = parseEventForm(
+      form({ ...fields, all_day: "on", starts_at: "2026-10-03T18:00", ends_at: "2026-10-03T09:00" })
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it("insists on a start time", () => {
+    const result = parseEventForm(form({ ...fields, starts_at: "" }))
+    expect(!result.ok && result.errors.starts_at).toBe(MESSAGES.startMissing)
+  })
+
+  it("refuses an end before the start", () => {
+    const result = parseEventForm(form({ ...fields, ends_at: "2026-10-03T17:00" }))
+    expect(!result.ok && result.errors.ends_at).toBe(MESSAGES.endBeforeStart)
+  })
+
+  it("refuses an address shaped like a month page", () => {
+    const result = parseEventForm(form({ ...fields, slug: "2026-10" }))
+    expect(!result.ok && result.errors.slug).toBe(MESSAGES.slugMonthShape)
+  })
+
+  it("accepts an address that only looks like one", () => {
+    const result = parseEventForm(form({ ...fields, slug: "2026-13" }))
+    expect(result.ok && result.value.slug).toBe("2026-13")
+  })
+
+  it("checks the registration link the same way as a menu link", () => {
+    expect(parseEventForm(form({ ...fields, registration_url: "javascript:alert(1)" })).ok).toBe(
+      false
+    )
+    const mail = parseEventForm(form({ ...fields, registration_url: "mailto:a@b.se" }))
+    expect(mail.ok && mail.value.registration_url).toBe("mailto:a@b.se")
+  })
+
+  it("reports every problem at once, in Swedish", () => {
+    const result = parseEventForm(
+      form({
+        title: "",
+        slug: "Inte En Slug",
+        summary: "x".repeat(401),
+        place: "y".repeat(121),
+        kind: "utflykt",
+        registration_url: "nej",
+        starts_at: "igår",
+        ends_at: "imorgon",
+        publish_at: "snart",
+      })
+    )
+    expect(result).toEqual({
+      ok: false,
+      errors: {
+        title: MESSAGES.titleMissing,
+        slug: MESSAGES.slugInvalid,
+        summary: MESSAGES.excerptTooLong,
+        place: MESSAGES.placeTooLong,
+        kind: MESSAGES.choiceInvalid,
+        registration_url: MESSAGES.linkUrlInvalid,
+        starts_at: MESSAGES.startInvalid,
+        ends_at: MESSAGES.endInvalid,
+        publish_at: MESSAGES.publishAtInvalid,
+      },
+    })
+  })
+
+  it("leaves the description alone when the editor never loaded", () => {
+    const data = form(fields)
+    data.delete("body_html")
+    const result = parseEventForm(data)
+    expect(result.ok && result.value.body_html).toBeNull()
   })
 })
