@@ -467,10 +467,32 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
 - Admin CRUD.
 - **New table:** `events`.
 - **Depends on:** D2, D4, D5.
-- **Open:**
-  - recurring events? (Recommended: no; copy an event instead.)
-  - import past program posts as events, or leave them as articles?
-  - show events in the app later?
+
+**Decided 2026-09-20** (the three open questions, plus what planning settled):
+
+- **No recurring events.** One row per occurrence; the admin copies an event for
+  the next time. No RRULE to expand in three views, and no policy for changing a
+  single occurrence.
+- **Old "Program" posts stay articles.** The import (step 8) would have to read
+  dates out of free text in 16 years of posts. The calendar holds what the admin
+  puts in it from here on, and replaces the hand-edited Årsprogram page.
+- **The iCal feed is built now** (`/kalender.ics`), so members can subscribe in
+  their own phone calendar.
+- **The app may read events later.** `events` gets a `to anon` select policy like
+  `articles`, so no schema change is needed when it does. No app work now.
+- **URL `/kalender`, menu item "Program"** — the slug is already reserved in
+  `src/lib/slug.ts`, and "Program" is the word the club uses (see the menu
+  proposal in `docs/design.md`).
+- **An event has a type from a fixed list**, stored as a checked column:
+  exkursion, möte, resa, kurs, tävling, arbetsdag, övrigt. Not the article
+  `categories` table, which holds Referat and Föreningsaktuellt.
+- **The public view is a date list grouped by month**, not a grid: it follows
+  the fältdagbok direction, reads the same at 360 px, and needs no JS.
+- **Place is free text**, not a foreign key into the app's `locations`. F5 can
+  add a soft link later.
+- **No cover image.** Adding one would mean re-policying `media`, whose anon
+  policy only exposes article covers. Inline images in the description still
+  work.
 
 ### F4 — Larm (public alert feed, with photos) — *viktig funktion*
 
@@ -636,4 +658,5 @@ time.
 | F1 | Menu | **Built from the page tree** (parent, order, "visa i menyn", link-only entries); the design pass proposes the structure and the user signs it off | 2026-09-19 |
 | D7 | Kommun boundary; league from observations or alerts | — | — |
 | F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile | 2026-09-19 |
+| F3 | Kalender | **No recurring events** (copy one instead); old Program posts **stay articles**; **iCal feed now** (`/kalender.ics`); built so the **app can read events later** (`to anon`). Route `/kalender`, menu item "Program"; a **fixed type list**; a **month-grouped list**, no grid; place is free text; no cover image | 2026-09-20 |
 | F4 | Larm scope | **Display only.** The site never sends alerts | 2026-09-19 |
