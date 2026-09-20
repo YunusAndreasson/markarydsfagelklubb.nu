@@ -1,0 +1,161 @@
+---
+export const prerender = false
+
+import EventList from "@/components/site/EventList.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { publicEventKindLabel } from "@/lib/event-kind"
+import { monthKey, monthRange, parseMonthKey, shiftMonth } from "@/lib/event-month"
+import type { MenuEntry } from "@/lib/page-tree"
+import {
+  type EventSummary,
+  type FullEvent,
+  listEventsInMonth,
+  loadNavigation,
+  loadPublishedEvent,
+} from "@/lib/public-content"
+import { isValidSlug } from "@/lib/slug"
+import { formatDate, isoDateTime, stockholmMonthKey, stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * One segment under /kalender is either a month — /kalender/2026-10 — or an
+ * event. The month shape is checked first, and `parseEventForm` refuses to
+ * give an event a name of that shape, so the two can never collide.
+ */
+
+const slug = Astro.params.slug ?? ""
+const { db } = Astro.locals
+if (!db || !isValidSlug(slug)) return new Response(null, { status: 404 })
+
+/** "oktober 2026" as a heading: Swedish months are lower case mid-sentence. */
+const monthLabel = (key: string) => {
+  const label = formatDate(`${key}-01T12:00:00Z`, "month")
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+const month = parseMonthKey(slug)
+let events: EventSummary[] = []
+let event: FullEvent | null = null
+let previous = ""
+let next = ""
+let menu: MenuEntry[] = []
+
+if (month) {
+  const [navigation, found] = await Promise.all([
+    loadNavigation(db),
+    listEventsInMonth(db, monthRange(month)),
+  ])
+  if (!found) return new Response("Programmet kunde inte läsas just nu.", { status: 503 })
+  events = found
+  previous = monthKey(shiftMonth(month, -1))
+  next = monthKey(shiftMonth(month, 1))
+  menu = navigation.menu
+} else {
+  const [navigation, found] = await Promise.all([loadNavigation(db), loadPublishedEvent(db, slug)])
+  if (found === "error") {
+    return new Response("Evenemanget kunde inte läsas just nu.", { status: 503 })
+  }
+  if (!found) return new Response(null, { status: 404 })
+  event = found
+  menu = navigation.menu
+}
+
+const monthTitle = month ? monthLabel(slug) : ""
+const kind = event ? publicEventKindLabel(event.kind) : null
+const eventMonth = event ? stockholmMonthKey(event.starts_at) : ""
+
+// An end is only worth printing when it says something new: the same day and
+// the same clock as the start is noise.
+const sameDay =
+  event?.ends_at && formatDate(event.ends_at, "long") === formatDate(event.starts_at, "long")
+const endLabel = !event?.ends_at
+  ? null
+  : event.all_day
+    ? sameDay
+      ? null
+      : formatDate(event.ends_at, "dayMonth")
+    : sameDay
+      ? formatDate(event.ends_at, "clock")
+      : `${formatDate(event.ends_at, "dayMonth")} ${formatDate(event.ends_at, "clock")}`
+
+const title = month ? `${monthTitle} · Program` : `${event?.title} · Program`
+const description = month
+  ? `Markaryds Fågelklubbs program i ${monthTitle.toLowerCase()}.`
+  : event?.summary || undefined
+---
+
+<SiteLayout title={title} description={description} menu={menu}>
+  {
+    month && (
+      <div class="flex flex-col gap-10">
+        <header class="flex flex-col gap-5 md:pl-[7rem]">
+          <nav aria-label="Du är här" class="type-meta text-muted-foreground">
+            <a href="/kalender" class="hover:text-foreground underline-offset-4 hover:underline">Program</a>
+          </nav>
+          <h1 class="type-title">{monthTitle}</h1>
+        </header>
+
+        {events.length === 0 ? (
+          <p class="text-muted-foreground max-w-[38rem] md:pl-[7rem]">
+            Inget stod i programmet den här månaden.
+          </p>
+        ) : (
+          <EventList events={events} />
+        )}
+
+        <nav aria-label="Fler månader" class="flex flex-wrap justify-between gap-4 md:pl-[7rem]">
+          <a href={`/kalender/${previous}`} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+            {monthLabel(previous)}
+          </a>
+          <a href={`/kalender/${next}`} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+            {monthLabel(next)}
+          </a>
+        </nav>
+      </div>
+    )
+  }
+
+  {
+    event && (
+      <article class="flex flex-col gap-8">
+        <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
+          <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
+            <a href="/kalender" class="hover:text-foreground underline-offset-4 hover:underline">Program</a>
+            <span aria-hidden="true"> / </span>
+            <a href={`/kalender/${eventMonth}`} class="hover:text-foreground underline-offset-4 hover:underline">
+              {monthLabel(eventMonth)}
+            </a>
+          </nav>
+          <h1 class="type-title md:col-start-2">{event.title}</h1>
+          <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
+            <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-1 md:flex-col">
+              <span>{formatDate(event.starts_at, "weekdayName")}</span>
+              <span>{formatDate(event.starts_at, "dayMonth")}</span>
+              <span>{stockholmYear(event.starts_at)}</span>
+              {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
+            </time>
+            {endLabel && <span class="mt-1">till {endLabel}</span>}
+            {kind && <span class="mt-1">{kind}</span>}
+          </div>
+          {event.summary && <p class="type-ingress text-muted-foreground md:col-start-2 md:row-start-3">{event.summary}</p>}
+        </header>
+
+        {event.place && (
+          <p class="flex flex-wrap gap-x-3 md:ml-[7rem] md:max-w-[38rem]">
+            <span class="text-muted-foreground">Plats</span>
+            <span>{event.place}</span>
+          </p>
+        )}
+
+        {event.body_html && <div class="content md:ml-[7rem]" set:html={event.body_html} />}
+
+        {event.registration_url && (
+          <p class="md:ml-[7rem]">
+            <a href={event.registration_url} class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+              Anmäl dig
+            </a>
+          </p>
+        )}
+      </article>
+    )
+  }
+</SiteLayout>

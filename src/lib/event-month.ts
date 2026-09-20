@@ -62,3 +62,22 @@ export function monthRange(month: Month): MonthRange {
 export function isWithinRange({ year }: Month): boolean {
   return year >= FIRST_YEAR && year <= LAST_YEAR
 }
+
+/**
+ * Split a list already sorted by date into its months, in the order they
+ * appear. The upcoming programme prints a heading whenever the month changes,
+ * which is where the year comes from — so the rows don't have to repeat it.
+ */
+export function groupByMonth<T extends { starts_at: string }>(
+  events: T[]
+): { month: Month; key: string; events: T[] }[] {
+  const groups: { month: Month; key: string; events: T[] }[] = []
+  for (const event of events) {
+    const month = monthOf(event.starts_at)
+    const key = monthKey(month)
+    const last = groups[groups.length - 1]
+    if (last && last.key === key) last.events.push(event)
+    else groups.push({ month, key, events: [event] })
+  }
+  return groups
+}

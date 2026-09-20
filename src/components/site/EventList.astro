@@ -1,0 +1,58 @@
+---
+import { publicEventKindLabel } from "@/lib/event-kind"
+import type { EventSummary } from "@/lib/public-content"
+import { formatDate, isoDateTime } from "@/lib/stockholm-time"
+
+/**
+ * One event per row, in the same field-notebook shape as a larm: when it is in
+ * the margin, then what it is, then what kind and where (docs/design.md).
+ *
+ * Two things differ from the larm row, both because the programme is read
+ * forwards. The weekday is spelled out, since that is how the club writes its
+ * programme ("Lördag 21 februari – Ugglespaning") and how a member decides
+ * whether they can come. And no year is printed: the month heading above the
+ * list already carries it, so repeating it in the margin would be noise.
+ */
+
+interface Props {
+  events: EventSummary[]
+  /** h2 on a month page, h3 under a month heading. */
+  headingLevel?: 2 | 3
+}
+
+const { events, headingLevel = 2 } = Astro.props
+const Heading = headingLevel === 2 ? "h2" : "h3"
+---
+
+<ol class="flex flex-col gap-7">
+  {
+    events.map((event) => {
+      const kind = publicEventKindLabel(event.kind)
+      return (
+        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
+          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-2 md:flex-col md:gap-x-0 md:pt-[0.25rem]">
+            <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-2 md:flex-col">
+              <span>{formatDate(event.starts_at, "weekdayName")}</span>
+              <span>{formatDate(event.starts_at, "short")}</span>
+              {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
+            </time>
+          </p>
+          <div class="flex flex-col gap-1">
+            <Heading class="text-lg leading-snug font-semibold text-pretty">
+              <a href={`/kalender/${event.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+                {event.title}
+              </a>
+            </Heading>
+            {(kind || event.place) && (
+              <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
+                {kind && <span>{kind}</span>}
+                {event.place && <span>{event.place}</span>}
+              </p>
+            )}
+            {event.summary && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{event.summary}</p>}
+          </div>
+        </li>
+      )
+    })
+  }
+</ol>

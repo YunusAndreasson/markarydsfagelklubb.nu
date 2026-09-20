@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import { monthKey, monthOf, monthRange, parseMonthKey, shiftMonth } from "./event-month"
+import {
+  groupByMonth,
+  monthKey,
+  monthOf,
+  monthRange,
+  parseMonthKey,
+  shiftMonth,
+} from "./event-month"
 
 describe("parseMonthKey", () => {
   it("reads a month page's path segment", () => {
@@ -79,5 +86,30 @@ describe("monthOf", () => {
     // 23:30 UTC on 31 October is already November in Stockholm.
     expect(monthOf("2026-10-31T23:30:00Z")).toEqual({ year: 2026, month: 11 })
     expect(monthOf("2026-10-31T21:30:00Z")).toEqual({ year: 2026, month: 10 })
+  })
+})
+
+describe("groupByMonth", () => {
+  const at = (starts_at: string) => ({ starts_at })
+
+  it("keeps the order and starts a group when the month changes", () => {
+    const groups = groupByMonth([
+      at("2026-10-03T16:00:00Z"),
+      at("2026-10-15T17:00:00Z"),
+      at("2026-11-01T10:00:00Z"),
+      at("2027-01-05T10:00:00Z"),
+    ])
+    expect(groups.map((group) => group.key)).toEqual(["2026-10", "2026-11", "2027-01"])
+    expect(groups[0]?.events).toHaveLength(2)
+    expect(groups[0]?.month).toEqual({ year: 2026, month: 10 })
+  })
+
+  it("groups by the Swedish month, so a late-evening event counts as the next day's", () => {
+    const groups = groupByMonth([at("2026-10-31T23:30:00Z")])
+    expect(groups[0]?.key).toBe("2026-11")
+  })
+
+  it("has nothing to group in an empty programme", () => {
+    expect(groupByMonth([])).toEqual([])
   })
 })
