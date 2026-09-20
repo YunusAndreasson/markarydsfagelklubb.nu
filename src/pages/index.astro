@@ -1,23 +1,28 @@
 ---
 export const prerender = false
 
+import AlertList from "@/components/site/AlertList.astro"
 import ArticleList from "@/components/site/ArticleList.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { mediaFallbackUrl, mediaSrcset } from "@/lib/media"
+import { listPublicAlerts } from "@/lib/public-alerts"
 import { listPublishedArticles, loadNavigation } from "@/lib/public-content"
 import { formatDate, isoDateTime } from "@/lib/stockholm-time"
 
-// Members first (docs/design.md): the newest article leads, loud; the rest
-// follow as a quiet dated list. Larm (step 4) and the program (step 5) get
-// their places here when they exist, not before.
+// Members first (docs/design.md): the newest article leads, loud; then the
+// latest larm, then the rest of the articles as a quiet dated list. The
+// program (step 5) gets its place here when it exists, not before.
 const { db } = Astro.locals
 if (!db) return new Response(null, { status: 503 })
 
-const [navigation, page] = await Promise.all([
+const [navigation, page, larm] = await Promise.all([
   loadNavigation(db),
   listPublishedArticles(db, { limit: 9 }),
+  listPublicAlerts({ limit: 4 }),
 ])
 const [lead, ...earlier] = page?.articles ?? []
+// A larm failure costs the section, never the home page.
+const alerts = larm.ok ? larm.value.alerts : []
 ---
 
 <SiteLayout menu={navigation.menu}>
@@ -68,6 +73,18 @@ const [lead, ...earlier] = page?.articles ?? []
           </div>
         </div>
       </article>
+    )
+  }
+
+  {
+    alerts.length > 0 && (
+      <section aria-labelledby="larm" class="mt-16 flex flex-col gap-7 md:mt-24">
+        <h2 id="larm" class="text-lg font-semibold md:pl-[7rem]">Senaste larmen</h2>
+        <AlertList alerts={alerts} headingLevel={3} years="other-years" photos={false} />
+        <a href="/larm" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4 md:ml-[7rem]">
+          Alla larm
+        </a>
+      </section>
     )
   }
 

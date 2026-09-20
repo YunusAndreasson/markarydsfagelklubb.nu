@@ -28,6 +28,7 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-rarity: var(--rarity);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -72,6 +73,12 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  /* "Larmrött": the top of the app's rarity ramp (RarityScale 0 and 1 in
+     ../mafk-mobie/src/constants/theme.ts, #C42A20). The app tints a chip with
+     it on every row; the site spends it on the two rarest levels only, as
+     text, so a page of common birds stays quiet. Distinct from --destructive,
+     which means "this will break something". */
+  --rarity: oklch(0.536 0.191 29);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.52 0.13 152);
@@ -106,6 +113,10 @@
   --accent: oklch(0.269 0.008 155);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  /* Lifted from the app's dark #D23B2E, which reads at 4.2:1 as text on this
+     background. 0.62 keeps the hue and clears AA, the same lift --primary
+     gets here. */
+  --rarity: oklch(0.62 0.19 29.2);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.68 0.16 152);

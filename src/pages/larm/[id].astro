@@ -1,0 +1,104 @@
+---
+export const prerender = false
+
+import AlertList from "@/components/site/AlertList.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
+import { listPublicAlerts, loadPublicAlert } from "@/lib/public-alerts"
+import { loadNavigation } from "@/lib/public-content"
+import { isRare, rarityLabel } from "@/lib/rarity"
+import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const { db } = Astro.locals
+const id = Astro.params.id ?? ""
+if (!db || !UUID.test(id)) return new Response(null, { status: 404 })
+
+const [navigation, alert] = await Promise.all([loadNavigation(db), loadPublicAlert(id)])
+if (!alert.ok) return new Response("Larmet kunde inte läsas just nu.", { status: 503 })
+if (!alert.value) return new Response(null, { status: 404 })
+
+const larm = alert.value
+
+// "Fler larm": the newest few, minus this one. A failure costs the section.
+const recent = await listPublicAlerts({ limit: 4 })
+const more = (recent.ok ? recent.value.alerts : [])
+  .filter((other) => other.id !== larm.id)
+  .slice(0, 3)
+
+const observed = larm.observedAt
+const title =
+  larm.count !== null && larm.count > 1 ? `${larm.species} ${larm.count} ex.` : larm.species
+---
+
+<SiteLayout
+  title={title}
+  description={`${larm.species} vid ${larm.place}, ${formatDate(observed, "long")}.`}
+  menu={navigation.menu}
+>
+  <div class="flex flex-col gap-16">
+    <article class="flex flex-col gap-8">
+      <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
+        <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
+          <a href="/larm" class="hover:text-foreground underline-offset-4 hover:underline">Larm</a>
+        </nav>
+
+        <h1 class="type-title md:col-start-2">
+          {larm.species}
+          {larm.count !== null && larm.count > 1 && (
+            <span class="text-muted-foreground font-normal">{larm.count} ex.</span>
+          )}
+        </h1>
+
+        <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
+          <time datetime={isoDateTime(observed)} class="flex flex-wrap gap-x-1 md:flex-col">
+            <span>{formatDate(observed, "weekdayName")}</span>
+            <span>{formatDate(observed, "dayMonth")}</span>
+            <span>{stockholmYear(observed)}</span>
+            <span>{formatDate(observed, "clock")}</span>
+          </time>
+        </div>
+
+        <div class="flex flex-col gap-1 md:col-start-2 md:row-start-3">
+          <p class="text-lg">{larm.place}</p>
+          {larm.scientificName && <p class="text-muted-foreground italic">{larm.scientificName}</p>}
+          <p class:list={["type-meta", isRare(larm.rarity) ? "text-rarity" : "text-muted-foreground"]}>
+            {rarityLabel(larm.rarity)}
+          </p>
+          <p class="text-muted-foreground mt-1">Rapporterat av {larm.observer ?? ANONYMOUS_OBSERVER}</p>
+        </div>
+      </header>
+
+      {
+        larm.photoUrl && (
+          /* object-contain, not cover: the feed crops to keep its rhythm, but
+             here the member's photo is shown whole, portrait or landscape, and
+             the box reserves the space so nothing shifts as it loads. */
+          <div class="aspect-3/2 w-full max-w-[45rem]">
+            <img
+              src={larm.photoUrl}
+              alt={`Foto av ${larm.species}`}
+              decoding="async"
+              class="h-full w-full rounded-[4px] object-contain"
+            />
+          </div>
+        )
+      }
+
+      <p class="text-muted-foreground max-w-prose text-sm md:ml-[7rem]">
+        Platsen visas ungefärligt. Larmet skickades i klubbens app{" "}
+        <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
+      </p>
+    </article>
+
+    {
+      more.length > 0 && (
+        <section aria-labelledby="fler" class="flex flex-col gap-6">
+          <h2 id="fler" class="text-lg font-semibold md:pl-[7rem]">Fler larm</h2>
+          <AlertList alerts={more} headingLevel={3} years="other-years" photos={false} />
+        </section>
+      )
+    }
+  </div>
+</SiteLayout>

@@ -1,0 +1,92 @@
+---
+import type { PublicAlert } from "@/lib/alert-dto"
+import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
+import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
+import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * One larm per row, in the shape of a field-notebook entry: when it was seen
+ * in the margin, then what was seen, then where, then who (docs/design.md).
+ *
+ * The rarity word appears only when a bird is unusual, and takes colour only
+ * when it is genuinely rare — 191 of the first 238 larm were "Allmän" or
+ * "Ganska allmän", so printing that on every row would be noise that never
+ * means anything. This way the page stays quiet and a rarity announces itself.
+ */
+
+interface Props {
+  alerts: PublicAlert[]
+  /** h2 on the larm page, h3 under a section heading on the home page. */
+  headingLevel?: 2 | 3
+  /** "changes": print the year when it changes. "other-years": only when it isn't this one. */
+  years?: "changes" | "other-years"
+  /**
+   * Show the photos. False on the home page, where the lead article is meant
+   * to be the one loud thing — four full-width member photos under it made the
+   * larm section the biggest thing on the page, and added 1.5 MB. The photos
+   * are the point of /larm, which "Alla larm" leads to.
+   */
+  photos?: boolean
+}
+
+const { alerts, headingLevel = 2, years = "changes", photos = true } = Astro.props
+const Heading = headingLevel === 2 ? "h2" : "h3"
+const thisYear = stockholmYear(new Date())
+
+const yearLabel = (index: number): number | null => {
+  const alert = alerts[index]
+  if (!alert) return null
+  const year = stockholmYear(alert.observedAt)
+  if (years === "other-years") return year === thisYear ? null : year
+  const previous = alerts[index - 1]
+  return previous && stockholmYear(previous.observedAt) === year ? null : year
+}
+---
+
+<ol class="flex flex-col gap-9">
+  {
+    alerts.map((alert, index) => {
+      const year = yearLabel(index)
+      const rare = isRare(alert.rarity)
+      return (
+        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
+          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-2 md:flex-col md:gap-x-0 md:pt-[0.25rem]">
+            <time datetime={isoDateTime(alert.observedAt)} class="flex flex-wrap gap-x-2 md:flex-col">
+              <span>{formatDate(alert.observedAt, "short")}</span>
+              {year !== null && <span>{year}</span>}
+              <span>{formatDate(alert.observedAt, "clock")}</span>
+            </time>
+          </p>
+          <div class="flex flex-col gap-1">
+            <Heading class="flex flex-wrap items-baseline gap-x-2 text-lg leading-snug font-semibold text-pretty">
+              <a href={`/larm/${alert.id}`} class="decoration-primary underline-offset-4 hover:underline">
+                {alert.species}
+              </a>
+              {alert.count !== null && alert.count > 1 && (
+                <span class="text-muted-foreground font-normal">{alert.count} ex.</span>
+              )}
+              {alert.rarity <= RARITY_WORTH_SAYING && (
+                <span class:list={["type-meta", rare ? "text-rarity" : "text-muted-foreground"]}>
+                  {rarityLabel(alert.rarity)}
+                </span>
+              )}
+            </Heading>
+            <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
+              <span>{alert.place}</span>
+              <span>{alert.observer ?? ANONYMOUS_OBSERVER}</span>
+            </p>
+            {photos && alert.photoUrl && (
+              <img
+                src={alert.photoUrl}
+                alt={`Foto av ${alert.species}`}
+                loading="lazy"
+                decoding="async"
+                class="mt-2 aspect-3/2 w-full rounded-[4px] object-cover"
+              />
+            )}
+          </div>
+        </li>
+      )
+    })
+  }
+</ol>

@@ -100,6 +100,10 @@ on conflict (slug) do nothing;
 insert into public.pages (parent_id, kind, slug, title, link_url, description, body_html, show_in_menu, sort_order, status, published_at)
 values
   (null, 'link', 'exempel-artiklar', 'Artiklar', '/artiklar', '', '', true, 10, 'published', now() - interval '30 days'),
+  -- Larm is a real section of the site (step 4), not dummy content, but the
+  -- menu is built from the page tree, so it needs a row. Step 8 rebuilds the
+  -- tree for real and keeps this entry (docs/design.md, "Menu proposal").
+  (null, 'link', 'exempel-larm', 'Larm', '/larm', '', '', true, 15, 'published', now() - interval '30 days'),
   (null, 'page', 'exempel-obsar', 'Obsar', null, 'Rapportera, följ och räkna fåglarna i Markaryds kommun.', $html$<p>Klubbens medlemmar rapporterar sina fynd på Artportalen. Här hittar du vägen dit, och till listorna över kommunens fåglar.</p>$html$, true, 20, 'published', now() - interval '30 days'),
   (null, 'page', 'exempel-klubben', 'Klubben', null, 'Om Markaryds Fågelklubb och hur man blir medlem.', $html$<p>Markaryds Fågelklubb samlar alla som tycker om fåglar och natur i Markaryds kommun.</p>$html$, true, 30, 'published', now() - interval '30 days')
 on conflict on constraint pages_parent_slug_unique do nothing;

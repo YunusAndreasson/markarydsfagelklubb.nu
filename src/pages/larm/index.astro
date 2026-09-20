@@ -1,0 +1,84 @@
+---
+export const prerender = false
+
+import AlertList from "@/components/site/AlertList.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { decodeAlertCursor, encodeAlertCursor } from "@/lib/alert-keyset"
+import { listPublicAlerts } from "@/lib/public-alerts"
+import { loadNavigation } from "@/lib/public-content"
+
+/**
+ * Twelve rather than the articles' twenty: most larm carry a photo, member
+ * photos are about half a megabyte each and there is no transform service, so
+ * a longer page would be a heavy one. `loading="lazy"` means a visitor who
+ * doesn't scroll pays for two or three.
+ */
+const PAGE_SIZE = 12
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 503 })
+
+const params = Astro.url.searchParams
+const [navigation, page] = await Promise.all([
+  loadNavigation(db),
+  listPublicAlerts({
+    limit: PAGE_SIZE,
+    before: decodeAlertCursor(params.get("fore")),
+    after: decodeAlertCursor(params.get("efter")),
+  }),
+])
+if (!page.ok) return new Response("Larmen kunde inte läsas just nu.", { status: 503 })
+
+const { alerts, older, newer } = page.value
+const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCursor>[0]) =>
+  `/larm?${new URLSearchParams({ [param]: encodeAlertCursor(cursor) })}`
+---
+
+<SiteLayout
+  title="Larm"
+  description="Fynd som medlemmarna larmat om i Markaryds Fågelklubbs app."
+  menu={navigation.menu}
+>
+  <div class="flex flex-col gap-10">
+    <header class="flex flex-col gap-3 md:pl-[7rem]">
+      <h1 class="type-title">Larm</h1>
+      <p class="type-ingress max-w-prose">
+        Fynd som medlemmarna larmat om i klubbens app. Platsen visas ungefärligt, som närmaste
+        lokal.
+      </p>
+    </header>
+
+    {
+      alerts.length === 0 ? (
+        <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+          Inga larm att visa ännu. Klubbens larm skickas från appen och dyker upp här.
+        </p>
+      ) : (
+        <AlertList alerts={alerts} headingLevel={2} years="changes" />
+      )
+    }
+
+    {
+      (older || newer) && (
+        <nav aria-label="Fler larm" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+          {newer && (
+            <a
+              href={link("efter", newer)}
+              class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4"
+            >
+              Nyare larm
+            </a>
+          )}
+          {older && (
+            <a
+              href={link("fore", older)}
+              class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4"
+            >
+              Äldre larm
+            </a>
+          )}
+        </nav>
+      )
+    }
+  </div>
+</SiteLayout>
