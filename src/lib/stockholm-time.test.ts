@@ -71,6 +71,13 @@ describe("formatDate", () => {
     expect(formatDate(date, "weekdayName")).toBe("lördag")
     expect(formatDate(date, "dayMonth")).toBe("19 september")
     expect(formatDate(date, "dateTime")).toBe("19 sep. 2026 10:05")
+    expect(formatDate(date, "clock")).toBe("10:05")
+  })
+
+  it("shows a larm's clock time on the 24-hour scale the club uses", () => {
+    expect(formatDate("2026-09-19T05:14:00Z", "clock")).toBe("07:14")
+    // Midnight is 00:00, never 24:00 — sv-SE's default without hourCycle h23.
+    expect(formatDate("2026-09-18T22:00:00Z", "clock")).toBe("00:00")
   })
 
   it("puts a post just after midnight on the right day and year", () => {

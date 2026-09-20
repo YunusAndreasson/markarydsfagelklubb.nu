@@ -108,6 +108,13 @@ const FORMATS = {
   }),
   /** "19 sep." */
   short: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric", month: "short" }),
+  /** "08:15" — a larm has a time of day; an article doesn't. */
+  clock: new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }),
   /** "19 sep. 2026 10:05" */
   dateTime: new Intl.DateTimeFormat("sv-SE", {
     timeZone: TIME_ZONE,
