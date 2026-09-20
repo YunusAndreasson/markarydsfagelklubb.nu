@@ -75,9 +75,11 @@ const heading = (key: string) => {
       ))
     }
 
+    {/* The link says what it does, not just where it goes: a bare month name
+        at the foot of the page reads as a stray heading. */}
     <nav aria-label="Tidigare i programmet" class="md:pl-[7rem]">
       <a href={`/kalender/${previousMonth}`} class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
-        {heading(previousMonth)}
+        Tidigare i programmet
       </a>
     </nav>
   </div>

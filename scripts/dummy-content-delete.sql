@@ -10,6 +10,7 @@
 begin;
 
 delete from public.articles where slug like 'exempel-%';
+delete from public.events where slug like 'exempel-%';
 
 -- Children before parents: pages refuse to be deleted while subpages exist.
 delete from public.pages where slug like 'exempel-%' and parent_id is not null;

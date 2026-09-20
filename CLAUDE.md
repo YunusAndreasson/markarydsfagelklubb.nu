@@ -5,15 +5,17 @@ markarydsfagelklubb.nu with a public site and an admin area (the CMS). All UI
 copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
 comments and docs are English.
 
-**Status: step 4 — larm på webben.** On top of the stack, the Supabase wiring,
+**Status: step 5 — kalender.** On top of the stack, the Supabase wiring,
 CI, local shipping and the gated `/admin` that exactly one administrator signs
 in to (email + password), the site has its own tables (pages, articles,
-categories, media) and the `site-media` bucket; `/admin` edits them with a
-Tiptap editor, and the public site renders them. The article and page content
-is dummy (`exempel-` slugs) until the WordPress import in step 8. **Step 4
-added the public larm feed** (`/larm`), which publishes the live app's alert
-log — real member data, read with the site's first Worker secret. Don't build
-features ahead of the step you've been asked for. The full agenda, the
+categories, media, events) and the `site-media` bucket; `/admin` edits them
+with a Tiptap editor, and the public site renders them. The article, page and
+event content is dummy (`exempel-` slugs) until the WordPress import in step 8.
+**Step 4 added the public larm feed** (`/larm`), which publishes the live app's
+alert log — real member data, read with the site's first Worker secret.
+**Step 5 added the kalender**: `/kalender` and `/kalender.ics`, the club's own
+programme, with no member data in it. Don't build features ahead of the step
+you've been asked for. The full agenda, the
 decisions and the step order are in `docs/roadmap.md`; plan a step from its
 section there. The public site's design is in `docs/design.md`.
 

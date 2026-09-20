@@ -494,6 +494,30 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
   policy only exposes article covers. Inline images in the description still
   work.
 
+**How it ended up:**
+
+- `/kalender` (upcoming, grouped by month), `/kalender/2026-10` (one month,
+  with the neighbouring months linked), `/kalender/<slug>`, `/kalender.ics`,
+  and the next event on the home page above the lead.
+- The `events` table copies the articles publishing model exactly, so
+  `src/lib/publish-state.ts` drives drafts and scheduling unchanged, and a
+  draft is invisible because of the `to anon` policy rather than a filter in a
+  query.
+- **A month URL and an event slug share one route.** `2026-10` is a valid slug
+  shape, so `/kalender/[slug].astro` checks the month pattern first and
+  `parseEventForm` refuses to give an event a name of that shape. Both halves
+  are tested.
+- `src/lib/ical.ts` is pure and tested because iCalendar is unforgiving in ways
+  a browser never shows: CRLF endings, folding at 75 **octets** (not
+  characters, so å counts twice), and `;` `,` `\` escaped inside text. An
+  all-day event's `DTEND` is the day after it finishes, because that field is
+  exclusive.
+- An event with no end time gets **no `DTEND`**. RFC 5545 reads that as ending
+  when it starts; inventing a length would put a wrong time in someone's
+  calendar.
+- The feed is cached for an hour: calendar clients poll on their own schedule
+  and ignore anything shorter.
+
 ### F4 — Larm (public alert feed, with photos) — *viktig funktion*
 
 **Decided 2026-09-19:** display only. The site never sends alerts.

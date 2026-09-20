@@ -102,7 +102,9 @@ const description = month
           <EventList events={events} />
         )}
 
-        <nav aria-label="Fler månader" class="flex flex-wrap justify-between gap-4 md:pl-[7rem]">
+        {/* Side by side in the reading column, like the article paging: pushed
+            to the edges of the 64rem container they read as unrelated. */}
+        <nav aria-label="Fler månader" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
           <a href={`/kalender/${previous}`} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
             {monthLabel(previous)}
           </a>
@@ -136,15 +138,13 @@ const description = month
             {endLabel && <span class="mt-1">till {endLabel}</span>}
             {kind && <span class="mt-1">{kind}</span>}
           </div>
-          {event.summary && <p class="type-ingress text-muted-foreground md:col-start-2 md:row-start-3">{event.summary}</p>}
+          <div class="flex flex-col gap-1 md:col-start-2 md:row-start-3">
+            {/* Where to meet is the fact a member acts on, so it leads here,
+                the way the larm page leads with the place it was seen. */}
+            {event.place && <p class="text-lg">{event.place}</p>}
+            {event.summary && <p class="type-ingress text-muted-foreground">{event.summary}</p>}
+          </div>
         </header>
-
-        {event.place && (
-          <p class="flex flex-wrap gap-x-3 md:ml-[7rem] md:max-w-[38rem]">
-            <span class="text-muted-foreground">Plats</span>
-            <span>{event.place}</span>
-          </p>
-        )}
 
         {event.body_html && <div class="content md:ml-[7rem]" set:html={event.body_html} />}
 

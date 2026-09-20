@@ -121,4 +121,105 @@ from (values
 join public.pages parent on parent.slug = child.parent_slug and parent.parent_id is null
 on conflict on constraint pages_parent_slug_unique do nothing;
 
+-- The programme (step 5). Its menu entry sits between Larm and Obsar, where
+-- the signed-off menu puts it, and is labelled "Program" although the route is
+-- /kalender (docs/roadmap.md, F3).
+insert into public.pages (parent_id, kind, slug, title, link_url, description, body_html, show_in_menu, sort_order, status, published_at)
+values
+  (null, 'link', 'exempel-program', 'Program', '/kalender', '', '', true, 18, 'published', now() - interval '30 days')
+on conflict on constraint pages_parent_slug_unique do nothing;
+
+-- Events, varied on purpose: one soon with a time and an anmälan link, a
+-- multi-day all-day trip, a meeting with a start and an end the same evening,
+-- one that has been (so the month pages have something to show backwards), one
+-- draft and one scheduled. All-day rows are stored at Swedish midnight, which
+-- is what the admin form does too.
+insert into public.events (slug, title, summary, place, kind, registration_url, starts_at, ends_at, all_day, status, published_at, body_html)
+values
+  (
+    'exempel-ugglespaning-vid-hualtet',
+    'Ugglespaning vid Hualtet',
+    'Vi lyssnar efter pärluggla och sparvuggla i skymningen. Ta med ficklampa och något varmt att dricka.',
+    'Samling vid Ekebacken',
+    'exkursion',
+    'mailto:webmaster@markarydsfagelklubb.nu',
+    now() + interval '5 days',
+    null,
+    false,
+    'published',
+    now() - interval '10 days',
+    $html$<p>Pärlugglan ropar som mest i mars och april, och Hualtet är en av kommunens säkraste lokaler. Vi står still och lyssnar, så klä dig varmare än du tror att du behöver.</p><p>Turen tar ungefär tre timmar och passar även den som är ovan. Kikare behövs inte i mörkret, men en ficklampa är bra att ha på vägen tillbaka.</p>$html$
+  ),
+  (
+    'exempel-resa-till-falsterbo',
+    'Resa till Falsterbo',
+    'Två dagar vid Nabben när sträcket är som bäst. Vi samåker och övernattar i Skanör.',
+    'Falsterbo',
+    'resa',
+    'mailto:webmaster@markarydsfagelklubb.nu',
+    date_trunc('day', (now() + interval '24 days') at time zone 'Europe/Stockholm') at time zone 'Europe/Stockholm',
+    date_trunc('day', (now() + interval '25 days') at time zone 'Europe/Stockholm') at time zone 'Europe/Stockholm',
+    true,
+    'published',
+    now() - interval '10 days',
+    $html$<p>Falsterbonäset i september är svårslaget. Med rätt vind drar rovfåglarna lågt över Nabben, och på morgonen är buskagen fulla av tättingar.</p><p>Anmäl dig senast en vecka innan, så ordnar vi samåkning.</p>$html$
+  ),
+  (
+    'exempel-manadsmote-pa-ekebacken',
+    'Månadsmöte på Ekebacken',
+    'Bildvisning från sommarens resor, och kaffe.',
+    'Ekebacken',
+    'mote',
+    null,
+    now() + interval '40 days',
+    now() + interval '40 days' + interval '2 hours',
+    false,
+    'published',
+    now() - interval '10 days',
+    $html$<p>Ta med dina egna bilder om du vill visa något. Vi har projektor.</p>$html$
+  ),
+  (
+    'exempel-vinterfagelrally',
+    'Vinterfågelrally',
+    'Klubbens egen tävling: flest arter i kommunen under ett dygn.',
+    'Hela kommunen',
+    'tavling',
+    null,
+    date_trunc('day', (now() - interval '35 days') at time zone 'Europe/Stockholm') at time zone 'Europe/Stockholm',
+    null,
+    true,
+    'published',
+    now() - interval '60 days',
+    $html$<p>Lagen startar när de vill och rapporterar till sekreteraren innan midnatt.</p>$html$
+  ),
+  (
+    'exempel-utkastevenemang',
+    'Utkastevenemang',
+    'Ska inte synas på webbplatsen.',
+    '',
+    'ovrigt',
+    null,
+    now() + interval '12 days',
+    null,
+    false,
+    'draft',
+    null,
+    $html$<p>Ett utkast.</p>$html$
+  ),
+  (
+    'exempel-schemalagt-evenemang',
+    'Schemalagt evenemang',
+    'Syns först när publiceringstiden passerat.',
+    'Ekebacken',
+    'kurs',
+    null,
+    now() + interval '60 days',
+    null,
+    false,
+    'published',
+    now() + interval '30 days',
+    $html$<p>Ett schemalagt evenemang.</p>$html$
+  )
+on conflict (slug) do nothing;
+
 commit;

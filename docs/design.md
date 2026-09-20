@@ -150,9 +150,9 @@ Alla artiklar                                           Alla artiklar
 - **"Tidigare"** holds the next 8 articles: the date in the margin column
   (day and month; the year only when it differs from the current year), the
   title as the link, one line of ingress.
-- **Room for later steps:** larm (step 4) goes between the lead and
-  "Tidigare", and the next program item (step 5) above the lead. Both slots are
-  empty until those steps; no placeholders are shown.
+- ~~**Room for later steps:** larm (step 4) goes between the lead and
+  "Tidigare", and the next program item (step 5) above the lead.~~ Both are
+  there now. Each shows nothing at all when it is empty; no placeholders.
 
 ### Article list (`/artiklar`, categories)
 
@@ -232,6 +232,57 @@ desktop
   again on the detail page. Readers deserve to know that "Nära Hualtet" is a
   deliberate blur, not a measurement.
 
+### Kalender (`/kalender`, `/kalender/<månad>`, `/kalender/<slug>`)
+
+The programme is the one part of the site that is read **forwards**. Everything
+else here is a record of what happened; this is what a member is deciding
+whether to come to. The row is the larm row's grammar with two changes that
+follow from that:
+
+```
+desktop
+September 2026                               ← month heading
+
+fredag         Ugglespaning vid Hualtet      ← title is the link
+25 sep.        Exkursion   Samling vid Ekebacken
+14:38          Vi lyssnar efter pärluggla …
+```
+
+- **The weekday is spelled out**, because that is how the club writes its
+  programme ("Lördag 21 februari – Ugglespaning") and it is what a member reads
+  first when deciding whether they can come. Larm and articles print only the
+  date.
+- **No year in the margin.** The month heading above the list carries it, so
+  repeating it per row would be the noise the article list avoids by printing
+  the year only when it changes.
+- **Type and place are two elements in a flex row**, not `Exkursion · Ekebacken`
+  — the same rule as the larm row's place and observer.
+- **"Övrigt" prints nothing.** The type is shown only when it says something;
+  an event whose type is "other" is described by its own title.
+- **A grid was rejected.** The club runs a couple of events a month, so a month
+  grid would be mostly empty squares, and it reads badly at 360 px. The month
+  pages are the same list, filtered, with the neighbouring months linked at the
+  foot — side by side in the reading column, not pushed to the container's
+  edges, where they read as unrelated.
+- **The clock is dropped for an all-day event** rather than printed as 00:00.
+
+An event's own page follows the article page, with the **place where the
+article has its ingress**: where to meet is the fact a member acts on, so it
+leads, exactly as the larm page leads with where the bird was. The margin
+carries weekday, date, year, time, then the type. "Anmäl dig" is a plain green
+link, not a button — the site spends colour on what can be clicked and keeps
+the one button for elsewhere.
+
+On the **home page** the next event sits **above the lead**, as one quiet line:
+a small heading, the weekday and time, the title as the link. It is the first
+thing on the page and the smallest, which is the point — the lead article stays
+the one loud thing.
+
+`/kalender.ics` is offered on `/kalender` as "Prenumerera på programmet", in a
+sentence that says what subscribing does. It is not offered on an event's page,
+where it would promise to add that one event and actually add the whole
+programme.
+
 ### Page
 
 The page title and body, in the same column. A section page (one with children)
@@ -253,7 +304,8 @@ out to Artportalen. The proposal is **five sections**, members' things first:
 ```
 Artiklar              /artiklar                 (link entry)
 Larm                  /larm                     (link entry, added in step 4)
-Program               /program                  Allmänt, Årsprogram 2026 (kalender from step 5)
+Program               /kalender                 (link entry, added in step 5; it replaces the
+                                                hand-edited Årsprogram page)
 Obsar                 /obsar                    one section for today's "Obsar" and "Listor":
                                                   Rapportera på Artportalen, Kommunobservationer,
                                                   Årslista {year}, Markarydslistan, Observatörsligan,
