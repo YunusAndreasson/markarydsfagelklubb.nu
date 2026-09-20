@@ -392,7 +392,7 @@ with the reading column, in muted text on the page background, with no band of
 colour. Links to Medlemskap and Kontaktpersoner come with the real page tree
 (step 8); until then, those pages don't exist.
 
-## Menu proposal (for sign-off)
+## Menu (signed off 2026-09-20)
 
 Today's WordPress menu has 10 top-level items, and four of them are mostly links
 out to Artportalen. The proposal is **five sections**, members' things first:
@@ -419,7 +419,7 @@ Klubben               /om-foreningen            Verksamhet, Cinclus, Medlemskap,
 - **Moved pages change path.** Medlemskap moves from `/medlemsskap/` to
   `/om-foreningen/medlemskap`, and `/svalan/` and `/listor/` become `/obsar`.
   Their old URLs go into step 8's redirect map along with the posts'.
-- **Step 8 builds the tree from this sign-off.** Step 3 runs on dummy pages
+- **Step 8 builds the tree from this, signed off 2026-09-20.** Step 3 runs on dummy pages
   that mirror the shape (`exempel-` slugs).
 - **Year-dependent link text** ("Årslista {year}") is fixed by hand each New
   Year until F7 phase A computes it.

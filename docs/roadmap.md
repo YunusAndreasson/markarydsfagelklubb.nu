@@ -450,12 +450,25 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
   signs off.
 - **New tables:** `articles`, `categories` (or a text enum), maybe `media`.
 - **Depends on:** D2–D6, and F1's editor.
-- **Open, before the import:**
-  - the category mapping;
-  - hotlinked external images: try to copy them or drop them?
-  - the 170 unattached media files: import or skip?
-  - the 57 PDFs (Cinclus archive): public, as on WordPress today?
-  - keep original publish dates and authors? (Recommended: yes.)
+- **Answered 2026-09-20:**
+  - **Hotlinked external images: copy the ones that still answer** into
+    `site-media` and rewrite the URL; **drop the `<img>` for any that are
+    dead.** The article then survives its source site disappearing, and the
+    page stops telling `vinterfaglar.se` and the others that someone read it.
+    The importer logs what it copied and what it dropped, per article.
+  - **Unattached media: import exactly what the content references.**
+    WordPress records only the post a file was *uploaded* to, so "unattached"
+    does not mean unused — a body can reference one by URL. The importer walks
+    every body anyway, so it takes what is referenced and skips the rest,
+    which avoids both broken images and dead weight.
+  - **The 57 PDFs (Cinclus) stay public**, as they are on WordPress today. No
+    new exposure, and it closes D3's last open item. (Keeping them behind
+    `/admin` was rejected: there is no member login (D2), so members who use
+    the archive would simply lose it.)
+  - **Original publish dates and authors are kept.**
+- **Open, before the import:** the **category mapping** — 45 WordPress
+  categories down to a handful. It needs the club's sign-off, so it has lead
+  time and should be raised with them now.
 
 ### F3 — Kalender (events)
 
@@ -771,13 +784,13 @@ time.
 |---|---|---|---|
 | D1 | What the public sees of the app's data | **Public**, since only the admin signs in (follows from D2). Observer names **shown**, resolved live from `profiles`; **all** larm published, with a per-larm hide in `/admin`; place coarsened to the nearest lokal within 3 km, never a coordinate; the policy update moved to the launch checklist. *Open:* the protected-species list | 2026-09-19, completed 2026-09-20 |
 | D2 | Web sign-in | **One administrator** (yunus@edenmind.com), **email + password**; no member login | 2026-09-19 |
-| D3 | Site media storage | **Public Supabase bucket `site-media`** (Pro plan; the library is ~0.45 GB, so no R2), **three pre-generated widths** served with `srcset`. *Open until step 8:* PDFs public | 2026-09-19 |
+| D3 | Site media storage | **Public Supabase bucket `site-media`** (Pro plan; the library is ~0.45 GB, so no R2), **three pre-generated widths** served with `srcset`. **PDFs public**, answered 2026-09-20 | 2026-09-19, completed 2026-09-20 |
 | D4 | Rendering and routing | **All public HTML through the Worker** (`["/*", "!/_astro/*", …]`), DB content server-rendered with a short cache; the 404 and legal pages stay prerendered | 2026-09-19 |
 | D5 | Editor | **Tiptap storing HTML**, sanitized on save; **drafts + scheduled publishing, no revisions**; embed allowlist starts with Artportalen and Google Maps | 2026-09-19 |
 | D6 | URLs | **Pages keep their WP paths; articles at `/artiklar/<slug>`** with the WP slug; old post URLs 301 from a **Worker map** (`_redirects` doesn't apply to Worker responses) | 2026-09-19 |
-| F1 | Menu | **Built from the page tree** (parent, order, "visa i menyn", link-only entries); the design pass proposes the structure and the user signs it off | 2026-09-19 |
+| F1 | Menu | **Built from the page tree** (parent, order, "visa i menyn", link-only entries). **Signed off 2026-09-20**: the six sections in `docs/design.md`, including the moved paths — Medlemskap to `/om-foreningen/medlemskap`, and `/svalan/` and `/listor/` to `/obsar` — whose old URLs join step 8's redirect map | 2026-09-19, signed off 2026-09-20 |
 | D7 | Kommun boundary; league from observations or alerts | **Boundary: built in step 4** — `isInsideKommun` ray-casts against OSM relation 935621 (`src/data/markaryd-boundary.json`), no PostGIS. **The league half is moot**: Larmligan comes from Artportalen (F6), so nothing is computed from the club's own reports | boundary 2026-09-20, league moot 2026-09-20 |
-| F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile | 2026-09-19 |
+| F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile. **Answered 2026-09-20:** hotlinked images copied when they still answer and dropped when dead; unattached media imported only where the content references them; the 57 Cinclus PDFs public as today; original dates and authors kept. *Still open:* the category mapping, which needs the club | 2026-09-19, mostly answered 2026-09-20 |
 | F3 | Kalender | **No recurring events** (copy one instead); old Program posts **stay articles**; **iCal feed now** (`/kalender.ics`); built so the **app can read events later** (`to anon`). Route `/kalender`, menu item "Program"; a **fixed type list**; a **month-grouped list**, no grid; place is free text; no cover image | 2026-09-20 |
 | F4 | Larm scope | **Display only.** The site never sends alerts | 2026-09-19 |
 | F5 | Lokaler | **All 61 lokaler pinned**, active ones marked (the app's 14-day rule), **no clustering, never a larm pin**; a page per lokal at `/lokaler/<slug>` listing larm as **"På lokalen" (300 m, the app's rule) and "I närheten" (3 km, `NEAR_KM`)**; the **9 WP lokal pages 301 there** and their text becomes `locations.description`, carried over by hand; **Leaflet + OpenStreetMap** raster tiles | 2026-09-20 |
