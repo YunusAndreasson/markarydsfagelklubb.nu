@@ -283,6 +283,102 @@ sentence that says what subscribing does. It is not offered on an event's page,
 where it would promise to add that one event and actually add the whole
 programme.
 
+### Lokaler (`/lokaler`, `/lokaler/<slug>`)
+
+A map is the one thing on this site that resists a reading column, so it gets
+treated as a picture: **the map is `/lokaler`'s one loud thing**, exactly as the
+lead photo is the home page's, at the container's full 64rem with the 4px radius
+photos use. The register under it is not a second copy of the map — it is the
+map's keyboard and screen-reader equivalent, which is why the island marks
+itself `aria-hidden` and its markers are not focusable. Put 61 pins in the tab
+order and you have made the page worse for the people the register serves.
+
+```
+Lokaler
+Klubbens lokaler i Markaryds kommun. En grön prick betyder att någon
+larmat därifrån de senaste två veckorna.        ← the legend as a sentence, not a legend box
+
+[ kartan, 64rem, kommungränsen streckad, 61 prickar ]
+
+A      Agghult/Traryd
+       Altaböke sjö
+       Anderslöv             1 larm   senast 20 aug.
+B      Broarna i Timsfors    9 larm   senast 16 aug.
+```
+
+- **The frame is near-square** (`aspect-square`, `md:aspect-3/2`). The kommun is
+  19 km by 18, so a wide frame shows no more of it — it just zooms out until
+  Laholm and Osby are on screen and the club's own ground is a patch in the
+  middle. This was the first draft and the screenshot settled it.
+- **The letter takes the margin**, printed only when it changes, which is the
+  article list's year device applied to a register. Swedish collation, so Å, Ä
+  and Ö file at the end and the heading agrees with the sort. On a phone the
+  margin collapses and the letter **disappears** rather than sitting alone above
+  the name, where it would only repeat the name's first letter.
+- **The tally is two elements in a flex row**, `12 larm` and `senast 12 sep.`,
+  never a middle-dot string. A lokal nobody has larmed from prints nothing, the
+  way a common bird prints no rarity.
+- **The tally counts only larm sent *from* the lokal** — the app's 300 m rule,
+  nearest-wins. Counting the three-kilometre band too was tried and is wrong:
+  109 larm lie within 3 km of Broarna i Timsfors and 9 came from it, and those
+  109 are mostly the same reports counted again at every other lokal in town. A
+  register built on that ranks a dozen places identically and calls each a
+  hotspot. The 78 "at" larm partition cleanly across 22 lokaler.
+- **Pins are dots, not teardrops** — 9px, in the site's tokens, with a
+  paper-coloured ring so they read over water, forest and road. Green for a larm
+  in the last fortnight, Blyerts when quiet, matching the app's legend so a
+  member reads the two screens the same way. This is the second place the site
+  spends colour on status rather than action, after `--rarity`, and it earns it
+  the same way: the app already teaches the code.
+- **No popup.** Leaflet's default bubble is a white shadowed rounded card — the
+  thing this design refuses everywhere else. Hover or touch shows a tooltip with
+  the name; a click goes to the lokal's page.
+- **The kommun's border is drawn** as a dashed ink hairline, from the polygon
+  step 4 already needed (`src/data/markaryd-boundary.json`). Dashed because an
+  atlas draws a boundary that way and it reads as one; the tiles draw the
+  neighbouring län and kommuner too, so ours has to be the darkest line.
+- **The map never eats the page's scroll** (`scrollWheelZoom` off; the zoom
+  buttons and pinch-zoom remain), and its animation respects
+  `prefers-reduced-motion`. In dark mode the tiles are **dimmed, not inverted** —
+  inverting turns water into land and reads as a different map.
+
+A lokal's own page follows the article page, with the map **where the article
+has its cover photo**: where it is, is what a visitor acts on, the same reason
+the larm page leads with where the bird was. It is a still — one dot, no
+dragging, no zooming — at the reading column's width.
+
+```
+Lokaler / Reningsdammarna
+              Reningsdammarna
+              [ stillbild, 38rem, 2:1 ]
+              Beskrivning, när det finns en          ← 4 of 61 have one today
+
+På lokalen
+15 sep.       Stjärtmes  9 ex.
+18:17         Anna Andersson                      ← no place: the heading said it
+
+I närheten
+              De 12 senaste larmen inom tre kilometer från lokalen.
+              Platsen för ett larm är alltid ungefärlig.
+ 2 sep.       Kungsfiskare
+06:28         Nära Klintbadet   Per Persson
+```
+
+- **"På lokalen" prints no place.** The heading has already said where these
+  larm came from, and the place ladder would print "Nära Reningsdammarna" on
+  Rallvägen's page — true, since the two are neighbours, and a flat
+  contradiction to read. The first build did exactly that and the screenshot
+  caught it.
+- **"På lokalen" is printed whole; "I närheten" stops at twelve.** The first is
+  what the page is about and is the number the register promised, so all of it
+  must be there. The second is context, and 3 km around tätorten is 60 larm and
+  growing.
+- **No counts in the headings** and no "Andra lokaler i närheten" at the foot.
+  The site writes "Fler larm" and "I det här avsnittet", not "Fler larm (6)",
+  and the breadcrumb already leads back to the map.
+- A lokal with nothing says `Inga larm har skickats härifrån ännu.` and offers
+  `Se alla larm`.
+
 ### Page
 
 The page title and body, in the same column. A section page (one with children)
@@ -310,7 +406,8 @@ Obsar                 /obsar                    one section for today's "Obsar" 
                                                   Rapportera på Artportalen, Kommunobservationer,
                                                   Årslista {year}, Markarydslistan, Observatörsligan,
                                                   the five regions (link entries)
-Lokaler               /fagellokaler             the 9 lokal pages, WordPress paths kept
+Lokaler               /lokaler                  the map and the 61 lokal pages (step 6). The 9 WP
+                                                lokal pages 301 here in step 8
 Klubben               /om-foreningen            Verksamhet, Cinclus, Medlemskap, Kontaktpersoner,
                                                   Tävlingar (Vinterfågelrally, Smålandsrallyt),
                                                   Fågelholkar, Länkar

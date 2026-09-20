@@ -7,7 +7,16 @@ import {
 } from "./alert-dto"
 import { type AlertCursor, newerThan, olderThan } from "./alert-keyset"
 import { observerIndex, observerName } from "./alert-observer"
-import { coarsePlace, type NamedLocation } from "./alert-place"
+import { coarsePlace } from "./alert-place"
+import {
+  buildLokaler,
+  byName,
+  findLokal,
+  type Lokal,
+  type LokalRow,
+  type LokalSummary,
+} from "./lokal"
+import { classifyForLokal, type LarmPoint, lokalActivity, nearBox } from "./lokal-alerts"
 import { type AlertsBackend, openAlertsBackend } from "./supabase-secret"
 
 /**
@@ -65,14 +74,26 @@ async function loadHiddenIds(backend: AlertsBackend): Promise<LarmResult<string[
   return { ok: true, value: data.map((row) => row.alert_id) }
 }
 
-async function loadLocations(backend: AlertsBackend): Promise<LarmResult<NamedLocation[]>> {
+/**
+ * The club's 61 lokaler, whole.
+ *
+ * Wider than the place ladder strictly needs (which only wants a name and a
+ * point) because step 6 gives every lokal a page, and a second read of the
+ * same 61 rows on the same request would buy nothing. Nothing here is member
+ * data: a lokal is a public place name, a position and the club's own
+ * description of it.
+ */
+async function loadLocations(backend: AlertsBackend): Promise<LarmResult<LokalRow[]>> {
   const { data, error } = await backend.db
     .from("locations")
-    .select("name, latitude, longitude")
+    .select("id, name, latitude, longitude, description")
     .limit(REFERENCE_LIMIT)
   if (error) {
     console.error(`mafk-web: load lokaler failed — ${error.message}`)
     return failed
+  }
+  if (data.length === REFERENCE_LIMIT) {
+    console.error("mafk-web: lokaler hit the row cap; the lokal read needs paging")
   }
   return { ok: true, value: data }
 }
@@ -99,7 +120,7 @@ async function loadObservers(backend: AlertsBackend): Promise<LarmResult<Map<str
   return { ok: true, value: observerIndex(data) }
 }
 
-type Context = { hidden: string[]; locations: NamedLocation[]; observers: Map<string, string> }
+type Context = { hidden: string[]; locations: LokalRow[]; observers: Map<string, string> }
 
 async function loadContext(backend: AlertsBackend): Promise<LarmResult<Context>> {
   const [hidden, locations, observers] = await Promise.all([
@@ -259,4 +280,191 @@ export async function openAlertPhoto(
     console.error("mafk-web: larm photo — storage unreachable")
     return failed
   }
+}
+
+/**
+ * Everything the lokal pages need to read (docs/roadmap.md, F5).
+ *
+ * The larm feed pages, so it never asks for more than twelve rows. A lokal
+ * page can't: to say how many larm a lokal has had, or which of them are
+ * within 300 m, you have to have looked at all of them. Supabase caps a
+ * response at 1000 rows and the club sends roughly 500 larm a year, so a plain
+ * `.limit(1000)` would quietly start undercounting in about eighteen months.
+ * {@link sweepAlerts} walks the same `(sent_at, id)` keyset the feed uses
+ * instead, and says so loudly if it ever hits the ceiling below.
+ */
+
+/** Ten pages is two decades of larm at the current rate — and a bug if reached. */
+const MAX_SWEEP_PAGES = 10
+const SWEEP_PAGE_SIZE = 1000
+
+/** The lean row the map's tally needs: no species, no observer, no photo. */
+const LARM_POINT_SELECT = "id, sent_at, latitude, longitude, location_id"
+
+type SweptPoint = LarmPoint & { id: string }
+
+/** A box to narrow on server-side before the real circular test runs. */
+type SweepBox = { minLat: number; maxLat: number; minLng: number; maxLng: number }
+
+type SweepOptions = {
+  /** Only larm inside this box. Omitted, the sweep reads every larm. */
+  box?: SweepBox | null
+  /**
+   * Also fetch larm that name this lokal, wherever they are. A reporter can
+   * pick a lokal from well outside the box, and their answer outranks the
+   * coordinate (see `lokal-alerts.ts`).
+   */
+  locationId?: number | null
+}
+
+/**
+ * Every larm matching `options`, oldest page last, hidden larm excluded.
+ *
+ * `select` decides how much of each row comes back, so the map's tally reads
+ * five columns and a lokal page reads the full {@link ALERT_SELECT}.
+ */
+async function sweepAlerts<T extends { id: string; sent_at: string }>(
+  backend: AlertsBackend,
+  select: string,
+  hidden: readonly string[],
+  options: SweepOptions = {}
+): Promise<LarmResult<T[]>> {
+  const rows: T[] = []
+  const seen = new Set<string>()
+  let cursor: AlertCursor | null = null
+
+  for (let page = 0; page < MAX_SWEEP_PAGES; page++) {
+    let query = backend.db.from("alerts").select(select)
+    if (hidden.length > 0) query = query.not("id", "in", notIn(hidden))
+    if (options.box) {
+      query = query
+        .gte("latitude", options.box.minLat)
+        .lte("latitude", options.box.maxLat)
+        .gte("longitude", options.box.minLng)
+        .lte("longitude", options.box.maxLng)
+    }
+    if (cursor) query = query.or(olderThan(cursor))
+
+    const { data, error } = await query
+      .order("sent_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(SWEEP_PAGE_SIZE)
+      .overrideTypes<T[], { merge: false }>()
+    if (error) {
+      console.error(`mafk-web: sweep larm failed — ${error.message}`)
+      return failed
+    }
+
+    for (const row of data) {
+      if (seen.has(row.id)) continue
+      seen.add(row.id)
+      rows.push(row)
+    }
+    if (data.length < SWEEP_PAGE_SIZE) return { ok: true, value: await withNamed() }
+
+    const last = data[data.length - 1]
+    if (!last) return { ok: true, value: await withNamed() }
+    cursor = { sentAt: last.sent_at, id: last.id }
+  }
+
+  console.error(
+    `mafk-web: larm sweep stopped at ${MAX_SWEEP_PAGES * SWEEP_PAGE_SIZE} rows; lokal tallies are now short`
+  )
+  return { ok: true, value: await withNamed() }
+
+  /**
+   * The larm that named this lokal but fall outside the box. A separate query
+   * rather than an `or()` branch on every page: there are 21 such larm in the
+   * whole log, and keeping the paged query free of nested `or` keeps the
+   * keyset filter the only one.
+   */
+  async function withNamed(): Promise<T[]> {
+    if (options.locationId === null || options.locationId === undefined) return rows
+    let named = backend.db.from("alerts").select(select).eq("location_id", options.locationId)
+    if (hidden.length > 0) named = named.not("id", "in", notIn(hidden))
+    const { data, error } = await named
+      .order("sent_at", { ascending: false })
+      .limit(SWEEP_PAGE_SIZE)
+      .overrideTypes<T[], { merge: false }>()
+    if (error) {
+      // The box already holds all but a handful; a lokal page short by one
+      // outlying larm beats a 503.
+      console.error(`mafk-web: named-lokal larm failed — ${error.message}`)
+      return rows
+    }
+    for (const row of data) {
+      if (seen.has(row.id)) continue
+      seen.add(row.id)
+      rows.push(row)
+    }
+    return rows
+  }
+}
+
+/**
+ * The club's lokaler with their larm tally, in Swedish alphabetical order —
+ * the register under the map, and the pins on it.
+ *
+ * Carries no member data whatsoever: a name, the club's own position for it,
+ * how many larm it has had and when the last one was.
+ */
+export async function listPublicLokaler(
+  now: Date = new Date()
+): Promise<LarmResult<LokalSummary[]>> {
+  const backend = open()
+  if (!backend.ok) return failed
+
+  const hidden = await loadHiddenIds(backend.value)
+  if (!hidden.ok) return failed
+  const [locations, points] = await Promise.all([
+    loadLocations(backend.value),
+    sweepAlerts<SweptPoint>(backend.value, LARM_POINT_SELECT, hidden.value),
+  ])
+  if (!locations.ok || !points.ok) return failed
+
+  // Every larm is assigned to one lokal at most, so the tallies partition the
+  // log instead of counting the same evening at three neighbouring lokaler.
+  const all = buildLokaler(locations.value)
+  const lokaler = all
+    .map((lokal) => ({ ...lokal, ...lokalActivity(lokal, points.value, all, now) }))
+    .sort(byName)
+  return { ok: true, value: lokaler }
+}
+
+export type PublicLokal = {
+  lokal: Lokal
+  /** Larm the app would also place here: within 300 m, or named by the reporter. */
+  at: PublicAlert[]
+  /** The rest of the three-kilometre band — the larm the feed labels "Nära …". */
+  near: PublicAlert[]
+}
+
+/** One lokal with its larm, or null when no lokal has that slug. */
+export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLokal | null>> {
+  const backend = open()
+  if (!backend.ok) return failed
+  const context = await loadContext(backend.value)
+  if (!context.ok) return failed
+
+  const lokaler = buildLokaler(context.value.locations)
+  const lokal = findLokal(slug, lokaler)
+  if (!lokal) return { ok: true, value: null }
+
+  const rows = await sweepAlerts<AlertRow & { id: string; sent_at: string }>(
+    backend.value,
+    ALERT_SELECT,
+    context.value.hidden,
+    { box: nearBox(lokal), locationId: lokal.id }
+  )
+  if (!rows.ok) return failed
+
+  const at: PublicAlert[] = []
+  const near: PublicAlert[] = []
+  for (const row of rows.value) {
+    const relation = classifyForLokal(lokal, row, lokaler)
+    if (relation === "elsewhere") continue
+    ;(relation === "at" ? at : near).push(publish(row, context.value))
+  }
+  const newestFirst = (a: PublicAlert, b: PublicAlert) => (a.sentAt < b.sentAt ? 1 : -1)
+  return { ok: true, value: { lokal, at: at.sort(newestFirst), near: near.sort(newestFirst) } }
 }

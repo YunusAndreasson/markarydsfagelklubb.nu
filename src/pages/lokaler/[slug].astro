@@ -1,0 +1,115 @@
+---
+export const prerender = false
+
+import AlertList from "@/components/site/AlertList.astro"
+import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { toPin } from "@/lib/lokal"
+import { ACTIVE_DAYS } from "@/lib/lokal-alerts"
+import { loadPublicLokal } from "@/lib/public-alerts"
+import { loadNavigation } from "@/lib/public-content"
+import { isValidSlug } from "@/lib/slug"
+
+/**
+ * One lokal: where it is, what the club says about it, and the larm from it
+ * (docs/roadmap.md, F5).
+ *
+ * The larm come under two headings on purpose. "På lokalen" is the app's own
+ * rule — within 300 m, or named by the reporter — so the site never claims a
+ * bird was somewhere the app doesn't. "I närheten" is the rest of the three
+ * kilometres that D1's place ladder already labels with this lokal's name, so
+ * a larm the feed calls "Nära Hualtet" can be found on Hualtet's page.
+ * `lokal-alerts.ts` owns the rule; this page only lays it out.
+ */
+
+const { slug } = Astro.params
+const { db } = Astro.locals
+if (!db || !slug || !isValidSlug(slug)) return new Response(null, { status: 404 })
+
+const [navigation, found] = await Promise.all([loadNavigation(db), loadPublicLokal(slug)])
+if (!found.ok) return new Response("Lokalen kunde inte läsas just nu.", { status: 503 })
+if (!found.value) return new Response(null, { status: 404 })
+
+/**
+ * How many nearby larm the page shows.
+ *
+ * "På lokalen" is printed whole: it is what the page is about, and it is the
+ * number the register promises ("29 larm"), so a reader who follows the link
+ * must find all of them. "I närheten" is context and is long — 3 km around
+ * Markaryd tätort holds 60 or more larm, and the same ones appear on every
+ * lokal in town — so it stops at a dozen, the same page size /larm uses.
+ */
+const NEAR_LIMIT = 12
+
+const { lokal, at, near } = found.value
+const nearShown = near.slice(0, NEAR_LIMIT)
+const description = lokal.description?.trim() || null
+
+// The dot means the same here as on the map: a larm from this lokal inside the
+// fortnight. Worked out from the larm already on the page rather than fetched
+// again — `at` is newest first.
+const lastAlertAt = at[0]?.sentAt ?? null
+const active =
+  lastAlertAt !== null && Date.now() - Date.parse(lastAlertAt) <= ACTIVE_DAYS * 86_400_000
+const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
+---
+
+<SiteLayout
+  title={lokal.name}
+  description={description ?? `Larm från ${lokal.name} i Markaryds kommun.`}
+  menu={navigation.menu}
+>
+  <article class="flex flex-col gap-10">
+    <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
+      <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
+        <a href="/lokaler" class="hover:text-foreground underline-offset-4 hover:underline">Lokaler</a>
+        <span aria-hidden="true"> / </span>
+        <span>{lokal.name}</span>
+      </nav>
+      <h1 class="type-title md:col-start-2">{lokal.name}</h1>
+      <div class="flex flex-col gap-4 md:col-start-2 md:row-start-3">
+        {pin && <LokalMapFrame pins={[pin]} still class="aspect-2/1" />}
+        {description && <p class="type-ingress text-muted-foreground">{description}</p>}
+      </div>
+    </header>
+
+    {
+      at.length === 0 && near.length === 0 ? (
+        <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+          Inga larm har skickats härifrån ännu.{" "}
+          <a href="/larm" class="text-primary underline underline-offset-4">
+            Se alla larm
+          </a>
+          .
+        </p>
+      ) : null
+    }
+
+    {
+      at.length > 0 && (
+        <section aria-labelledby="pa-lokalen" class="flex flex-col gap-5">
+          <h2 id="pa-lokalen" class="text-lg font-semibold md:pl-[7rem]">På lokalen</h2>
+          <AlertList alerts={at} headingLevel={3} years="other-years" photos={false} place={false} />
+        </section>
+      )
+    }
+
+    {
+      near.length > 0 && (
+        <section aria-labelledby="i-narheten" class="flex flex-col gap-5">
+          <div class="flex flex-col gap-2 md:pl-[7rem]">
+            <h2 id="i-narheten" class="text-lg font-semibold">I närheten</h2>
+            <p class="text-muted-foreground max-w-prose">
+              {
+                near.length > NEAR_LIMIT
+                  ? `De ${NEAR_LIMIT} senaste larmen inom tre kilometer från lokalen.`
+                  : "Larm inom tre kilometer från lokalen."
+              } Platsen för ett larm är alltid ungefärlig.
+            </p>
+          </div>
+          <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} />
+        </section>
+      )
+    }
+  </article>
+</SiteLayout>

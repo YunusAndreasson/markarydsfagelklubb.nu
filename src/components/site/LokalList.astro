@@ -1,0 +1,75 @@
+---
+import type { LokalSummary } from "@/lib/lokal"
+import { registerLetter } from "@/lib/lokal"
+import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * The club's lokaler as a register (docs/design.md, "Lokaler").
+ *
+ * The article list prints the year in the margin when it changes, so a scroll
+ * back through time reads like turning notebook pages. A register of places
+ * has no years, so the letter takes the margin instead and the list reads like
+ * the index at the back of the book — which is also what it is: the map's
+ * accessible equivalent, carrying every lokal as an ordinary link.
+ *
+ * A lokal nobody has larmed from prints no tally at all, the way a common
+ * bird prints no rarity: the silence is the information.
+ */
+
+interface Props {
+  lokaler: LokalSummary[]
+  headingLevel?: 2 | 3
+}
+
+const { lokaler, headingLevel = 2 } = Astro.props
+const Heading = headingLevel === 2 ? "h2" : "h3"
+const thisYear = stockholmYear(new Date())
+
+/** "12 sep." this year, "12 sep. 2025" when it isn't — the site's rule everywhere. */
+const lastSeen = (at: string): string => {
+  const year = stockholmYear(at)
+  const date = formatDate(at, "short")
+  return year === thisYear ? date : `${date} ${year}`
+}
+
+const letterLabel = (index: number): string | null => {
+  const lokal = lokaler[index]
+  if (!lokal) return null
+  const letter = registerLetter(lokal.name)
+  const previous = lokaler[index - 1]
+  return previous && registerLetter(previous.name) === letter ? null : letter
+}
+---
+
+<ol class="flex flex-col gap-5">
+  {
+    lokaler.map((lokal, index) => {
+      const letter = letterLabel(index)
+      return (
+        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
+          {/* The letter is an anchor for the eye running down the margin. With
+              no margin — on a phone — a lone "A" above "Agghult/Traryd" tells
+              a reader nothing they can't see in the name, so it goes away. */}
+          <p class="type-meta text-muted-foreground hidden md:block md:pt-[0.2rem]" aria-hidden="true">
+            {letter}
+          </p>
+          <div class="flex flex-col gap-0.5">
+            <Heading class="text-lg leading-snug font-semibold text-pretty">
+              <a href={`/lokaler/${lokal.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+                {lokal.name}
+              </a>
+            </Heading>
+            {lokal.alertCount > 0 && lokal.lastAlertAt && (
+              <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
+                <span>{lokal.alertCount} larm</span>
+                <span>
+                  senast <time datetime={isoDateTime(lokal.lastAlertAt)}>{lastSeen(lokal.lastAlertAt)}</time>
+                </span>
+              </p>
+            )}
+          </div>
+        </li>
+      )
+    })
+  }
+</ol>

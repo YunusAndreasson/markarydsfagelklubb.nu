@@ -27,9 +27,16 @@ interface Props {
    * are the point of /larm, which "Alla larm" leads to.
    */
   photos?: boolean
+  /**
+   * Show the coarse place. False on a lokal's own page under "På lokalen",
+   * where the heading has already said where these larm came from and the
+   * place ladder would print "Nära Reningsdammarna" on Rallvägen's page —
+   * true, since the two are neighbours, and a flat contradiction to read.
+   */
+  place?: boolean
 }
 
-const { alerts, headingLevel = 2, years = "changes", photos = true } = Astro.props
+const { alerts, headingLevel = 2, years = "changes", photos = true, place = true } = Astro.props
 const Heading = headingLevel === 2 ? "h2" : "h3"
 const thisYear = stockholmYear(new Date())
 
@@ -72,7 +79,7 @@ const yearLabel = (index: number): number | null => {
               )}
             </Heading>
             <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
-              <span>{alert.place}</span>
+              {place && <span>{alert.place}</span>}
               <span>{alert.observer ?? ANONYMOUS_OBSERVER}</span>
             </p>
             {photos && alert.photoUrl && (

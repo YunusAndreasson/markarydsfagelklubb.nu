@@ -2,6 +2,15 @@ import { embedFrameSources } from "./embeds"
 import { SUPABASE_ORIGIN } from "./media"
 
 /**
+ * The lokal map's tiles (docs/roadmap.md, F5).
+ *
+ * Raster tiles are plain `<img>` loads, so this belongs in `img-src` and
+ * `connect-src` stays closed. Standard OpenStreetMap tiles need no key; their
+ * usage policy asks for the attribution the map's control carries.
+ */
+const TILE_ORIGIN = "https://tile.openstreetmap.org"
+
+/**
  * Security headers applied to every response the Worker generates.
  *
  * `public/_headers` covers **static assets only**: the scripts, the favicon and
@@ -28,7 +37,7 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = Object.freeze(
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: ${SUPABASE_ORIGIN}`,
+    `img-src 'self' data: ${SUPABASE_ORIGIN} ${TILE_ORIGIN}`,
     "font-src 'self'",
     "connect-src 'self'",
     `frame-src ${embedFrameSources().join(" ")}`,

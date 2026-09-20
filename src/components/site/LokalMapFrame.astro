@@ -1,0 +1,120 @@
+---
+import LokalMap from "@/components/site/LokalMap"
+import type { LokalPin } from "@/lib/lokal"
+
+/**
+ * The map's frame: the box it fills, and the only CSS Leaflet's runtime DOM
+ * can be reached by.
+ *
+ * Astro's scoped styles tag elements in the template, and Leaflet builds its
+ * markers, tooltips and panes after hydration — so these have to be global.
+ * `is:global` inside this component keeps them out of `global.css`, which
+ * every page loads, and ships them only with the two pages that draw a map.
+ *
+ * The box is sized before hydration and carries the muted background, so the
+ * tiles fade in rather than pushing the register down the page.
+ */
+
+interface Props {
+  pins: LokalPin[]
+  /** A still of one place, on a lokal's own page. */
+  still?: boolean
+  /** Tailwind aspect and width; the map is the loud thing on /lokaler and a picture on a lokal page. */
+  class?: string
+}
+
+const { pins, still = false, class: className = "" } = Astro.props
+---
+
+<div class:list={["bg-muted overflow-hidden rounded-[4px]", className]}>
+  <LokalMap pins={pins} still={still} client:visible />
+</div>
+
+<style is:global>
+  /* Leaflet's own chrome, in the site's tokens. The default is a white card
+     with a drop shadow and rounded corners — the look docs/design.md rejects
+     everywhere else on the site. */
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+    background: var(--muted);
+    font: inherit;
+
+    /*
+     * Ink for things drawn *on the map*, which is not the page.
+     *
+     * These deliberately do not flip with the theme. The tiles are a light
+     * surface in both — dark mode dims them, it does not invert them — so a
+     * marker built from `--foreground` and `--background` turns inside out at
+     * night: the first dark pass drew a pale dot inside a near-black halo, and
+     * over the dimmed green the halo won and every lokal read as a hole
+     * punched in the map. Seen in Zen, not in the headless run.
+     */
+    --map-ink: oklch(0.36 0.012 155);
+    --map-halo: oklch(0.99 0 0 / 0.92);
+  }
+  /* Tiles are a bright white sheet on a near-black page. Dimming beats
+     inverting, which turns water into land and reads as a different map. */
+  .dark .leaflet-container .leaflet-tile-pane {
+    filter: brightness(0.72) saturate(0.85);
+  }
+
+  .lokal-pin__dot {
+    display: block;
+    height: 9px;
+    width: 9px;
+    border-radius: 50%;
+    background: var(--map-ink);
+    /* The halo keeps the dot legible over water, forest and road alike. */
+    box-shadow: 0 0 0 2px var(--map-halo);
+    margin: 2px;
+  }
+  .lokal-pin__dot--active {
+    background: var(--primary);
+  }
+  .leaflet-marker-icon {
+    cursor: pointer;
+  }
+
+  .lokal-tip.leaflet-tooltip {
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: none;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .lokal-tip.leaflet-tooltip-top::before {
+    border-top-color: var(--border);
+  }
+
+  /* Dashed, the way an atlas draws an administrative border: it reads as a
+     boundary rather than as a river or a road, and it stays legible over the
+     green the tiles use for most of the kommun. Ink, not green — the site
+     spends colour on what can be clicked. */
+  .lokal-boundary {
+    stroke: var(--map-ink);
+    stroke-opacity: 0.7;
+    stroke-dasharray: 5 4;
+  }
+
+  .leaflet-control-zoom a {
+    background: var(--background);
+    color: var(--foreground);
+    border-color: var(--border);
+  }
+  .leaflet-control-zoom a:hover {
+    background: var(--muted);
+  }
+  .leaflet-control-attribution {
+    background: color-mix(in oklab, var(--background) 82%, transparent);
+    color: var(--muted-foreground);
+    font-size: 0.6875rem;
+  }
+  .leaflet-control-attribution a {
+    color: var(--muted-foreground);
+    text-decoration: underline;
+  }
+</style>

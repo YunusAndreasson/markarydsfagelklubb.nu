@@ -20,6 +20,7 @@ const row: AlertRow = {
   observer_user_id: "LEAK-user-id",
   latitude: 56.4612345,
   longitude: 13.5987654,
+  location_id: 4242,
   location_name: "Hylte mosse",
   species_id: 42,
   species: { swedish_name: "Kungsörn", scientific_name: "Aquila chrysaetos", rarity: 1 },
@@ -34,7 +35,8 @@ describe("toPublicAlert", () => {
 
   it("carries no forbidden value, however it is nested or spread", () => {
     const serialized = JSON.stringify(toPublicAlert(row, "Nära Hylte mosse", "Anna Andersson"))
-    for (const sentinel of ["LEAK-user-id", "LEAK-image-path", "56.46", "13.59"]) {
+    // 4242 is `location_id`: read so a lokal page can group larm, never published.
+    for (const sentinel of ["LEAK-user-id", "LEAK-image-path", "56.46", "13.59", "4242"]) {
       expect(serialized, sentinel).not.toContain(sentinel)
     }
   })
@@ -87,7 +89,7 @@ describe("the selects", () => {
     // Character for character on purpose: adding a column fails here first,
     // where a reviewer has to decide whether it may be published.
     expect(ALERT_SELECT).toBe(
-      "id, count, observed_at, sent_at, observer_user_id, latitude, longitude, location_name, species_id, species:species(swedish_name, scientific_name, rarity), observation:observations(image_path)"
+      "id, count, observed_at, sent_at, observer_user_id, latitude, longitude, location_id, location_name, species_id, species:species(swedish_name, scientific_name, rarity), observation:observations(image_path)"
     )
     expect(PROFILE_SELECT).toBe("user_id, display_name")
   })
@@ -113,6 +115,7 @@ describe("the selects", () => {
       "sent_at",
       "latitude",
       "longitude",
+      "location_id",
       "location_name",
       "species_id",
       "image_path",

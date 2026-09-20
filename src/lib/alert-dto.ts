@@ -59,13 +59,19 @@ export const PUBLIC_ALERT_FIELDS = [
 /**
  * Exactly what PostgREST is asked for.
  *
- * `latitude`, `longitude` and `image_path` are read — the place ladder and the
- * photo route need them — and never published. `observer_name` is **not** read
- * at all: it is a snapshot that outlives a deleted account, and the name comes
- * from `profiles` instead (see `alert-observer.ts`).
+ * `latitude`, `longitude`, `location_id` and `image_path` are read — the place
+ * ladder, the lokal pages and the photo route need them — and never published.
+ * `observer_name` is **not** read at all: it is a snapshot that outlives a
+ * deleted account, and the name comes from `profiles` instead (see
+ * `alert-observer.ts`).
+ *
+ * `location_id` was added in step 6 (F5) as the honest join key for
+ * "which lokal is this larm's?" — the reporter's own answer, which beats a
+ * coordinate. It identifies a place, not a person, and `lokal-alerts.ts` turns
+ * it into a heading rather than a published field.
  */
 export const ALERT_SELECT =
-  "id, count, observed_at, sent_at, observer_user_id, latitude, longitude, location_name, species_id, species:species(swedish_name, scientific_name, rarity), observation:observations(image_path)"
+  "id, count, observed_at, sent_at, observer_user_id, latitude, longitude, location_id, location_name, species_id, species:species(swedish_name, scientific_name, rarity), observation:observations(image_path)"
 
 /** The two columns the observer lookup may touch on `profiles`. */
 export const PROFILE_SELECT = "user_id, display_name"
@@ -93,6 +99,7 @@ export type AlertRow = {
   observer_user_id: string | null
   latitude: number | null
   longitude: number | null
+  location_id: number | null
   location_name: string | null
   species_id: number | null
   species: { swedish_name: string; scientific_name: string; rarity: number | null } | null

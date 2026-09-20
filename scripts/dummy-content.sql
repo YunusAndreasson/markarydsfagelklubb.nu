@@ -129,6 +129,14 @@ values
   (null, 'link', 'exempel-program', 'Program', '/kalender', '', '', true, 18, 'published', now() - interval '30 days')
 on conflict on constraint pages_parent_slug_unique do nothing;
 
+-- Lokaler (step 6). Another real section behind a link row, sitting between
+-- Obsar and Klubben as the signed-off menu has it. The map and the lokal pages
+-- read the app's `locations` table, so there is no dummy content to seed.
+insert into public.pages (parent_id, kind, slug, title, link_url, description, body_html, show_in_menu, sort_order, status, published_at)
+values
+  (null, 'link', 'exempel-lokaler', 'Lokaler', '/lokaler', '', '', true, 25, 'published', now() - interval '30 days')
+on conflict on constraint pages_parent_slug_unique do nothing;
+
 -- Events, varied on purpose: one soon with a time and an anmälan link, a
 -- multi-day all-day trip, a meeting with a start and an end the same evening,
 -- one that has been (so the month pages have something to show backwards), one

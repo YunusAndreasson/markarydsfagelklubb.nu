@@ -1,0 +1,61 @@
+---
+export const prerender = false
+
+import LokalList from "@/components/site/LokalList.astro"
+import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { toPin } from "@/lib/lokal"
+import { listPublicLokaler } from "@/lib/public-alerts"
+import { loadNavigation } from "@/lib/public-content"
+
+/**
+ * The club's lokaler: the map, then the register (docs/roadmap.md, F5).
+ *
+ * The map is the one loud thing on the page, as the lead photo is on the home
+ * page. The register under it is not a second copy for its own sake — it is
+ * the map's keyboard and screen-reader equivalent, which is why the island
+ * marks itself `aria-hidden`.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 503 })
+
+const [navigation, lokaler] = await Promise.all([loadNavigation(db), listPublicLokaler()])
+if (!lokaler.ok) return new Response("Lokalerna kunde inte läsas just nu.", { status: 503 })
+
+const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
+---
+
+<SiteLayout
+  title="Lokaler"
+  description="Markaryds Fågelklubbs lokaler, med larmen som skickats från dem."
+  menu={navigation.menu}
+>
+  <div class="flex flex-col gap-10">
+    <header class="flex flex-col gap-3 md:pl-[7rem]">
+      <h1 class="type-title">Lokaler</h1>
+      <p class="type-ingress max-w-prose">
+        Klubbens lokaler i Markaryds kommun. En grön prick betyder att någon larmat därifrån de
+        senaste två veckorna.
+      </p>
+    </header>
+
+    {
+      /* The kommun is about as wide as it is tall (19 km by 18), so a wide
+         frame doesn't show more of it — it just zooms out until Laholm and
+         Osby are on screen and the club's own ground is a patch in the middle.
+         Near-square on a phone, 3:2 on a desktop. */
+      pins.length > 0 && <LokalMapFrame pins={pins} class="aspect-square md:aspect-3/2" />
+    }
+
+    {
+      lokaler.value.length === 0 ? (
+        <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+          Inga lokaler är upplagda ännu. Klubbens lokaler läggs till i appen och dyker upp här.
+        </p>
+      ) : (
+        <LokalList lokaler={lokaler.value} headingLevel={2} />
+      )
+    }
+  </div>
+</SiteLayout>

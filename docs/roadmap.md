@@ -399,10 +399,11 @@ free coordinates from anywhere.
   - Hundreds of points a year need no PostGIS. Enabling an extension on the
     shared database is avoidable.
   - Observations at a named lokal count if the lokal is inside.
-- **Open:** count **observations** (every report) or only **alerts**? The alert
-  log keeps `observer_name` after an account is deleted, and a public league
-  must not show a deleted member. Recommendation: count from `observations`
-  joined to `profiles`, so a deleted account drops out on its own.
+- ~~**Open:** count **observations** (every report) or only **alerts**?~~
+  **Moot since 2026-09-20**: Larmligan comes from Artportalen (F6), so no
+  league is computed from the club's own data and nothing has to decide between
+  the two. The boundary check itself stays in use by the larm place ladder
+  (`coarsePlace`), which is what D7 was really needed for.
 
 ## Features
 
@@ -564,21 +565,104 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
   OpenStreetMap or Lantmäteriet's open topographic map. Tile hosts go into the
   CSP.
 - **Depends on:** D1 and F4's public-data module.
-- **Open:**
-  - show pins, or only named lokaler (27 of 238 reports use one)?
-  - cluster the pins?
-  - should the 9 WP lokal pages (Köphultasjö, Hammarsjön …) become lokal
-    detail pages?
+- **Answered 2026-09-20** (measured on the live data the same day):
+  - **All 61 lokaler get a pin**, and one with a larm in the last 14 days is
+    marked as active — the app's own Lokaler code, so the two agree. The map is
+    "var kan man skåda i kommunen", not only "var har det larmats". **No
+    clustering**: 61 pins fit the kommun at one zoom, and clustering would hide
+    precisely the lokaler in tätorten. Lokaler sharing a point (Ängabäck and
+    Ängabäcks kraftstation) are drawn as one pin that names both.
+  - **Never a larm pin.** D1 forbids publishing the coordinate, so a larm is
+    only ever drawn at the lokal it resolves to.
+  - **A lokal page lists its larm under two headings.** "På lokalen" uses the
+    app's rule — within `LOKAL_RADIUS_M` (300 m) of the lokal, or the reporter
+    picked it — which is 78 larm across 21 lokaler. "I närheten" holds the rest
+    of the 3 km `NEAR_KM` band, 133 more larm across 36 lokaler, the ones
+    `/larm` already labels "Nära X". Neither the app nor the site's own place
+    labels get contradicted, and no larm is dropped. (27 larm resolve to no
+    lokal at all and appear on none.)
+  - **Every lokal gets a page**, `/lokaler/<slug>`, with its larm, its position
+    and its description. **The 9 WP lokal pages 301 there** in step 8's redirect
+    map, and their text becomes the lokal's description — only 4 of the 61 have
+    one today. `locations.description` belongs to the app, so the site
+    **never writes it**; the text is carried over by hand, with the user's
+    approval, as a shared-database change.
+  - **Tiles: standard OpenStreetMap raster, through Leaflet.** No key, no
+    registration, one host in the CSP. Lantmäteriet's topographic map is the
+    better birding base and stays the upgrade if the club registers a token.
+
+**Built 2026-09-20.** Two things the answers above got wrong, both found by
+looking at the real data and the rendered page:
+
+- **"På lokalen" is nearest-wins, and only one lokal ever wins.** The first
+  build counted a larm as *at* every lokal within 300 m, so one evening at the
+  Tröskeln was filed at three neighbouring lokaler at once, and Rallvägen's page
+  listed larm whose own place label read "Nära Reningsdammarna". The app had
+  already settled this, in its own words: *"a pin between two lokaler belongs to
+  the closer one, never to both."* The site now uses the same rule
+  (`homeLokalId` in `src/lib/lokal-alerts.ts`), so the 78 "at" larm partition
+  across 22 lokaler instead of being counted several times over.
+- **The register's tally counts only those larm**, not the three-kilometre band.
+  109 larm lie within 3 km of Broarna i Timsfors and 9 came from it; publishing
+  109 would rank every lokal in tätorten identically off the same reports.
+
+Also settled while building: the map is near-square rather than wide (the
+kommun is 19 km by 18, so a wide frame only zooms out past Laholm and Osby);
+"På lokalen" prints no place, because the heading has said it; "I närheten"
+stops at twelve; and the island imports Leaflet **inside its effect**, since
+Leaflet reads `window` in its module body and an `.astro` page importing the
+component otherwise pulls it into the Worker bundle and fails the route.
+
+The design is in `docs/design.md`, "Lokaler".
 
 ### F6 — Larmligan
 
-- A public leaderboard of distinct species per member **in the kommun** this
-  year, with earlier years selectable. It's computed in the Worker (see D7).
-- Names follow D1. If observer names aren't public, a league makes little sense,
-  so D1 decides whether this feature exists at all.
-- **Depends on:** D1, D7, and F4's public-data module.
-- **Open:** see D7. Tie-break by who reached the count first? Show each
-  member's species list?
+**Decided 2026-09-20: the league comes from Artportalen, not from the club's
+own larm.** It is Artportalen's *Observatörsligan* for Markaryds kommun — the
+same list the WordPress site links to today — and not a leaderboard computed
+from `alerts` or `observations`.
+
+What that changes:
+
+- **It stops being a shared-database feature.** No member names, no
+  observations, no `profiles` join, no secret key, nothing from F4's
+  public-data module. The one part of the agenda that would have ranked members
+  by their own reports now ranks Artportalen accounts on Artportalen's numbers,
+  which is the club's existing practice and nobody's private data.
+- **It no longer depends on D1 or D7.** D7's open sub-question — count
+  observations or alerts — is moot; the kommun boundary it also covers is still
+  in use by the larm place ladder.
+- **It moves under F7**, which is where the club's other Artportalen lists
+  live. The "keep Observatörsligan as a link or drop it" question below is
+  answered by this: Observatörsligan *is* Larmligan.
+
+- **Open: a link, or a table rendered on the site?** Checked 2026-09-20 against
+  `biodiversitydata-se/SOS`:
+  - **The names are there.** `occurrence.recordedBy` ("names of people, groups
+    or organizations responsible for recording the original Occurrence") and
+    `occurrence.reportedBy` ("name of the person that reported the species
+    observation") are documented fields of the observation model. So a table is
+    not blocked for want of data.
+  - **But there is no aggregation by observer.** The only aggregation endpoints
+    are `Observations_GeogridAggregation` and `Observations_TaxonAggregation`
+    (`Docs/Endpoints.md`). Årslista and Markarydslistan are one
+    `TaxonAggregation` call each; a league is not.
+  - **So a table means a full scan of a kommun-year**, paged through the search
+    endpoint and counted in the Worker — against a **hard limit of 10 000
+    records, 1 000 per page** (`Docs/FAQ.md`). Whether Markaryds kommun's bird
+    year fits under that is **one measurement away and needs the API key**: the
+    search response's total count answers it in a single call.
+  - **And it would be our ranking, not Artportalen's.** Counting raw
+    observations ourselves can disagree with the official Observatörsligan over
+    validation status, taxon scope and protected observations. Two pages
+    claiming to be the same list and disagreeing is worse than one link — which
+    is exactly the test F7's spike already applies to the species lists.
+  - **Recommendation: link at launch**, and add this question to that spike.
+    One key, one afternoon, three lists answered. Going native later costs
+    nothing that the link forecloses.
+  - **Worth the club's view either way:** a ranked list of named individuals is
+    personal data. Artportalen publishes it; republishing a ranking we computed
+    is a different act from linking to theirs.
 
 ### F7 — Årslista and Kommunlista (Artportalen)
 
@@ -602,8 +686,20 @@ date).
     protected species can be noted ("exkl. skyddsklassade fynd") or added by
     hand.
   - **They differ a lot:** keep linking to Artportalen, the authoritative list.
-- **Observatörsligan** (Artportalen's user top list) exists today but isn't on
-  the agenda. Keep it as a link, or drop it now that Larmligan exists?
+- **The spike also answers Larmligan (F6).** Two extra questions, same key,
+  same afternoon:
+  1. **How many bird observations does the kommun have in a year?** One search
+     call's total count. Under 10 000 and a league can be scanned and counted
+     in the Worker; over it, and the hard cap settles the matter — a link.
+  2. **If it fits, does our count match Artportalen's Observatörsligan?** Same
+     test as the species lists: match, or differ only by protected observations,
+     and a table is honest; differ a lot and we would be publishing a second,
+     contradictory ranking of named people under the club's name.
+- **Observatörsligan** (Artportalen's user top list) **is Larmligan**, decided
+  2026-09-20 (F6). It is kept, as a link, and it carries the agenda's
+  "larmligan — vem som har sett flest arter i kommunen i år". Note it is
+  Artportalen's ranking of Artportalen accounts, so it answers that question
+  for the kommun rather than for the club's membership.
 - **Depends on:** nothing internal. It can happen at any point.
 
 ### F8 — Admin area
@@ -622,8 +718,8 @@ Proposed order. Each step is one plan and ends shipped with `pnpm ship`.
 | 3 | ~~**Innehållsgrund:** pages, articles, media bucket, editor, sanitizing, public rendering, navigation, dummy articles (F1 + F2), and the design pass~~ — done 2026-09-19 | D3–D6, F1 menu | **new tables + bucket**, applied 2026-09-19 |
 | 4 | ~~**Larm på webben** (F4: public, display only)~~ — shipped 2026-09-20 | D1 | **new table `hidden_alerts`**, applied 2026-09-20; first Worker secret |
 | 5 | ~~**Kalender** (F3)~~ — shipped 2026-09-20 | F3 answered 2026-09-20 | **new table `events`**, applied 2026-09-20 |
-| 6 | **Lokaler** map (F5) | F5 open questions | no |
-| 7 | **Larmligan** (F6) | D1 (names), D7 | no |
+| 6 | **Lokaler** map (F5) — built 2026-09-20, awaiting `pnpm ship` | F5 answered 2026-09-20 | no |
+| 7 | ~~**Larmligan** (F6)~~ — **folded into step 9** as an Artportalen link, decided 2026-09-20 | — | no |
 | 8 | **WordPress import** and the redirect map; dummy articles deleted (F2) | F2 open questions | writes new tables only |
 | 9 | **Lansering:** the domain cutover (see below). Artportalen lists as links (F7 phase A) | — | auth `site_url` changes |
 | 10 | **Årslista & Kommunlista native** (F7 phase B), after the SOS spike | spike results | no |
@@ -680,7 +776,9 @@ time.
 | D5 | Editor | **Tiptap storing HTML**, sanitized on save; **drafts + scheduled publishing, no revisions**; embed allowlist starts with Artportalen and Google Maps | 2026-09-19 |
 | D6 | URLs | **Pages keep their WP paths; articles at `/artiklar/<slug>`** with the WP slug; old post URLs 301 from a **Worker map** (`_redirects` doesn't apply to Worker responses) | 2026-09-19 |
 | F1 | Menu | **Built from the page tree** (parent, order, "visa i menyn", link-only entries); the design pass proposes the structure and the user signs it off | 2026-09-19 |
-| D7 | Kommun boundary; league from observations or alerts | — | — |
+| D7 | Kommun boundary; league from observations or alerts | **Boundary: built in step 4** — `isInsideKommun` ray-casts against OSM relation 935621 (`src/data/markaryd-boundary.json`), no PostGIS. **The league half is moot**: Larmligan comes from Artportalen (F6), so nothing is computed from the club's own reports | boundary 2026-09-20, league moot 2026-09-20 |
 | F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile | 2026-09-19 |
 | F3 | Kalender | **No recurring events** (copy one instead); old Program posts **stay articles**; **iCal feed now** (`/kalender.ics`); built so the **app can read events later** (`to anon`). Route `/kalender`, menu item "Program"; a **fixed type list**; a **month-grouped list**, no grid; place is free text; no cover image | 2026-09-20 |
 | F4 | Larm scope | **Display only.** The site never sends alerts | 2026-09-19 |
+| F5 | Lokaler | **All 61 lokaler pinned**, active ones marked (the app's 14-day rule), **no clustering, never a larm pin**; a page per lokal at `/lokaler/<slug>` listing larm as **"På lokalen" (300 m, the app's rule) and "I närheten" (3 km, `NEAR_KM`)**; the **9 WP lokal pages 301 there** and their text becomes `locations.description`, carried over by hand; **Leaflet + OpenStreetMap** raster tiles | 2026-09-20 |
+| F6 | Larmligan | **From Artportalen, not from the club's larm.** It is Artportalen's Observatörsligan for Markaryds kommun — the list the WP site already links to — so it touches no member data and drops out of the shared-database work entirely. Folded into step 9 as a **link** for now. A table on the site is possible — `occurrence.recordedBy` is in the data — but there is no aggregation by observer (only GeoGrid and Taxon), so it means scanning a kommun-year under a 10 000-record cap, and it would be our ranking rather than Artportalen's. **F7's spike decides it** | 2026-09-20 |
