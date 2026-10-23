@@ -49,6 +49,19 @@ export function cleanTitle(rendered: string): string {
     .trim()
 }
 
+/**
+ * A title for a post that has none (3 of 354): its first bold or heading text,
+ * which in both untitled posts with text is visibly the headline. Empty when
+ * there is none; the importer then skips the post rather than guess.
+ */
+export function fallbackTitle(html: string): string {
+  for (const match of html.matchAll(/<(strong|b|h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
+    const text = cleanTitle(match[2] ?? "")
+    if (text) return text.length > 120 ? `${text.slice(0, 119).trimEnd()}…` : text
+  }
+  return ""
+}
+
 /** WordPress slugs may be percent-encoded Swedish; the site's are `[a-z0-9-]`. */
 export function siteSlug(wpSlug: string): string {
   let decoded = wpSlug
@@ -224,6 +237,12 @@ export function transformBody(html: string, context: ResolveContext): BodyResult
   let captions = 0
 
   let out = html
+    // A gallery is a list of images (6 posts). The sanitizer would keep the
+    // list and print bullets, so it becomes a plain run of images.
+    .replace(
+      /<ul[^>]*class="[^"]*\b(?:wp-block-gallery|blocks-gallery-grid)\b[^"]*"[^>]*>([\s\S]*?)<\/ul>/gi,
+      (_whole, inner: string) => inner.replace(/<\/?li\b[^>]*>/gi, "")
+    )
     // Unwrap <a href="…/uploads/…jpg"><img …></a>: the image is what matters.
     .replace(
       /<a\s[^>]*href="([^"]+)"[^>]*>\s*(<img\s[^>]*>)\s*<\/a>/gi,

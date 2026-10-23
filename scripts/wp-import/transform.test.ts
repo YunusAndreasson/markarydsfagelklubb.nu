@@ -5,6 +5,7 @@ import {
   type Attachment,
   cleanExcerpt,
   cleanTitle,
+  fallbackTitle,
   plannedPrefix,
   type ResolveContext,
   siteSlug,
@@ -83,6 +84,15 @@ describe("transformBody", () => {
     expect(html).toContain(SITE_MEDIA_PUBLIC_PREFIX)
   })
 
+  it("turns a gallery into a plain run of images, without list bullets", () => {
+    const { html, images } = stored(
+      `<ul class="wp-block-gallery columns-3 is-cropped"><li class="blocks-gallery-item"><figure><img src="${UPLOADS}/2026/06/familj-strand-1032x688.jpg" class="wp-image-10151"></figure></li></ul><p>Text</p>`
+    )
+    expect(images).toHaveLength(1)
+    expect(html).not.toMatch(/<(ul|li)\b/)
+    expect(html).toMatch(/^<img [^>]+>\s*<p>Text<\/p>$/)
+  })
+
   it("unwraps a link to the uploaded image file", () => {
     const { html } = stored(
       `<a href="${UPLOADS}/2026/06/familj-strand.jpg"><img src="${UPLOADS}/2026/06/familj-strand-1032x688.jpg" class="wp-image-10151"></a>`
@@ -127,6 +137,18 @@ describe("the small helpers", () => {
   it("decodes a rendered title", () => {
     expect(cleanTitle("Nattfåglar &#8211; 5 juni")).toBe("Nattfåglar – 5 juni")
     expect(cleanTitle("fredagen  5 juni &amp; mer")).toBe("fredagen 5 juni & mer")
+  })
+
+  it("titles an untitled post from its first bold line", () => {
+    expect(
+      fallbackTitle(
+        "<p></p><p><br>  <strong>Måndag 16 november-Medlemsmöte</strong><br> Mötet är inställt!</p>"
+      )
+    ).toBe("Måndag 16 november-Medlemsmöte")
+    expect(fallbackTitle("<h3><br></h3><p><strong>  Smålandsrallyt 31/10-1/11</strong></p>")).toBe(
+      "Smålandsrallyt 31/10-1/11"
+    )
+    expect(fallbackTitle('<p><img src="x.jpg"></p>')).toBe("")
   })
 
   it("turns any WordPress slug into a valid site slug", () => {

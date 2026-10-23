@@ -7,6 +7,7 @@ import { readExport, WordPressClient, type WpCategory, type WpPost } from "./sou
 import {
   cleanExcerpt,
   cleanTitle,
+  fallbackTitle,
   isWpUrl,
   oldPath,
   plannedPrefix,
@@ -124,6 +125,10 @@ for (const post of posts) {
   if (post.content.protected)
     problems.push("password-protected: the body is not readable anonymously")
 
+  const wpTitle = cleanTitle(post.title.rendered)
+  const title = wpTitle || fallbackTitle(post.content.rendered)
+  if (!title) problems.push("no title, and no bold line in the body to take one from")
+
   const slug = siteSlug(post.slug)
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug))
     problems.push(`slug "${post.slug}" gives no valid site slug`)
@@ -142,6 +147,8 @@ for (const post of posts) {
   })
   // Blocking problems skip the post in a real run; the rest are notes.
   const blocked = problems.length > 0
+  if (!wpTitle && title)
+    problems.push(`untitled on WordPress; titled from its first bold line: "${title}"`)
 
   // The real run swaps each planned tag for the stored image's, which has
   // the measured size, or removes it when the file can't be fetched.
@@ -205,7 +212,6 @@ for (const post of posts) {
     )
   }
 
-  const title = cleanTitle(post.title.rendered)
   const excerpt = cleanExcerpt(wxr.excerpts.get(post.id))
   const author = post._embedded?.author?.[0]?.name ?? ""
   let outcome: string | null = null
@@ -213,17 +219,25 @@ for (const post of posts) {
     if (blocked) {
       outcome = "skipped"
     } else {
-      outcome = await upsertArticle(db, {
-        wp_id: post.id,
-        slug,
-        title,
-        excerpt,
-        body_html: html,
-        category_id: category.kind === "category" ? (categoryIds.get(category.slug) ?? null) : null,
-        cover_media_id: coverMediaId,
-        author_name: author,
-        published_at: publishedAt.toISOString(),
-      })
+      // One post the database refuses is reported, not fatal: the run is
+      // idempotent, so it is fixed and run again.
+      try {
+        outcome = await upsertArticle(db, {
+          wp_id: post.id,
+          slug,
+          title,
+          excerpt,
+          body_html: html,
+          category_id:
+            category.kind === "category" ? (categoryIds.get(category.slug) ?? null) : null,
+          cover_media_id: coverMediaId,
+          author_name: author,
+          published_at: publishedAt.toISOString(),
+        })
+      } catch (caught) {
+        outcome = "failed"
+        problems.push(caught instanceof Error ? caught.message : String(caught))
+      }
     }
   }
 

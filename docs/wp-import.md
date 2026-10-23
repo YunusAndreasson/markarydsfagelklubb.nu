@@ -32,7 +32,14 @@ Decided while building it (reversible, flagged to the user):
   `20261023174814_wp_import_ids.sql`, also `pages.wp_id`). Images get a storage
   prefix derived from their source URL (UUID v5), so a re-run finds them.
 
-**The pilot ran on 2026-10-23**: the migration is applied, the dummy articles
+**All posts imported on 2026-10-23**: 353 of 354 articles, 401 images
+(100 MB as WebP), 8 covers. Skipped: one image-only post (WP id 4479, an ad
+with no title or text). Two untitled posts took their first bold line as
+title. Eight images were dropped because their originals are gone (one 404 on
+WordPress, seven on hotlink hosts). Galleries (6 posts) become a plain run of
+images. The full report is `.wp-import/full-run.txt`.
+
+**The pilot ran first, the same day**: the migration is applied, the dummy articles
 and their categories are deleted (the dummy pages and events stay until real
 ones replace them, since they are the whole menu and the whole kalender), and
 the 10 newest posts are live with 24 images. A second run updated all 10 and

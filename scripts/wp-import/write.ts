@@ -94,8 +94,10 @@ async function download(url: string): Promise<Buffer | null> {
   try {
     const response = await fetchWithTimeout(url, { headers: { "User-Agent": USER_AGENT } })
     if (!response.ok) return null
+    // Not "must be image/": WordPress serves some uploads named plain `jpg`
+    // with no content type at all. An error page is HTML; sharp judges the rest.
     const type = response.headers.get("content-type") ?? ""
-    if (!type.startsWith("image/")) return null
+    if (type.startsWith("text/")) return null
     const bytes = Buffer.from(await response.arrayBuffer())
     await keepOriginal(url, bytes)
     return bytes
@@ -135,7 +137,12 @@ export async function importImage(
   if (!original) return { kind: "unreachable" }
 
   // Camera orientation applied once, so every variant is upright.
-  const upright = await sharp(original).rotate().toBuffer({ resolveWithObject: true })
+  let upright: { data: Buffer; info: { width: number; height: number } }
+  try {
+    upright = await sharp(original).rotate().toBuffer({ resolveWithObject: true })
+  } catch {
+    return { kind: "unreachable" }
+  }
   const { width, height } = upright.info
   const widths = planImageWidths(width)
   let bytes = 0
