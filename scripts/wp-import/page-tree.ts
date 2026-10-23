@@ -233,14 +233,14 @@ export const PAGE_TREE: TreeEntry[] = [
         showInMenu: true,
         from: ["/lankar"],
       },
-      // Not in the signed-off menu: practical notes for meetings and trips,
-      // listed on the Klubben page but kept out of the menu until decided.
+      // Practical notes for meetings and trips. Not in the signed-off menu;
+      // added to it on 2026-10-23.
       {
         kind: "page",
         slug: "allmant",
         title: "Allmänt",
         wpId: 1002,
-        showInMenu: false,
+        showInMenu: true,
         from: ["/program/allmant"],
       },
     ],

@@ -170,6 +170,15 @@ export function siteFileUrl(path: string): string {
   return `${SUPABASE_ORIGIN}/storage/v1/object/public/${SITE_FILES_BUCKET}/${path}`
 }
 
+/**
+ * A document that couldn't be copied (it is gone on WordPress too): its links
+ * become their plain text, rather than pointing at a file that isn't there.
+ */
+export function unlinkFile(html: string, path: string): string {
+  const url = siteFileUrl(path).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return html.replace(new RegExp(`<a\\s[^>]*href="${url}"[^>]*>([\\s\\S]*?)<\\/a>`, "g"), "$1")
+}
+
 export type BodyResult = {
   html: string
   images: ImageNeed[]
@@ -356,6 +365,8 @@ export function transformBody(html: string, context: ResolveContext): BodyResult
     // WordPress's spacers: <p>&nbsp;</p>, and <br>s at a paragraph's edges.
     .replace(/(<p[^>]*>)(?:\s|&nbsp;| |<br\s*\/?>)+/gi, "$1")
     .replace(/(?:\s|&nbsp;| |<br\s*\/?>)+(<\/p>)/gi, "$1")
+    // A link left with nothing in it (its image gone) is invisible and dead.
+    .replace(/<a\s[^>]*>(?:\s|&nbsp;|&#160;)*<\/a>/gi, "")
     .replace(/<p[^>]*><\/p>/gi, "")
     .replace(/\n{3,}/g, "\n\n")
 

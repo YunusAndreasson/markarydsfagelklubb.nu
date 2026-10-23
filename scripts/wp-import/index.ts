@@ -14,6 +14,7 @@ import {
   siteImageTag,
   siteSlug,
   transformBody,
+  unlinkFile,
 } from "./transform"
 import {
   checkSchema,
@@ -165,7 +166,7 @@ for (const post of posts) {
       }
     }
   }
-  const html = sanitizeContent(bodyHtml)
+  let html = sanitizeContent(bodyHtml)
 
   // The two checks the spec asks a human to make, made here first.
   const keptImages = (html.match(/<img\s/g) ?? []).length
@@ -210,8 +211,10 @@ for (const post of posts) {
     if (values.files && file.path) {
       if (db && !blocked) {
         const copied = await copyFile(db, file.source, file.path)
-        if (copied === "unreachable")
-          problems.push(`linked ${file.kind} doesn't answer: ${file.source}`)
+        if (copied === "unreachable") {
+          problems.push(`linked ${file.kind} doesn't answer, link removed: ${file.source}`)
+          html = unlinkFile(html, file.path)
+        }
       }
     } else {
       problems.push(

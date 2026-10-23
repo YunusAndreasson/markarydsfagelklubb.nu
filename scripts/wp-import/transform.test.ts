@@ -8,9 +8,11 @@ import {
   fallbackTitle,
   plannedPrefix,
   type ResolveContext,
+  siteFileUrl,
   siteSlug,
   stripSizeSuffix,
   transformBody,
+  unlinkFile,
   uuidV5,
 } from "./transform"
 
@@ -135,10 +137,31 @@ describe("transformBody", () => {
     )
   })
 
+  it("turns the link to a document that couldn't be copied into its text", () => {
+    const gone = siteFileUrl("2011/03/verksamhet-2010.pdf")
+    const kept = siteFileUrl("2024/02/Cinclus.pdf")
+    expect(
+      unlinkFile(
+        `<p><a href="${gone}">Verksamhet 2010</a> och <a href="${kept}">Cinclus</a></p>`,
+        "2011/03/verksamhet-2010.pdf"
+      )
+    ).toBe(`<p>Verksamhet 2010 och <a href="${kept}">Cinclus</a></p>`)
+  })
+
   it("keeps the formatting the sanitizer would otherwise flatten", () => {
     const { html } = stored("<h1>Rubrik</h1><p><b>fet</b> och <i>kursiv</i></p><h5>liten</h5>")
     expect(html).toBe(
       "<h2>Rubrik</h2><p><strong>fet</strong> och <em>kursiv</em></p><h4>liten</h4>"
+    )
+  })
+
+  it("drops a link with nothing left in it", () => {
+    const { html } = stored(
+      `<p>Lycka till!<a href="${UPLOADS}/2011/04/Ringtrast1MN-040425-kopia1.jpg"></a></p>`
+    )
+    expect(html).toBe("<p>Lycka till!</p>")
+    expect(stored('<p>Text</p><p><a href="http://www.smhi.se/x">&nbsp;</a></p>').html).toBe(
+      "<p>Text</p>"
     )
   })
 

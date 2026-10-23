@@ -3,7 +3,7 @@ import { parseArgs } from "node:util"
 import { sanitizeContent } from "../../src/lib/sanitize"
 import { flattenTree, NOT_IMPORTED } from "./page-tree"
 import { readExport, WordPressClient } from "./sources"
-import { siteImageTag, transformBody } from "./transform"
+import { siteImageTag, transformBody, unlinkFile } from "./transform"
 import { copyFile, importImage, openBackend, publishPages, upsertPage } from "./write"
 
 /**
@@ -92,7 +92,8 @@ for (const { entry, path, parentPath, sortOrder } of flattenTree()) {
     for (const file of transformed.files) {
       if (values.files && file.path) {
         if (db && (await copyFile(db, file.source, file.path)) === "unreachable") {
-          problems.push(`linked ${file.kind} doesn't answer: ${file.source}`)
+          problems.push(`linked ${file.kind} doesn't answer, link removed: ${file.source}`)
+          body = unlinkFile(body, file.path)
         }
       } else {
         problems.push(

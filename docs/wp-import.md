@@ -77,12 +77,17 @@ the full `wp-content/uploads` archive.
   imports with `--files`: they copy each file byte for byte and point the
   links at it.
 
-**Left for the user:** review the draft pages and `--publish`; apply
-`*_site_files.sql` and re-run with `--files`; decide Tånnerydsdammen (no
-lokal matches it) and whether "Allmänt" belongs in the menu. One post links a
-plain JPEG and the Smålandsrallyt 2015 Excel was a menu link; both are
-reported, not handled. The dummy events stay until the club's real programme
-is in /admin/kalender.
+**Switched on later that evening**, the user's go ("the site is not public, so
+enable everything"): `site-files` applied, both imports re-run with `--files`
+(31 documents, 3.5 MB; the one PDF gone on WordPress too lost its link and kept
+its text), and the page tree published with `--publish`, which removed the 12
+dummy pages. "Allmänt" is in the menu. No body links to WordPress's uploads any
+more. Empty links left behind by missing images (or holding only `&nbsp;`) are
+dropped on the way in.
+
+**Still open:** Tånnerydsdammen (no lokal matches it; its old URL 404s), and
+whether captions should sit tighter under their image. The dummy events stay
+until the club's real programme is in /admin/kalender.
 
 ## Sources
 
