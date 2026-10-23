@@ -1,0 +1,27 @@
+---
+import SiteLayout from "@/layouts/site.astro"
+
+/**
+ * The app's legal pages: prerendered, so they answer without the database,
+ * like the 404. That means no menu (the menu is read from the page tree), so
+ * the page offers its own way into the site.
+ */
+interface Props {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+---
+
+<SiteLayout title={title} description={description} menu={[]}>
+  <article class="flex flex-col gap-8 md:pl-[7rem]">
+    <h1 class="type-title max-w-[38rem]">{title}</h1>
+    <div class="content">
+      <slot />
+    </div>
+    <p>
+      <a href="/" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">Till startsidan</a>
+    </p>
+  </article>
+</SiteLayout>

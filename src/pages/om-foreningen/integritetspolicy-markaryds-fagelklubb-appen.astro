@@ -1,0 +1,36 @@
+---
+import LegalPage from "@/components/site/LegalPage.astro"
+
+// The app links here (../mafk-mobie/src/constants/legal.ts), and both app
+// stores require the privacy-policy URL to answer: a static page at the old
+// WordPress path, never reading the database (docs/roadmap.md, D6). The root
+// form the app uses 301s here (src/data/wp-redirects.json). Text as published
+// on WordPress, 2026-07-15.
+---
+
+<LegalPage title="Integritetspolicy – Markaryds Fågelklubb-appen" description="Hur Markaryds Fågelklubb behandlar personuppgifter i klubbens mobilapp.">
+    <p><strong>Senast uppdaterad:</strong> 2026-06-09</p>
+    <p>Den här integritetspolicyn beskriver hur <strong>Markaryds Fågelklubb</strong> (“vi”, “oss”, “klubben”) behandlar personuppgifter i mobilappen <em>Markaryds Fågelklubb</em> (“appen”). Vi värnar om din integritet och behandlar dina uppgifter i enlighet med dataskyddsförordningen (GDPR).</p>
+    <h2>Personuppgiftsansvarig</h2>
+    <p>Markaryds Fågelklubb är personuppgiftsansvarig för behandlingen. Kontakt: <strong>webmaster@markarydsfagelklubb.nu</strong></p>
+    <h2>Vilka uppgifter vi samlar in</h2>
+    <p>Vi samlar bara in uppgifter som behövs för att appen ska fungera:</p>
+    <table><thead><tr><th>Uppgift</th><th>Exempel</th><th>När</th></tr></thead><tbody><tr><td><strong>Kontouppgifter</strong></td><td>E‑postadress, och vid inloggning med Apple/Google det konto-ID som leverantören delar</td><td>När du skapar konto / loggar in</td></tr><tr><td><strong>Profil</strong></td><td>Visningsnamn, telefonnummer (frivilligt), profilbild (frivilligt)</td><td>När du fyller i din profil</td></tr><tr><td><strong>Observationer</strong></td><td>Art, antal, tidpunkt, fritextkommentar</td><td>När du rapporterar ett fynd</td></tr><tr><td><strong>Plats</strong></td><td>Koordinater för var en fågel setts (exakt plats)</td><td>Endast när du markerar en plats för en observation</td></tr><tr><td><strong>Foton</strong></td><td>Bilder du lägger till på en observation</td><td>När du väljer/tar ett foto</td></tr><tr><td><strong>Push‑token</strong></td><td>En enhetsidentifierare som krävs för att skicka aviseringar</td><td>Om du tillåter aviseringar</td></tr></tbody></table>
+    <p>Vi samlar <strong>inte</strong> in din position i bakgrunden, och vi spårar dig inte mellan appar eller webbplatser. Platsdata samlas in endast i samband med en observation du själv skapar.</p>
+    <h2>Varför vi behandlar uppgifterna och rättslig grund</h2>
+    <ul><li><strong>Tillhandahålla tjänsten</strong> (konto, rapportera och visa fynd, kartan): för att fullgöra vårt avtal med dig som användare.</li><li><strong>Larma om sällsynta fynd</strong> via push‑avisering, samt visa namn/telefon så medlemmar kan nå varandra: berättigat intresse för klubbens verksamhet och, för aviseringar, ditt samtycke (du kan stänga av dem).</li><li><strong>Säkerhet och missbruk</strong> (t.ex. dölja/anmäla olämpligt innehåll): berättigat intresse av en trygg tjänst.</li></ul>
+    <h2>Var uppgifterna lagras</h2>
+    <p>Appen använder <strong>Supabase</strong> som databas- och lagringsleverantör. Uppgifterna lagras inom EU (regionen <em>eu‑north‑1</em>, Stockholm). All överföring sker krypterat (HTTPS/TLS).</p>
+    <h2>Vem uppgifterna delas med</h2>
+    <ul><li><strong>Andra medlemmar i appen</strong> ser dina observationer inklusive art, plats, ev. foto och kommentar, samt ditt visningsnamn och – om du angett det – telefonnummer (för att kunna kontakta dig om ett fynd).</li><li><strong>Underleverantörer (personuppgiftsbiträden):</strong> Supabase (databas/lagring), Expo (aviseringstjänst), samt Apple och Google för inloggning respektive leverans av push‑aviseringar (APNs/FCM).</li><li>Vi <strong>säljer aldrig</strong> dina uppgifter och delar dem inte för marknadsföring.</li></ul>
+    <h2>Lagringstid</h2>
+    <p>Vi sparar dina uppgifter så länge du har ett konto. Observationer kan sparas som en del av klubbens fynddata. När du raderar ditt konto tas dina personuppgifter och din profil bort.</p>
+    <h2>Dina rättigheter</h2>
+    <p>Enligt GDPR har du rätt att begära <strong>tillgång till</strong>, <strong>rättelse av</strong> eller <strong>radering av</strong> dina uppgifter, att <strong>invända mot</strong> eller <strong>begränsa</strong> viss behandling samt <strong>dataportabilitet</strong>. Kontakta webmaster@markarydsfagelklubb.nu. Du har också rätt att klaga hos <strong>Integritetsskyddsmyndigheten (IMY)</strong>.</p>
+    <h2>Radera ditt konto</h2>
+    <p>Du kan radera ditt konto direkt i appen under <strong>Profil → Radera konto</strong>. Det tar bort din inloggning, profil och dina personuppgifter.</p>
+    <h2>Ändringar</h2>
+    <p>Vi kan uppdatera denna policy. Väsentliga ändringar meddelas i appen eller på klubbens webbplats. Datumet högst upp visar senaste ändringen.</p>
+    <h2>Kontakt</h2>
+    <p>Frågor om personuppgifter: <strong>webmaster@markarydsfagelklubb.nu</strong></p>
+</LegalPage>
