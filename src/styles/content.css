@@ -104,9 +104,16 @@
     margin: 2em 0;
   }
 
+  /*
+   * As wide as the column, never wider than the file: some of the club's
+   * WordPress originals are 300 px, and stretching them to 38rem blurs them.
+   * An image's width attribute is its original's, so a large one still fills
+   * the column through max-width. No CSS width at all: even `width: auto`
+   * overrides the attribute, and the browser then sizes the image by `sizes`.
+   */
   .content img {
     display: block;
-    width: 100%;
+    max-width: 100%;
     height: auto;
     border-radius: 4px;
     margin-top: 1.5em;

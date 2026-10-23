@@ -21,7 +21,8 @@
     "ship": "bash scripts/ship.sh",
     "types:db": "supabase gen types typescript --project-id zgnmajovyqibgxlcomvb > src/lib/database.types.ts && biome format --write src/lib/database.types.ts",
     "types:cf": "wrangler types",
-    "admin:password": "node scripts/set-admin-password.mjs"
+    "admin:password": "node scripts/set-admin-password.mjs",
+    "wp-import": "tsx scripts/wp-import/index.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.2",
@@ -58,6 +59,9 @@
     "@types/leaflet": "^1.9.22",
     "@types/node": "^26.6.1",
     "@types/sanitize-html": "^2.16.1",
+    "fast-xml-parser": "^5.11.2",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1",
     "wrangler": "^4.135.0"

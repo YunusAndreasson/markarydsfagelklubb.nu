@@ -9,6 +9,42 @@ Supabase secret key in an uncommitted env file — never in CI, never in the
 Worker. It is idempotent, keyed on the WordPress post id, so it can be run
 again after a fix without duplicating anything.
 
+## Status, 2026-10-23
+
+Built: the dry run and the real run for **posts** (`pnpm wp-import`, see the
+header of `scripts/wp-import/index.ts`). The dry run over all 354 posts plans
+449 body images (16 hotlinked) and 8 covers, maps every category, gives every
+post a valid unique slug, loses no image to the sanitizer and leaves no link to
+the old site. Its output is in `.wp-import/dry-run/` (gitignored).
+
+Decided while building it (reversible, flagged to the user):
+
+- **Captions become a paragraph under the image.** 113 posts have a
+  `<figcaption>`, nearly all photo credits, and the editor has no caption node.
+- **Only hand-written excerpts are kept** (3 of 354, read from the export). The
+  automatic ones repeat the first paragraph, which the article page would then
+  print twice.
+- **A featured image is the cover only when the body doesn't show it** (8 of
+  14). Otherwise the photo would appear twice.
+- **Small originals render at their own size** (`content.css`): some are
+  300 px wide and blurred when stretched to the column.
+- **Re-runs are keyed on `articles.wp_id`** (migration
+  `20261023174814_wp_import_ids.sql`, also `pages.wp_id`). Images get a storage
+  prefix derived from their source URL (UUID v5), so a re-run finds them.
+
+**The pilot ran on 2026-10-23**: the migration is applied, the dummy articles
+and their categories are deleted (the dummy pages and events stay until real
+ones replace them, since they are the whole menu and the whole kalender), and
+the 10 newest posts are live with 24 images. A second run updated all 10 and
+downloaded nothing. The key is passed as `--env .env --key-var sb`. Every
+original the import downloads is kept in `.wp-import/originals/`, which is not
+the full `wp-content/uploads` archive.
+
+Not built yet: the **48 linked documents** (29 PDF, 19 Office) — `site-media`
+accepts only WebP and JPEG up to 5 MB, so they need a bucket decision first;
+the **pages**; and the Worker's **redirect map**, for which each run writes
+`redirects.json`.
+
 ## Sources
 
 Two, and each is better at something:

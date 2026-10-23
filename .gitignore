@@ -48,6 +48,9 @@ worker-configuration.d.ts
 supabase/.temp/
 supabase/.branches/
 
+# The WordPress import's cache and dry-run output (scripts/wp-import/)
+.wp-import/
+
 # Logs
 *.log
 npm-debug.log*

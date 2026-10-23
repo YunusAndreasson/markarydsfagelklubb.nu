@@ -95,6 +95,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          wp_id: number | null
         }
         Insert: {
           author_name?: string
@@ -109,6 +110,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          wp_id?: number | null
         }
         Update: {
           author_name?: string
@@ -123,6 +125,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          wp_id?: number | null
         }
         Relationships: [
           {
@@ -412,6 +415,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          wp_id: number | null
         }
         Insert: {
           body_html?: string
@@ -428,6 +432,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          wp_id?: number | null
         }
         Update: {
           body_html?: string
@@ -444,6 +449,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          wp_id?: number | null
         }
         Relationships: [
           {
