@@ -63,6 +63,25 @@ export type WpPost = {
 
 export type WpCategory = { id: number; slug: string; name: string }
 
+/**
+ * The newest `limit` published posts, or all of them. 100 per request is the
+ * REST API's maximum; four requests cover all 354, and the cache keeps a rerun
+ * from asking again.
+ */
+export async function fetchPosts(wp: WordPressClient, limit: number | null): Promise<WpPost[]> {
+  const posts: WpPost[] = []
+  for (let page = 1; limit === null || posts.length < limit; page++) {
+    const perPage = Math.min(100, limit ?? 100)
+    const batch = await wp.get<WpPost[]>(
+      `/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&orderby=date&order=desc&status=publish&_embed=author`
+    )
+    posts.push(...batch)
+    if (batch.length < perPage) break
+  }
+  if (limit !== null) posts.length = Math.min(posts.length, limit)
+  return posts
+}
+
 export type Export = {
   attachmentsById: Map<string, Attachment>
   attachmentsByUrl: Map<string, Attachment>

@@ -105,9 +105,34 @@ describe("transformBody", () => {
     const { html, files, internalLinks } = stored(
       `<p><a href="${UPLOADS}/2024/02/Cinclus-1-2024.pdf">Cinclus</a> och <a href="https://markarydsfagelklubb.nu/medlemsskap/">bli medlem</a></p>`
     )
-    expect(files).toEqual([{ source: `${UPLOADS}/2024/02/Cinclus-1-2024.pdf`, kind: "pdf" }])
+    expect(files).toEqual([
+      {
+        source: `${UPLOADS}/2024/02/Cinclus-1-2024.pdf`,
+        kind: "pdf",
+        path: "2024/02/Cinclus-1-2024.pdf",
+      },
+    ])
     expect(internalLinks).toEqual(["/medlemsskap/"])
     expect(html).toContain('href="/medlemsskap/"')
+  })
+
+  it("repairs an email address linked without mailto:", () => {
+    const { html } = stored(
+      '<p><a href="sveneric.helmersson@telia.com">sveneric</a> <a href="mailto:a@b.se">a</a></p>'
+    )
+    expect(html).toBe(
+      '<p><a href="mailto:sveneric.helmersson@telia.com">sveneric</a> <a href="mailto:a@b.se">a</a></p>'
+    )
+  })
+
+  it("points document links at site-files only when the import copies them", () => {
+    const html = `<p><a href="${UPLOADS}/2016/11/Regler-f%C3%B6r-Vinterf%C3%A5gelrallyt.-MaFk.docx">Regler</a></p>`
+    expect(stored(html).html).toContain(`href="${UPLOADS}/2016/11/`)
+    const copied = stored(html, { ...context(), rewriteFiles: true })
+    expect(copied.files[0]?.path).toBe("2016/11/Regler-for-Vinterfagelrallyt.-MaFk.docx")
+    expect(copied.html).toContain(
+      'href="https://zgnmajovyqibgxlcomvb.supabase.co/storage/v1/object/public/site-files/2016/11/Regler-for-Vinterfagelrallyt.-MaFk.docx"'
+    )
   })
 
   it("keeps the formatting the sanitizer would otherwise flatten", () => {

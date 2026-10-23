@@ -3,7 +3,7 @@ import { join } from "node:path"
 import { parseArgs } from "node:util"
 import { sanitizeContent } from "../../src/lib/sanitize"
 import { pickCategory, SITE_CATEGORIES } from "./categories"
-import { readExport, WordPressClient, type WpCategory, type WpPost } from "./sources"
+import { fetchPosts, readExport, WordPressClient, type WpCategory } from "./sources"
 import {
   cleanExcerpt,
   cleanTitle,
@@ -15,7 +15,14 @@ import {
   siteSlug,
   transformBody,
 } from "./transform"
-import { checkSchema, ensureCategories, importImage, openBackend, upsertArticle } from "./write"
+import {
+  checkSchema,
+  copyFile,
+  ensureCategories,
+  importImage,
+  openBackend,
+  upsertArticle,
+} from "./write"
 
 /**
  * The WordPress import (step 8). Build spec: docs/wp-import.md.
@@ -39,6 +46,8 @@ const { values } = parseArgs({
     env: { type: "string" },
     // The variable in --env that holds the key, if not SUPABASE_SECRET_KEY.
     "key-var": { type: "string" },
+    // Copy linked documents to site-files and point the links there.
+    files: { type: "boolean", default: false },
   },
 })
 
@@ -76,17 +85,7 @@ const categories = await wp.get<WpCategory[]>(
 )
 const wpCategorySlug = new Map(categories.map((category) => [category.id, category.slug]))
 
-// 100 per request is the REST API's maximum; four requests cover all 354.
-const posts: WpPost[] = []
-for (let page = 1; limit === null || posts.length < limit; page++) {
-  const perPage = Math.min(100, limit ?? 100)
-  const batch = await wp.get<WpPost[]>(
-    `/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&orderby=date&order=desc&status=publish&_embed=author`
-  )
-  posts.push(...batch)
-  if (batch.length < perPage) break
-}
-if (limit !== null) posts.length = Math.min(posts.length, limit)
+const posts = await fetchPosts(wp, limit)
 
 await rm(OUT_DIR, { recursive: true, force: true })
 await mkdir(join(OUT_DIR, "bodies"), { recursive: true })
@@ -144,6 +143,7 @@ for (const post of posts) {
     attachmentsById: wxr.attachmentsById,
     attachmentsByUrl: wxr.attachmentsByUrl,
     postDate: publishedAt,
+    rewriteFiles: values.files === true,
   })
   // Blocking problems skip the post in a real run; the rest are notes.
   const blocked = problems.length > 0
@@ -207,9 +207,17 @@ for (const post of posts) {
     problems.push(`image not in the export, original guessed: ${image.source}`)
   }
   for (const file of body.files) {
-    problems.push(
-      `linked ${file.kind} not copied yet (site-media takes images only): ${file.source}`
-    )
+    if (values.files && file.path) {
+      if (db && !blocked) {
+        const copied = await copyFile(db, file.source, file.path)
+        if (copied === "unreachable")
+          problems.push(`linked ${file.kind} doesn't answer: ${file.source}`)
+      }
+    } else {
+      problems.push(
+        `linked ${file.kind} not copied${values.files ? "" : " (run with --files)"}: ${file.source}`
+      )
+    }
   }
 
   const excerpt = cleanExcerpt(wxr.excerpts.get(post.id))
@@ -299,7 +307,7 @@ const images = planned.flatMap((post) => post.images)
 const files = planned.flatMap((post) => post.files)
 console.log(
   `\n${dryRun ? "Would upload" : "Handled"} ${images.length} images (${images.filter((image) => image.hotlinked).length} hotlinked)` +
-    ` and ${files.length} linked files (not copied yet); ${dryRun ? "would insert" : "inserted"} any of the ${SITE_CATEGORIES.length} categories that were missing.`
+    ` and ${files.length} links to documents (${values.files ? (dryRun ? "would copy" : "copied") : "not copied, see --files"}); ${dryRun ? "would insert" : "inserted"} any of the ${SITE_CATEGORIES.length} categories that were missing.`
 )
 console.log(`Bodies: ${join(OUT_DIR, "bodies")}/   Plan: ${join(OUT_DIR, "plan.json")}`)
 console.log(

@@ -5,6 +5,7 @@ import { applySecurityHeaders, supabaseConnectOrigins } from "@/lib/security-hea
 import { createSupabasePublicClient } from "@/lib/supabase-public"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 import { readServerEnv } from "@/lib/worker-env"
+import { wpRedirect } from "@/lib/wp-redirects"
 
 const API_PREFIX = "/api/"
 
@@ -14,6 +15,14 @@ const API_PREFIX = "/api/"
  * browser caches it: Workers Cache stays off until launch.
  */
 const PUBLIC_CACHE_CONTROL = "public, max-age=60"
+
+/** An old WordPress URL that moved (D6). Browsers may keep it for a day. */
+function movedPermanently(location: string): Response {
+  return new Response(null, {
+    status: 301,
+    headers: { Location: location, "Cache-Control": "public, max-age=86400" },
+  })
+}
 
 function plainResponse(body: string, status: number): Response {
   return new Response(body, {
@@ -45,6 +54,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   if (!isAdminPath(pathname)) {
+    // WordPress shortlinks (/?p=<id>) would otherwise get the home page.
+    const shortlink = pathname === "/" ? wpRedirect(pathname, context.url.searchParams) : null
+    if (shortlink) return applySecurityHeaders(movedPermanently(shortlink))
+
     // Public pages read as an anonymous visitor would: the publishable key and
     // no session. They never touch an auth cookie, which keeps them cacheable.
     context.locals.db = createSupabasePublicClient(
@@ -52,6 +65,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
       result.env.supabasePublishableKey
     )
     const response = await next()
+
+    // An old URL only redirects where nothing answers it now, so a page the
+    // club creates later at an old path is never shadowed by the map.
+    if (response.status === 404) {
+      const moved = wpRedirect(pathname, context.url.searchParams)
+      if (moved) return applySecurityHeaders(movedPermanently(moved))
+    }
     if (response.status === 200 && !response.headers.has("Cache-Control")) {
       response.headers.set("Cache-Control", PUBLIC_CACHE_CONTROL)
     }

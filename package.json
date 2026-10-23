@@ -22,7 +22,9 @@
     "types:db": "supabase gen types typescript --project-id zgnmajovyqibgxlcomvb > src/lib/database.types.ts && biome format --write src/lib/database.types.ts",
     "types:cf": "wrangler types",
     "admin:password": "node scripts/set-admin-password.mjs",
-    "wp-import": "tsx scripts/wp-import/index.ts"
+    "wp-import": "tsx scripts/wp-import/index.ts",
+    "wp-import:pages": "tsx scripts/wp-import/import-pages.ts",
+    "wp-import:redirects": "tsx scripts/wp-import/write-redirects.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.2",

@@ -13,7 +13,7 @@ import {
   SUPABASE_ORIGIN,
 } from "../../src/lib/media"
 import { SITE_CATEGORIES } from "./categories"
-import { isWpUrl } from "./transform"
+import { isWpUrl, SITE_FILES_BUCKET } from "./transform"
 
 /**
  * The writing half of the import: the database and the site-media bucket,
@@ -204,4 +204,124 @@ export async function upsertArticle(db: Db, row: ArticleRow): Promise<"inserted"
     .upsert({ ...row, status: "published" }, { onConflict: "wp_id" })
   if (error) throw new Error(`article ${row.slug}: ${error.message}`)
   return before ? "updated" : "inserted"
+}
+
+export type PageRow = {
+  parent_id: number | null
+  kind: "page" | "link"
+  slug: string
+  title: string
+  link_url: string | null
+  body_html: string
+  show_in_menu: boolean
+  sort_order: number
+  wp_id: number | null
+}
+
+/**
+ * Insert or update one entry of the page tree, found by its place (parent and
+ * slug, which the table keeps unique). New entries are drafts: nobody sees the
+ * real tree until `publishPages` switches it in. An existing entry keeps its
+ * status, so a re-run never unpublishes or publishes anything.
+ */
+export async function upsertPage(
+  db: Db,
+  row: PageRow
+): Promise<{ id: number; outcome: "inserted" | "updated" }> {
+  const lookup = db.from("pages").select("id").eq("slug", row.slug)
+  const { data: existing, error: lookupError } = await (row.parent_id === null
+    ? lookup.is("parent_id", null)
+    : lookup.eq("parent_id", row.parent_id)
+  ).maybeSingle()
+  if (lookupError) throw new Error(`page lookup ${row.slug}: ${lookupError.message}`)
+  if (existing) {
+    const { error } = await db.from("pages").update(row).eq("id", existing.id)
+    if (error) throw new Error(`page ${row.slug}: ${error.message}`)
+    return { id: existing.id, outcome: "updated" }
+  }
+  const { data, error } = await db
+    .from("pages")
+    .insert({ ...row, status: "draft", published_at: null })
+    .select("id")
+    .single()
+  if (error) throw new Error(`page ${row.slug}: ${error.message}`)
+  return { id: data.id, outcome: "inserted" }
+}
+
+/**
+ * The switch to the real menu: publish every entry of the imported tree, then
+ * remove the dummy pages (`exempel-` slugs), children before parents. Only run
+ * when the user has reviewed the drafts in /admin.
+ */
+export async function publishPages(
+  db: Db,
+  ids: number[]
+): Promise<{ published: number; removed: number }> {
+  const { error } = await db
+    .from("pages")
+    .update({ status: "published", published_at: new Date().toISOString() })
+    .in("id", ids)
+    .eq("status", "draft")
+  if (error) throw new Error(`publish: ${error.message}`)
+  const { data: children, error: childError } = await db
+    .from("pages")
+    .delete()
+    .like("slug", "exempel-%")
+    .not("parent_id", "is", null)
+    .select("id")
+  if (childError) throw new Error(`remove dummy subpages: ${childError.message}`)
+  const { data: roots, error: rootError } = await db
+    .from("pages")
+    .delete()
+    .like("slug", "exempel-%")
+    .select("id")
+  if (rootError) throw new Error(`remove dummy pages: ${rootError.message}`)
+  return { published: ids.length, removed: (children?.length ?? 0) + (roots?.length ?? 0) }
+}
+
+const FILE_TYPES: Record<string, string> = {
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+
+/**
+ * One linked document into site-files at `path`, byte for byte. A file already
+ * there is left alone, so a re-run downloads nothing it has. Needs the
+ * site-files migration applied.
+ */
+export async function copyFile(
+  db: Db,
+  source: string,
+  path: string
+): Promise<"existing" | "copied" | "unreachable"> {
+  const { data: existing, error: listError } = await db.storage
+    .from(SITE_FILES_BUCKET)
+    .list(path.split("/").slice(0, -1).join("/"), { search: path.split("/").pop() ?? "" })
+  if (listError) throw new Error(`site-files: ${listError.message} (is *_site_files.sql applied?)`)
+  if (existing?.some((object) => object.name === path.split("/").pop())) return "existing"
+
+  if (isWpUrl(source)) await sleep(WP_PAUSE_MS)
+  let bytes: Buffer
+  try {
+    const response = await fetchWithTimeout(source, { headers: { "User-Agent": USER_AGENT } })
+    if (!response.ok || (response.headers.get("content-type") ?? "").startsWith("text/html"))
+      return "unreachable"
+    bytes = Buffer.from(await response.arrayBuffer())
+  } catch {
+    return "unreachable"
+  }
+  await keepOriginal(source, bytes)
+  const extension = path.split(".").pop()?.toLowerCase() ?? ""
+  const { error } = await db.storage.from(SITE_FILES_BUCKET).upload(path, bytes, {
+    contentType: FILE_TYPES[extension] ?? "application/octet-stream",
+    cacheControl: "31536000",
+    upsert: true,
+  })
+  if (error) throw new Error(`upload ${path}: ${error.message}`)
+  return "copied"
 }

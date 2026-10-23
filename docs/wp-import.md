@@ -47,10 +47,42 @@ downloaded nothing. The key is passed as `--env .env --key-var sb`. Every
 original the import downloads is kept in `.wp-import/originals/`, which is not
 the full `wp-content/uploads` archive.
 
-Not built yet: the **48 linked documents** (29 PDF, 19 Office) — `site-media`
-accepts only WebP and JPEG up to 5 MB, so they need a bucket decision first;
-the **pages**; and the Worker's **redirect map**, for which each run writes
-`redirects.json`.
+**Built the same evening, waiting on the user:**
+
+- **The redirect map** (D6). `pnpm wp-import:redirects` writes
+  `src/data/wp-redirects.json` (433 old paths, 365 shortlink ids) from the
+  import's cache; `src/lib/wp-redirects.ts` looks it up and the middleware
+  answers with a 301 **only when nothing else answers the path**, so a page
+  created later at an old path is never shadowed. `/?p=<id>` and
+  `/?page_id=<id>` shortlinks redirect before the home page answers.
+  `wp-redirects.test.ts` checks the map: one hop, no key under a site route,
+  targets on the site or Artportalen. Re-run the generator after any import
+  that adds or renames posts.
+- **The two legal pages** are static at `/om-foreningen/<slug>` (prerendered,
+  no database), and the app's root form 301s there. Text as on WordPress,
+  with the hard-wrapped lines joined, one split word rejoined, and the terms
+  page's dead `/integritetspolicy` link pointed at the real page. The D1
+  privacy update is still the club's, at launch.
+- **The page tree**, in `scripts/wp-import/page-tree.ts`, built from the
+  signed-off menu. `pnpm wp-import:pages` wrote it **as drafts** (26 entries):
+  the dummy menu stays live until the drafts are reviewed in /admin/sidor and
+  `--publish` switches (publishes the tree, deletes the dummy pages). Read as
+  part of the sign-off, and flagged: Kontaktpersoner, Tävlingar, Fågelholkar
+  and Länkar move under `/om-foreningen` (their old paths redirect), and
+  "Allmänt" goes there too but stays out of the menu. Four email links on
+  Kontaktpersoner lacked `mailto:` and are repaired.
+- **Linked documents** (36 files behind 49 links: 27 PDF, 8 Word/Excel) go to
+  a new public bucket, `site-files`, in migration `*_site_files.sql`, **not
+  applied**. `site-media` stays images only. Once it is applied, run both
+  imports with `--files`: they copy each file byte for byte and point the
+  links at it.
+
+**Left for the user:** review the draft pages and `--publish`; apply
+`*_site_files.sql` and re-run with `--files`; decide Tånnerydsdammen (no
+lokal matches it) and whether "Allmänt" belongs in the menu. One post links a
+plain JPEG and the Smålandsrallyt 2015 Excel was a menu link; both are
+reported, not handled. The dummy events stay until the club's real programme
+is in /admin/kalender.
 
 ## Sources
 
@@ -146,8 +178,9 @@ both.**
 
 ## Still open
 
-- **The 39 published pages → the signed-off six-section tree.** The mapping is
-  not written down yet. From the export, today's tree is:
+- **The 39 published pages → the signed-off six-section tree.** Mapped since
+  2026-10-23 in `scripts/wp-import/page-tree.ts`; this list is what it was
+  built from. From the export, today's tree is:
   - **11 stubs with no content** (`/svalan/`, `/listor/`, `/program/`,
     `/klubbtavlingar/`, `/forsaljning/`, `/om-foreningen/` and the link-only
     children) — these become link entries or section pages, not imported prose.

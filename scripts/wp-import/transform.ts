@@ -5,6 +5,7 @@ import {
   mediaFallbackUrl,
   mediaSrcset,
   planImageWidths,
+  SUPABASE_ORIGIN,
 } from "../../src/lib/media"
 
 /**
@@ -137,6 +138,36 @@ export type ImageNeed = {
 export type FileNeed = {
   source: string
   kind: "pdf" | "office" | "image-link" | "other"
+  /** Where it goes in site-files, for a pdf or office file; null otherwise. */
+  path: string | null
+}
+
+/** Documents the old site links to (migration *_site_files.sql). */
+export const SITE_FILES_BUCKET = "site-files"
+
+/**
+ * `YYYY/MM/<name>` in site-files, from the WordPress upload path, which is
+ * unique already. The name is reduced to ASCII, since storage keys are picky.
+ */
+export function plannedFilePath(source: string): string | null {
+  const match = /\/wp-content\/uploads\/(\d{4})\/(\d{2})\/([^/?#]+)$/.exec(new URL(source).pathname)
+  if (!match) return null
+  let name = match[3] ?? ""
+  try {
+    name = decodeURIComponent(name)
+  } catch {
+    // Keep it as it came.
+  }
+  const safe = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return safe ? `${match[1]}/${match[2]}/${safe}` : null
+}
+
+export function siteFileUrl(path: string): string {
+  return `${SUPABASE_ORIGIN}/storage/v1/object/public/${SITE_FILES_BUCKET}/${path}`
 }
 
 export type BodyResult = {
@@ -157,6 +188,11 @@ export type ResolveContext = {
   attachmentsByUrl: ReadonlyMap<string, Attachment>
   /** The post's date: the storage month for hotlinked images. */
   postDate: Date
+  /**
+   * Point document links at site-files. Only when the import copies them
+   * (`--files`), or the links would break before the cutover.
+   */
+  rewriteFiles?: boolean
 }
 
 function attribute(tag: string, name: string): string | null {
@@ -286,10 +322,20 @@ export function transformBody(html: string, context: ResolveContext): BodyResult
     })
     .replace(/<a\s[^>]*href="([^"]+)"[^>]*>/gi, (tag, rawHref: string) => {
       const href = decodeEntities(rawHref)
+      // An address linked without its scheme resolves as a page path and
+      // 404s (four on the contact page). It can only have meant mailto:.
+      if (/^[^\s@/:]+@[^\s@/:]+\.[a-z]{2,}$/i.test(href.trim())) {
+        return tag.replace(rawHref, `mailto:${escapeAttribute(href.trim())}`)
+      }
       if (!isWpUrl(href)) return tag
       if (isWpUpload(href)) {
-        files.push({ source: href.replace("://www.", "://"), kind: fileKind(href) })
-        return tag
+        const source = href.replace("://www.", "://")
+        const kind = fileKind(href)
+        const path = kind === "pdf" || kind === "office" ? plannedFilePath(source) : null
+        files.push({ source, kind, path })
+        return path && context.rewriteFiles
+          ? tag.replace(rawHref, escapeAttribute(siteFileUrl(path)))
+          : tag
       }
       const url = new URL(href)
       const relative = `${url.pathname}${url.search}${url.hash}`
