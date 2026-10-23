@@ -101,7 +101,7 @@ const next = upcoming?.[0] ?? null
     alerts.length > 0 && (
       <section aria-labelledby="larm" class="mt-16 flex flex-col gap-7 md:mt-24">
         <h2 id="larm" class="text-lg font-semibold md:pl-[7rem]">Senaste larmen</h2>
-        <AlertList alerts={alerts} headingLevel={3} years="other-years" photos={false} />
+        <AlertList alerts={alerts} headingLevel={3} years="other-years" photos="thumb" />
         <a href="/larm" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4 md:ml-[7rem]">
           Alla larm
         </a>

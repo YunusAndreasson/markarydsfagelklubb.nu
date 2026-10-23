@@ -221,13 +221,16 @@ desktop
   "uncropped where the layout allows" actually applies. The feed is 12 per page,
   not 20, and lazy-loads: originals average 0.5 MB and there is no transform
   service.
-- **Photos appear on `/larm` and on a larm's own page — nowhere else.** The
-  home page's "Senaste larmen" and the detail page's "Fler larm" are
-  photo-free lists (`photos={false}`). The first draft showed them everywhere,
-  and four full-width member photos under the home page's lead article made the
-  larm section the largest thing on the page, against the rule that the lead is
-  the one loud thing — and cost 1.5 MB. Quiet lists also give "Alla larm"
-  something to promise.
+- **Full-size photos appear on `/larm` and on a larm's own page; the home page
+  gets thumbnails.** The first draft showed full-width photos everywhere, and
+  four of them under the home page's lead article made the larm section the
+  largest thing on the page, against the rule that the lead is the one loud
+  thing. So "Senaste larmen" shows each photo as a small square print beside
+  its row (`photos="thumb"`: 80 px on a phone, 112 px from `md`), with the text
+  kept together on the left; a larm without a photo is just the plain row.
+  The thumbnails still load the originals, since there is no transform
+  service, but they lazy-load below the lead. "Fler larm" on a larm's own
+  page and the lokal pages stay photo-free (`photos={false}`).
 - **The page says the place is approximate**, under the heading on `/larm` and
   again on the detail page. Readers deserve to know that "Nära Hualtet" is a
   deliberate blur, not a measurement.
