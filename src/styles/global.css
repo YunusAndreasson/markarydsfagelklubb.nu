@@ -168,6 +168,14 @@
   font-weight: 650;
   text-wrap: balance;
 }
+/* A home-page or end-of-page section: the scale's H2. */
+@utility type-section {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  text-wrap: balance;
+}
 @utility type-ingress {
   font-size: 1.1875rem;
   line-height: 1.5;

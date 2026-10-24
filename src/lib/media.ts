@@ -94,3 +94,18 @@ export function isSiteMediaUrl(value: string): boolean {
   // URL parsing resolves "..", so compare the normalised path too.
   return url.origin === SUPABASE_ORIGIN && url.href.startsWith(SITE_MEDIA_PUBLIC_PREFIX)
 }
+
+/**
+ * Every candidate URL in a srcset is one of ours. The sanitizer drops an image
+ * that fails this; the teaser reader (`teaser.ts`) skips one.
+ */
+export function srcsetIsSiteMedia(srcset: string): boolean {
+  const candidates = srcset
+    .split(",")
+    .map((candidate) => candidate.trim())
+    .filter(Boolean)
+  return (
+    candidates.length > 0 &&
+    candidates.every((candidate) => isSiteMediaUrl(candidate.split(/\s+/)[0] ?? ""))
+  )
+}

@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import type { PhotoTransform } from "./alert-photo"
 import type { Database } from "./database.types"
 import { createFetchWithTimeout } from "./fetch"
 import { readAlertsEnv } from "./worker-env"
@@ -40,8 +41,14 @@ const STORAGE_TIMEOUT_MS = 8_000
 export type AlertsBackend = {
   /** RLS-bypassing reader. Only `public-alerts.ts` should query with it. */
   db: SupabaseSecretClient
-  /** GET one object from the private bucket, streaming, key never exposed. */
-  fetchUpload(objectPath: string, init?: { signal?: AbortSignal }): Promise<Response>
+  /**
+   * GET one object from the private bucket, streaming, key never exposed.
+   * With a `transform`, Storage resizes it on the way out (WebP).
+   */
+  fetchUpload(
+    objectPath: string,
+    init?: { signal?: AbortSignal; transform?: PhotoTransform }
+  ): Promise<Response>
 }
 
 export type AlertsBackendResult =
@@ -69,19 +76,38 @@ export function openAlertsBackend(): AlertsBackendResult {
       db,
       fetchUpload(objectPath, init) {
         const encoded = objectPath.split("/").map(encodeURIComponent).join("/")
+        const transform = init?.transform
+        // The same URLs supabase-js builds for `download()` with and without
+        // a transform. Storage picks WebP from the Accept header, so it is
+        // pinned here rather than passed through from the visitor.
         const url = new URL(
-          `/storage/v1/object/${USER_UPLOADS_BUCKET}/${encoded}`,
+          transform
+            ? `/storage/v1/render/image/authenticated/${USER_UPLOADS_BUCKET}/${encoded}`
+            : `/storage/v1/object/${USER_UPLOADS_BUCKET}/${encoded}`,
           supabaseUrl
-        ).toString()
+        )
+        if (transform) {
+          url.searchParams.set("width", String(transform.width))
+          if (transform.height !== undefined) {
+            url.searchParams.set("height", String(transform.height))
+            url.searchParams.set("resize", "cover")
+          } else {
+            // Width alone, under the default `cover`, crops to the original's
+            // height (a 1801×1200 photo came back 480×1200). `contain` scales.
+            url.searchParams.set("resize", "contain")
+          }
+          url.searchParams.set("quality", "70")
+        }
         // Both headers, which is what supabase-js itself sends for REST and
         // Storage. CLAUDE.md's "never Authorization: Bearer" is about the
         // *publishable* key on Auth routes, where a Bearer is read as a user
         // JWT; Storage authenticates the service key this way.
-        return storageFetch(url, {
+        return storageFetch(url.toString(), {
           signal: init?.signal,
           headers: {
             apikey: supabaseSecretKey,
             Authorization: `Bearer ${supabaseSecretKey}`,
+            ...(transform && { Accept: "image/webp" }),
           },
         })
       },

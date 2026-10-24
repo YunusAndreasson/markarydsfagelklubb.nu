@@ -167,6 +167,22 @@ export function formatDate(value: Date | string, format: DateFormat): string {
   return FORMATS[format].format(toDate(value))
 }
 
+/**
+ * When a larm was seen, as a member would say it: "i dag", "i går", else
+ * "20 okt." — with the year when it isn't this one. Days are Stockholm days,
+ * so the 25-hour night when summer time ends is still one day.
+ */
+export function dayLabel(value: Date | string, now: Date = new Date()): string {
+  const day = startOfStockholmDay(value).getTime()
+  const today = startOfStockholmDay(now).getTime()
+  if (day === today) return "i dag"
+  // Twelve hours before midnight is always inside yesterday, 23 hours long or 25.
+  if (day === startOfStockholmDay(new Date(today - 12 * 3_600_000)).getTime()) return "i går"
+  const short = formatDate(value, "short")
+  const year = stockholmYear(value)
+  return year === stockholmYear(now) ? short : `${short} ${year}`
+}
+
 /** The year in Stockholm: a post at 00:30 on New Year's Day belongs to the new year. */
 export function stockholmYear(value: Date | string): number {
   return stockholmParts(toDate(value)).year

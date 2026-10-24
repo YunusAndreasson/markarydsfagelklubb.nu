@@ -7,6 +7,7 @@ import {
 } from "./alert-dto"
 import { type AlertCursor, newerThan, olderThan } from "./alert-keyset"
 import { observerIndex, observerName } from "./alert-observer"
+import type { PhotoTransform } from "./alert-photo"
 import { coarsePlace } from "./alert-place"
 import {
   buildLokaler,
@@ -243,7 +244,8 @@ const SAFE_OBJECT_PATH = /^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-
  */
 export async function openAlertPhoto(
   id: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  transform?: PhotoTransform
 ): Promise<LarmResult<Response | null>> {
   const backend = open()
   if (!backend.ok) return failed
@@ -274,6 +276,17 @@ export async function openAlertPhoto(
   if (!path || !SAFE_OBJECT_PATH.test(path)) return { ok: true, value: null }
 
   try {
+    if (transform) {
+      const resized = await backend.value.fetchUpload(path, { signal, transform })
+      if (resized.ok) return { ok: true, value: resized }
+      // An HTTP error from the resizer — transformations switched off, say —
+      // still has the original to fall back on. A throw or a timeout does
+      // not get a second try: two storage deadlines back to back is longer
+      // than anyone waits for a photo.
+      await resized.body?.cancel()
+      console.error(`mafk-web: larm photo — render ${resized.status}, serving original`)
+      if (signal?.aborted) throw new DOMException("Aborted", "AbortError")
+    }
     return { ok: true, value: await backend.value.fetchUpload(path, { signal }) }
   } catch {
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError")

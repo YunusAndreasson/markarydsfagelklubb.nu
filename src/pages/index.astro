@@ -3,51 +3,41 @@ export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
 import ArticleList from "@/components/site/ArticleList.astro"
+import ArticleTiles from "@/components/site/ArticleTiles.astro"
+import LarmRail from "@/components/site/LarmRail.astro"
+import SectionHeading from "@/components/site/SectionHeading.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { mediaFallbackUrl, mediaSrcset } from "@/lib/media"
+import { pickLead, splitFeatured, splitLarm } from "@/lib/front-page"
 import { listPublicAlerts } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
 import { formatDate, isoDateTime, startOfStockholmDay } from "@/lib/stockholm-time"
+import { isHeroWorthy } from "@/lib/teaser"
 
-// Members first (docs/design.md): what is coming up sits above the lead, in
-// one quiet line; then the newest article leads, loud; then the latest larm,
-// then the rest of the articles as a quiet dated list.
+// The club's magazine (docs/design.md, "Tidskriften"): a lead story on a wide
+// photo with the programme beside it, then the newest larm photos as a rail,
+// then three more articles with their photos and the rest as a dated list.
+// front-page.ts decides what goes where; this file only lays it out.
 const { db } = Astro.locals
 if (!db) return new Response(null, { status: 503 })
 
 const now = new Date()
 const [navigation, page, larm, upcoming] = await Promise.all([
   loadNavigation(db),
-  listPublishedArticles(db, { limit: 9 }),
-  listPublicAlerts({ limit: 4 }),
-  listUpcomingEvents(db, { limit: 1, from: startOfStockholmDay(now) }),
+  listPublishedArticles(db, { limit: 10 }),
+  listPublicAlerts({ limit: 12 }),
+  listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
 ])
-const [lead, ...earlier] = page?.articles ?? []
+const { lead, rest } = pickLead(page?.articles ?? [])
+const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
+const { tiles, list } = splitFeatured(rest, 3)
 // A larm failure costs the section, never the home page.
-const alerts = larm.ok ? larm.value.alerts : []
-// The same for the programme: one line, and nothing at all when it is empty.
-const next = upcoming?.[0] ?? null
+const { prints, plain } = splitLarm(larm.ok ? larm.value.alerts : [], 5)
+// The same for the programme: nothing at all when it is empty.
+const events = upcoming ?? []
 ---
 
 <SiteLayout menu={navigation.menu}>
   <h1 class="sr-only">Markaryds Fågelklubb</h1>
-
-  {
-    next && (
-      <section aria-labelledby="narmast" class="mb-10 flex flex-col gap-1 md:mb-14 md:pl-[7rem]">
-        <h2 id="narmast" class="type-meta text-muted-foreground">Närmast i programmet</h2>
-        <p class="flex flex-wrap items-baseline gap-x-3">
-          <time datetime={isoDateTime(next.starts_at)} class="type-meta text-muted-foreground">
-            {formatDate(next.starts_at, "weekday")}
-            {!next.all_day && ` ${formatDate(next.starts_at, "clock")}`}
-          </time>
-          <a href={`/kalender/${next.slug}`} class="decoration-primary font-medium underline-offset-4 hover:underline">
-            {next.title}
-          </a>
-        </p>
-      </section>
-    )
-  }
 
   {
     !lead && (
@@ -57,22 +47,29 @@ const next = upcoming?.[0] ?? null
     )
   }
 
-  {
-    lead && (
-      <article class="flex flex-col gap-6 md:gap-8">
-        {lead.cover && (
+  <div class="flex flex-col gap-6 md:gap-8 lg:grid lg:grid-cols-[7rem_minmax(0,38rem)_minmax(0,1fr)] lg:gap-x-0 lg:gap-y-8">
+    {
+      lead && leadImage && (
+        /* The photo repeats the headline's link, so it is hidden from the
+           accessibility tree and kept out of the tab order. */
+        <a href={`/artiklar/${lead.slug}`} tabindex="-1" aria-hidden="true" class="-mx-4 block sm:mx-0 lg:col-span-3">
           <img
-            src={mediaFallbackUrl(lead.cover)}
-            srcset={mediaSrcset(lead.cover)}
+            src={leadImage.src}
+            srcset={leadImage.srcset || undefined}
             sizes="(min-width: 64rem) 61rem, 100vw"
-            width={lead.cover.width}
-            height={lead.cover.height}
-            alt={lead.cover.alt}
+            width={leadImage.width}
+            height={leadImage.height}
+            alt=""
             fetchpriority="high"
-            class="-mx-4 h-auto w-[calc(100%+2rem)] max-w-none sm:mx-0 sm:w-full sm:rounded-[4px]"
+            class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-2/1"
           />
-        )}
-        <div class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,1fr)]">
+        </a>
+      )
+    }
+
+    {
+      lead && (
+        <article class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,38rem)] lg:col-span-2">
           <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3 md:flex-col md:gap-y-1.5 md:pt-[0.9rem]">
             <time datetime={isoDateTime(lead.published_at)} class="flex flex-wrap gap-x-1 md:flex-col">
               <span>{formatDate(lead.published_at, "weekdayName")}</span>
@@ -90,33 +87,64 @@ const next = upcoming?.[0] ?? null
                 {lead.title}
               </a>
             </h2>
-            {lead.excerpt && <p class="type-ingress text-muted-foreground max-w-[38rem]">{lead.excerpt}</p>}
+            {lead.standfirst && <p class="type-ingress text-muted-foreground line-clamp-4 max-w-[38rem]">{lead.standfirst}</p>}
           </div>
-        </div>
-      </article>
-    )
-  }
+        </article>
+      )
+    }
+
+    {
+      events.length > 0 && (
+        <section aria-labelledby="narmast" class="flex flex-col gap-3 md:pl-[7rem] lg:col-start-3 lg:pt-[0.9rem] lg:pl-10">
+          <h2 id="narmast" class="type-meta text-muted-foreground">Närmast i programmet</h2>
+          <ol class="flex flex-col gap-3">
+            {events.map((event) => (
+              <li class="flex flex-col">
+                <time datetime={isoDateTime(event.starts_at)} class="type-meta text-muted-foreground">
+                  {formatDate(event.starts_at, "weekday")}
+                  {!event.all_day && ` ${formatDate(event.starts_at, "clock")}`}
+                </time>
+                <a href={`/kalender/${event.slug}`} class="decoration-primary leading-snug font-medium text-pretty underline-offset-4 hover:underline">
+                  {event.title}
+                </a>
+              </li>
+            ))}
+          </ol>
+          <a href="/kalender" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+            Hela programmet
+          </a>
+        </section>
+      )
+    }
+  </div>
 
   {
-    alerts.length > 0 && (
-      <section aria-labelledby="larm" class="mt-16 flex flex-col gap-7 md:mt-24">
-        <h2 id="larm" class="text-lg font-semibold md:pl-[7rem]">Senaste larmen</h2>
-        <AlertList alerts={alerts} headingLevel={3} years="other-years" photos="thumb" />
-        <a href="/larm" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4 md:ml-[7rem]">
-          Alla larm
-        </a>
+    (prints.length > 0 || plain.length > 0) && (
+      <section aria-labelledby="larm" class="mt-16 flex flex-col gap-6 md:mt-24">
+        <SectionHeading id="larm" href="/larm" link="Alla larm">
+          Senaste larmen
+        </SectionHeading>
+        {prints.length > 0 && (
+          <LarmRail alerts={prints} layout="five" sizes="(min-width: 64rem) 11rem, (min-width: 48rem) 14rem, 42vw" />
+        )}
+        {plain.length > 0 && (
+          <div class="flex flex-col gap-5">
+            {prints.length > 0 && <p class="type-meta text-muted-foreground md:pl-[7rem]">Också larmat</p>}
+            <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} compact />
+          </div>
+        )}
       </section>
     )
   }
 
   {
-    earlier.length > 0 && (
-      <section aria-labelledby="tidigare" class="mt-16 flex flex-col gap-7 md:mt-24">
-        <h2 id="tidigare" class="text-lg font-semibold md:pl-[7rem]">Tidigare</h2>
-        <ArticleList articles={earlier} headingLevel={3} years="other-years" />
-        <a href="/artiklar" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4 md:ml-[7rem]">
-          Alla artiklar
-        </a>
+    (tiles.length > 0 || list.length > 0) && (
+      <section aria-labelledby="artiklar" class="mt-16 flex flex-col gap-10 md:mt-24">
+        <SectionHeading id="artiklar" href="/artiklar" link="Alla artiklar">
+          Fler artiklar
+        </SectionHeading>
+        {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
+        {list.length > 0 && <ArticleList articles={list.slice(0, 6)} headingLevel={3} years="other-years" />}
       </section>
     )
   }

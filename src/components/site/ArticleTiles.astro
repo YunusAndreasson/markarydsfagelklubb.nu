@@ -1,0 +1,74 @@
+---
+import type { ArticleTeaser } from "@/lib/public-content"
+import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * One row of up to three articles with their photos (docs/design.md,
+ * "Tidskriften"): a 3:2 photo, the date, the title as the link and the
+ * opening line. No card around them — no border, fill or shadow — and never
+ * stacked into a second row; what doesn't fit is the dated list below.
+ *
+ * `splitFeatured` hands over only articles with a photo, so a tile never has
+ * a hole where its picture should be.
+ */
+
+interface Props {
+  articles: ArticleTeaser[]
+  /** h2 when the tiles are the section, h3 under a section heading. */
+  headingLevel?: 2 | 3
+  /** The home page names the category; "Mer i Referat" already has. */
+  showCategory?: boolean
+}
+
+const { articles, headingLevel = 3, showCategory = false } = Astro.props
+const Heading = headingLevel === 2 ? "h2" : "h3"
+const thisYear = stockholmYear(new Date())
+---
+
+<ol class="grid gap-x-6 gap-y-10 md:grid-cols-3">
+  {
+    articles.map((article) => {
+      const year = stockholmYear(article.published_at)
+      return (
+        <li class="flex flex-col gap-4">
+          {article.image && (
+            <a href={`/artiklar/${article.slug}`} tabindex="-1" aria-hidden="true">
+              <img
+                src={article.image.src}
+                srcset={article.image.srcset || undefined}
+                sizes="(min-width: 64rem) 20rem, (min-width: 48rem) 30vw, 100vw"
+                width={article.image.width || undefined}
+                height={article.image.height || undefined}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+              />
+            </a>
+          )}
+          <div class="flex flex-col gap-1.5">
+            <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
+              <time datetime={isoDateTime(article.published_at)}>
+                {formatDate(article.published_at, "short")}
+                {year !== thisYear && ` ${year}`}
+              </time>
+              {showCategory && article.category && (
+                <a href={`/artiklar/kategori/${article.category.slug}`} class="hover:text-foreground underline-offset-4 hover:underline">
+                  {article.category.name}
+                </a>
+              )}
+            </p>
+            <Heading class="text-xl leading-tight font-semibold tracking-[-0.01em] text-pretty">
+              <a href={`/artiklar/${article.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+                {article.title}
+              </a>
+            </Heading>
+            {article.standfirst && (
+              <p class="text-muted-foreground line-clamp-3 leading-relaxed">{article.standfirst}</p>
+            )}
+          </div>
+        </li>
+      )
+    })
+  }
+</ol>

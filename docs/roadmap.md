@@ -648,6 +648,15 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
   bucket (not `storage.download()`, which buffers up to 3 MB) and answers one
   identical 404 for a bad id, an unknown larm, a hidden larm, a report without a
   picture and a missing object, so it is not an oracle for what has been hidden.
+- **Photo sizes (2026-10-24).** `?v=` names one of a fixed table in
+  `src/lib/alert-photo.ts`, and the route asks Storage's render endpoint for it:
+  `480`, `960` and `1600` keep the photo's shape (`resize=contain` — width alone
+  under the default `cover` crops to the original's height), and `p480`/`p960`
+  are the home rail's 4:5 prints, cropped by Storage. No `v` streams the
+  original, as before. An HTTP error from the resizer (transformations switched
+  off) falls back to the original; a throw or a timeout does not get a second
+  try. Measured on the preview: `/larm` went from 3.9 MB to 0.34 MB, an average
+  photo from 537 KB to 27 KB.
 - Rarity is shown as a **word, only from "Ovanlig" up**, coloured only for the
   two rarest levels. Nothing in the first 238 larm was level 0 or 1, and 191
   were level 4–5, so a badge on every row would have meant nothing.
@@ -882,5 +891,7 @@ time.
 | F2 | WordPress import | **Later (step 8).** Build against a few dummy articles meanwhile. **Answered 2026-09-20:** hotlinked images copied when they still answer and dropped when dead; unattached media imported only where the content references them; the 57 Cinclus PDFs public as today; original dates and authors kept. **Category mapping signed off 2026-09-20**: 46 WP categories onto six (Föreningsaktuellt, Referat, Tävlingar, Exkursioner, Mötesplats Ekebacken, Program), "Okategoriserade" left with no category, and the most specific category winning when a post has several | 2026-09-19, answered 2026-09-20 |
 | F3 | Kalender | **No recurring events** (copy one instead); old Program posts **stay articles**; **iCal feed now** (`/kalender.ics`); built so the **app can read events later** (`to anon`). Route `/kalender`, menu item "Program"; a **fixed type list**; a **month-grouped list**, no grid; place is free text; no cover image | 2026-09-20 |
 | F4 | Larm scope | **Display only.** The site never sends alerts | 2026-09-19 |
+| F4 | Larm photo sizes | **Resized by Supabase Storage image transformations** on the way out, through the existing photo route and secret key, from a fixed variant table. The Pro plan includes 100 source images a month, then $5 per 1,000: normally $0 at the club's ~30 photo larm a month, $5 at most. Falls back to the original if the resizer answers with an error | 2026-10-24 |
+| F2 | The home page as a magazine ("Tidskriften", `docs/design.md`) | **Article photos come from the body** when there is no cover (`src/lib/teaser.ts`; 222 of 353 posts have one, 8 have a cover), and the opening line when there is no excerpt. **The lead is the newest of the latest four with a large landscape photo**, else the newest as plain type. The scope stops short of the article body: a hero photo and real captions need a caption node in the editor and sanitizer, and a re-import | 2026-10-24 |
 | F5 | Lokaler | **All 61 lokaler pinned**, active ones marked (the app's 14-day rule), **no clustering, never a larm pin**; a page per lokal at `/lokaler/<slug>` listing larm as **"På lokalen" (300 m, the app's rule) and "I närheten" (3 km, `NEAR_KM`)**; the **9 WP lokal pages 301 there** and their text becomes `locations.description`, carried over by hand; **Leaflet + OpenStreetMap** raster tiles | 2026-09-20 |
 | F6 | Larmligan | **From Artportalen, not from the club's larm.** It is Artportalen's Observatörsligan for Markaryds kommun — the list the WP site already links to — so it touches no member data and drops out of the shared-database work entirely. Folded into step 9 as a **link** for now. A table on the site is possible — `occurrence.recordedBy` is in the data — but there is no aggregation by observer (only GeoGrid and Taxon), so it means scanning a kommun-year under a 10 000-record cap, and it would be our ranking rather than Artportalen's. **F7's spike decides it** | 2026-09-20 |

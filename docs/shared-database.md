@@ -121,6 +121,13 @@ every observation and every private storage object. What contains it:
   the same way, so RLS stays the boundary there.
 - **Storage:** the key goes on both `apikey` and `Authorization: Bearer` for the
   Storage REST call, which is what supabase-js itself sends for REST and Storage.
+  Since 2026-10-24 the same call can go to the **render endpoint**
+  (`/storage/v1/render/image/authenticated/user-uploads/…`) for a resized larm
+  photo, from the fixed sizes in `src/lib/alert-photo.ts`. It reads the same
+  objects, so nothing about who can reach the key changed. Image
+  transformations are a project setting (Storage → Settings) that the app
+  doesn't use; switching it off costs the site only the small sizes, since the
+  route then serves the original.
   The "new keys never use Bearer" rule in `CLAUDE.md` is about the *publishable*
   key on Auth routes, where a Bearer is read as a user JWT.
 

@@ -40,11 +40,135 @@ The site reads as the club's shared field notebook.
   where it matters ("lördag 19 september"), as the club writes it.
 - **One bold thing:** the lead story on the home page. The newest article is set
   at display size in Inter's display cut, with its photo full-bleed on a phone.
-  Everything after it is quiet.
+  ~~Everything after it is quiet.~~ Since 2026-10-24 the members' photos carry
+  the rest of the page too; see [Tidskriften](#tidskriften-2026-10-24).
 - **Quiet everywhere else:** one left-aligned reading column, no cards, no
-  decoration, and colour only where something can be clicked.
+  decoration, and colour only where something can be clicked. (Still true of
+  cards, decoration and colour; the home page and the lists now use the full
+  container for photos.)
 - **Photos are the members' own work,** shown large, uncropped where the
   layout allows (never a forced square), and always with alt text.
+
+## Tidskriften (2026-10-24)
+
+The second pass, asked for as "more like a magazine, with better use of images
+for articles and alerts, so the page feels alive". Benchmarked against Audubon,
+National Geographic, Monocle and BirdLife Sverige (fetched), and The Atlantic
+and NYT Magazine (from their known layouts).
+
+### What changed in the brief
+
+The notebook direction was written when the import was expected to bring almost
+no photos, so a typographic page was right for the data. The data turned out
+otherwise:
+
+- **Articles:** 8 of 353 have a cover, but **222 carry photos in the body** —
+  71% of the past year's posts. Every photo-less post of the past two years is
+  a short notice (110–710 characters).
+- **Larm:** 64% have a photo, 77% in the past month.
+
+The site was hiding them. The spine stays — the date margin, Inter only, green
+only for action, no cards, no all-caps, no middle-dot strings — and "quiet
+everywhere" becomes **"the members' photos carry the page"**.
+
+### Principles
+
+1. **Anything with a photo shows it**, at the ratio its role uses.
+2. **The date margin stays the spine**, on the lead and in every list.
+3. **Size makes the hierarchy:** a 2:1 lead, then 4:5 prints, then 3:2 tiles,
+   then 3:2 thumbnails. No kicker labels beyond the lead's category.
+4. **No placeholders.** A story without a photo is type, never a grey box. That
+   is honest because those stories are notices.
+5. **No text over photos**, no gradient scrims, no carousels, no hover zoom.
+
+### Where an article's photo and opening line come from
+
+`src/lib/teaser.ts`, read from the stored, sanitized body, so the article page
+and the import are untouched:
+
+- **Photo:** the cover if the editor set one; otherwise the first of the body's
+  opening six photos that is landscape (w/h ≥ 1.2) and at least 960 px wide;
+  otherwise the first at least 480 px wide; otherwise none.
+- **Opening line:** the hand-written excerpt; otherwise the first paragraph
+  that isn't empty, doesn't hold an image, isn't the caption the import wrote
+  after one, isn't a photo credit and doesn't merely repeat the title. Cut at a
+  word with "…". On the newest 40 posts this gave 40 opening lines and no photo
+  credit.
+
+### Home
+
+```
+desktop (lg)                                          360 px
+[ lead photo, 2:1, 64rem ]                            [ lead photo 3:2, full-bleed ]
+onsdag      Inför Smålandsrallyt        Närmast i     onsdag 30 september  Tävlingar
+30 sep.     opening line …              programmet    Inför Smålandsrallyt  ← display
+Tävlingar                               (≤ 3 events)  opening line …
+                                        Hela progr.   Närmast i programmet (≤ 3)
+
+Senaste larmen                          Alla larm     Senaste larmen       Alla larm
+[4:5][4:5][4:5][4:5][4:5]                             [4:5][4:5][4  → swipe
+Järnsparv / Nära Klintbadet / i går 08:25
+        Också larmat
+22 okt. 12:46  Kungsfiskare  Reningsdammarna  Åsa Andersen   ← one line each
+
+Fler artiklar                       Alla artiklar
+[3:2]       [3:2]       [3:2]                         tiles stacked full width
+18 okt. Tävlingar / title / opening line
+30 sep.     Medlemsmöte …                             the dated list,
+ 6 sep.     Nu finns …                                thumbnail on the right
+18 juni     upprop 2026!                 [3:2]
+```
+
+- **The lead** is the newest of the latest four articles with a hero-worthy
+  photo (`pickLead` in `src/lib/front-page.ts`), so the page opens on a picture
+  rather than on "programändring!" at 72 px. When none of the four has one,
+  the newest leads as plain type, as before. The photo is cropped to 2:1 from
+  `md` up (3:2 on a phone) so the headline stays above the fold at 1280×900.
+- **"Närmast i programmet"** takes the column beside the headline from `lg` up.
+  At `md` the container is only 45rem, so it sits under the lead there.
+- **The larm rail** is the page's live part: the five newest larm with a photo,
+  as 4:5 prints with the species, place and "i dag" / "i går" / date under each
+  (`dayLabel`). Below `lg` it scrolls sideways inside itself, snapping print by
+  print, with no script. **"Också larmat"** lists every photo-less larm newer
+  than the last print, uncapped, so a rare bird reported without a picture is
+  never hidden behind older photos (`splitLarm`). It is one line per larm,
+  because full notebook rows under the rail outweighed the photos.
+- **"Fler artiklar"**: the next three articles with a photo as tiles, with no
+  card chrome and never a second row, then the rest as the dated list.
+- Section headings are 1.5rem (`type-section`) with the one "Alla …" link on the
+  same line, at the container's edge. Sections are still separated by space,
+  not rules.
+
+### Lists and related blocks
+
+- **The article list** (`/artiklar`, categories, the home page) puts each
+  article's photo on the right as a 3:2 print, aligned to the container's
+  edge. A row without one simply has none.
+- **`/larm`** shows the photos in a right-hand column (18rem, 3:2) from `md` up,
+  so they line up like a contact strip and the log is half as long; on a phone
+  they stay full width under the row.
+- **"Mer i <kategori>"** under an article: the newest three in the category with
+  a photo, as tiles; if none has one, the old list.
+- **"Fler larm"** under a larm: the newest three with a photo, as a rail of
+  prints, in the reading column's width.
+
+### Photo sizes
+
+Larm photos are members' full-size originals, so the route asks Storage for
+fixed sizes (`src/lib/alert-photo.ts`; roadmap decision log, 2026-10-24): 4:5
+prints of 480×600 and 960×1200 for the rail, and 480/960/1600 wide in the
+photo's own shape for the feed and a larm's page. Measured on the preview,
+`/larm` went from 3.9 MB to 0.34 MB, and the home page shows 12 photos instead
+of 2 in less weight than before (520–625 KB against 685 KB).
+
+### Left for a later pass
+
+- The article page itself: a wide hero photo (the cover, or the body's first
+  photo moved up) and real `<figure>`/`<figcaption>` captions. Captions are
+  paragraphs today, so this needs a caption node in the editor and sanitizer
+  and a re-import.
+- Imported titles in lowercase or capitals ("programändring!", "EKEBACKEN 28
+  APRIL") are for the editor to fix, not CSS.
 
 ## Tokens
 
@@ -144,12 +268,15 @@ Alla artiklar                                           Alla artiklar
 - The lead article's **whole headline is the link**. There's no "Läs mer" and
   no arrow.
 - **Without a cover photo, the lead is purely typographic.** The display
-  headline carries it, and the layout must not leave a hole. Only 14 of the
+  headline carries it, and the layout must not leave a hole. ~~Only 14 of the
   353 WordPress posts have a featured image, so this is the common case until
-  the import picks a cover (step 8, F2).
-- **"Tidigare"** holds the next 8 articles: the date in the margin column
+  the import picks a cover (step 8, F2).~~ The import set 8 covers, but 222
+  posts carry photos in the body, so this is now the rare case; see
+  [Tidskriften](#tidskriften-2026-10-24).
+- ~~**"Tidigare"** holds the next 8 articles: the date in the margin column
   (day and month; the year only when it differs from the current year), the
-  title as the link, one line of ingress.
+  title as the link, one line of ingress.~~ Replaced by "Fler artiklar"
+  (2026-10-24).
 - ~~**Room for later steps:** larm (step 4) goes between the lead and
   "Tidigare", and the next program item (step 5) above the lead.~~ Both are
   there now. Each shows nothing at all when it is empty; no placeholders.
@@ -220,9 +347,11 @@ desktop
   (`object-contain`), portrait or landscape, which is where the brief's
   "uncropped where the layout allows" actually applies. The feed is 12 per page,
   not 20, and lazy-loads: originals average 0.5 MB and there is no transform
-  service.
-- **Full-size photos appear on `/larm` and on a larm's own page; the home page
-  gets thumbnails.** The first draft showed full-width photos everywhere, and
+  service. (Superseded 2026-10-24: Storage resizes the photos now, so the feed
+  loads 480/960-wide WebP files of about 27 KB, and shows them in a right-hand
+  column from `md` up rather than across the reading column.)
+- ~~**Full-size photos appear on `/larm` and on a larm's own page; the home page
+  gets thumbnails.**~~ (Superseded 2026-10-24 by the larm rail.) The first draft showed full-width photos everywhere, and
   four of them under the home page's lead article made the larm section the
   largest thing on the page, against the rule that the lead is the one loud
   thing. So "Senaste larmen" shows each photo as a small square print beside
@@ -276,10 +405,12 @@ carries weekday, date, year, time, then the type. "Anmäl dig" is a plain green
 link, not a button — the site spends colour on what can be clicked and keeps
 the one button for elsewhere.
 
-On the **home page** the next event sits **above the lead**, as one quiet line:
+~~On the **home page** the next event sits **above the lead**, as one quiet line:
 a small heading, the weekday and time, the title as the link. It is the first
 thing on the page and the smallest, which is the point — the lead article stays
-the one loud thing.
+the one loud thing.~~ Since 2026-10-24 the next three events sit **beside the
+lead headline** from `lg` up, in the column the reading layout left empty, and
+under the lead below that; see [Tidskriften](#tidskriften-2026-10-24).
 
 `/kalender.ics` is offered on `/kalender` as "Prenumerera på programmet", in a
 sentence that says what subscribing does. It is not offered on an event's page,

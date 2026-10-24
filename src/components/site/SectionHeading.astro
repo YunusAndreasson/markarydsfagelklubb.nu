@@ -1,0 +1,27 @@
+---
+/**
+ * A section's name and, beside it, the one link to the rest of it — "Alla
+ * larm", "Alla artiklar" (docs/design.md, "Tidskriften"). The size of the
+ * heading carries the hierarchy; there is no label above it and no rule.
+ */
+
+interface Props {
+  /** For the section's `aria-labelledby`. */
+  id: string
+  href?: string
+  link?: string
+}
+
+const { id, href, link } = Astro.props
+---
+
+<div class="flex flex-wrap items-baseline justify-between gap-x-6">
+  <h2 id={id} class="type-section"><slot /></h2>
+  {
+    href && link && (
+      <a href={href} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+        {link}
+      </a>
+    )
+  }
+</div>

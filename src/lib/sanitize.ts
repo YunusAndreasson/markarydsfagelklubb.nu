@@ -1,6 +1,6 @@
 import sanitizeHtml from "sanitize-html"
 import { isAllowedEmbed } from "./embeds"
-import { isSiteMediaUrl } from "./media"
+import { isSiteMediaUrl, srcsetIsSiteMedia } from "./media"
 
 /**
  * The one gate between an editor and the database (docs/roadmap.md, D5).
@@ -66,18 +66,6 @@ const OPTIONS: sanitizeHtml.IOptions = {
     if (frame.tag === "iframe") return !isAllowedEmbed(frame.attribs.src ?? "")
     return false
   },
-}
-
-/** Every candidate URL in a srcset must be one of ours. */
-function srcsetIsSiteMedia(srcset: string): boolean {
-  const candidates = srcset
-    .split(",")
-    .map((candidate) => candidate.trim())
-    .filter(Boolean)
-  return (
-    candidates.length > 0 &&
-    candidates.every((candidate) => isSiteMediaUrl(candidate.split(/\s+/)[0] ?? ""))
-  )
 }
 
 /** The editor keeps a paragraph at the end to type in; it isn't content. */

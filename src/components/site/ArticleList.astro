@@ -1,9 +1,16 @@
 ---
-import type { ArticleSummary } from "@/lib/public-content"
+import type { ArticleTeaser } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
 
+/**
+ * The dated list: the date in the margin, the title and opening line, and the
+ * article's photo as a small 3:2 print on the right (docs/design.md,
+ * "Tidskriften"). An article without a photo simply has no print — in practice
+ * those are short notices, and a grey box would only say "no picture".
+ */
+
 interface Props {
-  articles: ArticleSummary[]
+  articles: ArticleTeaser[]
   /** h2 on a list page, h3 under a section heading. */
   headingLevel?: 2 | 3
   /**
@@ -27,24 +34,44 @@ const yearLabel = (index: number): number | null => {
 }
 ---
 
-<ol class="flex flex-col gap-7">
+<ol class="flex flex-col gap-8">
   {
     articles.map((article, index) => {
       const year = yearLabel(index)
       return (
-        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
+        <li class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)_minmax(12rem,1fr)] md:gap-x-0">
           <p class="type-meta text-muted-foreground flex gap-1.5 md:flex-col md:gap-0 md:pt-[0.2rem]">
             <time datetime={isoDateTime(article.published_at)}>{formatDate(article.published_at, "short")}</time>
             {year !== null && <span>{year}</span>}
           </p>
-          <div class="flex flex-col gap-1">
+          <div class="col-start-1 flex flex-col gap-1 md:col-start-2 md:row-start-1">
             <Heading class="text-lg leading-snug font-semibold text-pretty">
               <a href={`/artiklar/${article.slug}`} class="decoration-primary underline-offset-4 hover:underline">
                 {article.title}
               </a>
             </Heading>
-            {article.excerpt && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{article.excerpt}</p>}
+            {article.standfirst && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{article.standfirst}</p>}
           </div>
+          {article.image && (
+            <a
+              href={`/artiklar/${article.slug}`}
+              tabindex="-1"
+              aria-hidden="true"
+              class="col-start-2 row-span-2 row-start-1 md:col-start-3 md:row-span-1 md:w-48 md:justify-self-end md:pl-6"
+            >
+              <img
+                src={article.image.src}
+                srcset={article.image.srcset || undefined}
+                sizes="(min-width: 48rem) 10.5rem, 7rem"
+                width={article.image.width || undefined}
+                height={article.image.height || undefined}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="bg-muted aspect-3/2 w-28 rounded-[4px] object-cover md:w-full"
+              />
+            </a>
+          )}
         </li>
       )
     })

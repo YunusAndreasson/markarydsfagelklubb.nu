@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  dayLabel,
   formatDate,
   parseStockholmInputValue,
   stockholmYear,
@@ -83,5 +84,32 @@ describe("formatDate", () => {
   it("puts a post just after midnight on the right day and year", () => {
     expect(formatDate("2025-12-31T23:30:00Z", "long")).toBe("1 januari 2026")
     expect(stockholmYear("2025-12-31T23:30:00Z")).toBe(2026)
+  })
+})
+
+describe("dayLabel", () => {
+  // Saturday 24 October 2026, 10:00 in Stockholm (summer time, UTC+2).
+  const now = new Date("2026-10-24T08:00:00Z")
+
+  it("says i dag and i går by the Stockholm calendar, not by 24 hours", () => {
+    expect(dayLabel("2026-10-23T22:30:00Z", now)).toBe("i dag") // 00:30 today
+    expect(dayLabel("2026-10-23T21:59:00Z", now)).toBe("i går") // 23:59 yesterday
+    expect(dayLabel("2026-10-22T22:00:00Z", now)).toBe("i går") // 00:00 yesterday
+    expect(dayLabel("2026-10-22T21:59:00Z", now)).toBe("22 okt.") // 23:59 the day before
+  })
+
+  it("survives the night summer time ends", () => {
+    // Monday 26 October, 00:30 (UTC+1). Sunday 25 October was 25 hours long.
+    const monday = new Date("2026-10-25T23:30:00Z")
+    expect(dayLabel("2026-10-24T22:00:00Z", monday)).toBe("i går") // Sunday 00:00, UTC+2
+    expect(dayLabel("2026-10-25T22:59:00Z", monday)).toBe("i går") // Sunday 23:59, UTC+1
+    expect(dayLabel("2026-10-24T21:59:00Z", monday)).toBe("24 okt.") // Saturday 23:59
+  })
+
+  it("adds the year only when it isn't this one", () => {
+    const newYear = new Date("2027-01-01T09:00:00Z")
+    expect(dayLabel("2026-12-31T12:00:00Z", newYear)).toBe("i går")
+    expect(dayLabel("2026-12-30T12:00:00Z", newYear)).toBe("30 dec. 2026")
+    expect(dayLabel("2026-10-01T12:00:00Z", now)).toBe("1 okt.")
   })
 })

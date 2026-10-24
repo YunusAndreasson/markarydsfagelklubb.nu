@@ -1,6 +1,7 @@
 ---
 import type { PublicAlert } from "@/lib/alert-dto"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
+import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
 import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
 
@@ -21,13 +22,13 @@ interface Props {
   /** "changes": print the year when it changes. "other-years": only when it isn't this one. */
   years?: "changes" | "other-years"
   /**
-   * How to show the photos. `true` prints them at the column's full width, as
-   * /larm does. `"thumb"` is the home page's: a small square beside the row,
-   * because four full-width member photos under the lead article made the
-   * larm section the biggest thing on the page, and the lead is meant to be
-   * the one loud thing. `false` shows none.
+   * Show the photos, as /larm does: in a column of their own on the right from
+   * `md` up, so the photos line up like a contact strip and the log stays
+   * scannable; full width under the row on a phone. Cropped to 3:2 to keep the
+   * rhythm — a larm's own page shows the photo whole. `false` shows none, as
+   * the lokal pages and the home page's "Också larmat" do.
    */
-  photos?: boolean | "thumb"
+  photos?: boolean
   /**
    * Show the coarse place. False on a lokal's own page under "På lokalen",
    * where the heading has already said where these larm came from and the
@@ -35,9 +36,22 @@ interface Props {
    * true, since the two are neighbours, and a flat contradiction to read.
    */
   place?: boolean
+  /**
+   * One line per larm — date and time, then species, place and observer in a
+   * row — for the home page's "Också larmat" under the photo rail, where full
+   * notebook rows would outweigh the photos they sit beneath.
+   */
+  compact?: boolean
 }
 
-const { alerts, headingLevel = 2, years = "changes", photos = true, place = true } = Astro.props
+const {
+  alerts,
+  headingLevel = 2,
+  years = "changes",
+  photos = true,
+  place = true,
+  compact = false,
+} = Astro.props
 const Heading = headingLevel === 2 ? "h2" : "h3"
 const thisYear = stockholmYear(new Date())
 
@@ -51,63 +65,66 @@ const yearLabel = (index: number): number | null => {
 }
 ---
 
-<ol class="flex flex-col gap-9">
+<ol class:list={["flex flex-col", compact ? "gap-4" : "gap-9"]}>
   {
     alerts.map((alert, index) => {
       const year = yearLabel(index)
       const rare = isRare(alert.rarity)
       return (
-        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
-          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-2 md:flex-col md:gap-x-0 md:pt-[0.25rem]">
-            <time datetime={isoDateTime(alert.observedAt)} class="flex flex-wrap gap-x-2 md:flex-col">
+        <li class:list={["grid gap-y-1", photos ? "md:grid-cols-[7rem_minmax(0,1fr)_18rem]" : "md:grid-cols-[7rem_minmax(0,38rem)]"]}>
+          <p
+            class:list={[
+              "type-meta text-muted-foreground flex flex-wrap gap-x-2",
+              compact ? "md:pt-[0.125rem]" : "md:flex-col md:gap-x-0 md:pt-[0.25rem]",
+            ]}
+          >
+            <time datetime={isoDateTime(alert.observedAt)} class:list={["flex flex-wrap gap-x-2", !compact && "md:flex-col"]}>
               <span>{formatDate(alert.observedAt, "short")}</span>
               {year !== null && <span>{year}</span>}
               <span>{formatDate(alert.observedAt, "clock")}</span>
             </time>
           </p>
-          <div class="flex items-start gap-4 md:gap-6">
-            <div class="flex min-w-0 flex-1 flex-col gap-1">
-              <Heading class="flex flex-wrap items-baseline gap-x-2 text-lg leading-snug font-semibold text-pretty">
-                <a href={`/larm/${alert.id}`} class="decoration-primary underline-offset-4 hover:underline">
-                  {alert.species}
-                </a>
-                {alert.count !== null && alert.count > 1 && (
-                  <span class="text-muted-foreground font-normal">{alert.count} ex.</span>
-                )}
-                {alert.rarity <= RARITY_WORTH_SAYING && (
-                  <span class:list={["type-meta", rare ? "text-rarity" : "text-muted-foreground"]}>
-                    {rarityLabel(alert.rarity)}
-                  </span>
-                )}
-              </Heading>
-              <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
-                {place && <span>{alert.place}</span>}
-                <span>{alert.observer ?? ANONYMOUS_OBSERVER}</span>
-              </p>
-              {photos === true && alert.photoUrl && (
-                <img
-                  src={alert.photoUrl}
-                  alt={`Foto av ${alert.species}`}
-                  loading="lazy"
-                  decoding="async"
-                  class="mt-2 aspect-3/2 w-full rounded-[4px] object-cover"
-                />
-              )}
-            </div>
-            {photos === "thumb" && alert.photoUrl && (
-              <a href={`/larm/${alert.id}`} tabindex="-1" aria-hidden="true" class="shrink-0">
-                <img
-                  src={alert.photoUrl}
-                  alt=""
-                  width="112"
-                  height="112"
-                  loading="lazy"
-                  decoding="async"
-                  class="bg-muted size-20 rounded-[4px] object-cover md:size-28"
-                />
+          <div
+            class:list={[
+              "flex min-w-0",
+              compact ? "flex-wrap items-baseline gap-x-3" : "flex-col gap-1",
+              photos && "md:pr-6",
+            ]}
+          >
+            <Heading
+              class:list={[
+                "flex flex-wrap items-baseline gap-x-2 leading-snug font-semibold text-pretty",
+                compact ? "text-base" : "text-lg",
+              ]}
+            >
+              <a href={`/larm/${alert.id}`} class="decoration-primary underline-offset-4 hover:underline">
+                {alert.species}
               </a>
-            )}
+              {alert.count !== null && alert.count > 1 && (
+                <span class="text-muted-foreground font-normal">{alert.count} ex.</span>
+              )}
+              {alert.rarity <= RARITY_WORTH_SAYING && (
+                <span class:list={["type-meta", rare ? "text-rarity" : "text-muted-foreground"]}>
+                  {rarityLabel(alert.rarity)}
+                </span>
+              )}
+            </Heading>
+            <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
+              {place && <span>{alert.place}</span>}
+              <span>{alert.observer ?? ANONYMOUS_OBSERVER}</span>
+            </p>
           </div>
+          {photos && alert.photoUrl && (
+            <img
+              src={alertPhotoSrc(alert.photoUrl, "480")}
+              srcset={alertPhotoSrcset(alert.photoUrl, "feed")}
+              sizes="(min-width: 48rem) 18rem, 100vw"
+              alt={`Foto av ${alert.species}`}
+              loading="lazy"
+              decoding="async"
+              class="bg-muted mt-2 aspect-3/2 w-full rounded-[4px] object-cover md:col-start-3 md:row-start-1 md:mt-0"
+            />
+          )}
         </li>
       )
     })

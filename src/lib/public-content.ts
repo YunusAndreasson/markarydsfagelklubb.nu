@@ -2,6 +2,7 @@ import { type Cursor, newerThan, olderThan } from "./keyset"
 import type { MediaFormat, MediaImage } from "./media"
 import { buildMenu, buildPageTree, type MenuEntry, type PageRow, type PageTree } from "./page-tree"
 import type { SupabasePublicClient } from "./supabase-public"
+import { pickTeaserImage, type TeaserImage, teaserText } from "./teaser"
 
 /**
  * What public pages read, as an anonymous visitor would (`locals.db`). The
@@ -63,8 +64,35 @@ function toSummary(row: SummaryRow): ArticleSummary {
   }
 }
 
+/**
+ * An article as a list shows it: with a photo and an opening line, both read
+ * out of the body when the editor set neither (src/lib/teaser.ts).
+ */
+export type ArticleTeaser = ArticleSummary & {
+  image: TeaserImage | null
+  /** The hand-written excerpt, or the body's opening line. Plain text. */
+  standfirst: string
+}
+
+/**
+ * Lists read the body to find its photo and opening line. Bodies average
+ * 1.5 KB (the longest is 11.5 KB), so a page of 20 costs about 30 KB from the
+ * database. If that ever grows, a generated column holding the first `<img>`
+ * and paragraph is the way out.
+ */
+const TEASER_COLUMNS = `${SUMMARY_COLUMNS}, body_html`
+
+function toTeaser({ body_html, ...row }: SummaryRow & { body_html: string }): ArticleTeaser {
+  const summary = toSummary(row)
+  return {
+    ...summary,
+    image: pickTeaserImage(summary.cover, body_html),
+    standfirst: summary.excerpt || teaserText(body_html, summary.title),
+  }
+}
+
 export type ArticlePage = {
-  articles: ArticleSummary[]
+  articles: ArticleTeaser[]
   /** Cursor for the next, older page, if there is one. */
   older: Cursor | null
   /** Cursor for the previous, newer page, if this isn't the first. */
@@ -87,7 +115,7 @@ export async function listPublishedArticles(
   const { limit, categoryId, before, after } = options
   // Paging back towards newer articles reads ascending, then flips.
   const ascending = Boolean(after && !before)
-  let query = db.from("articles").select(SUMMARY_COLUMNS)
+  let query = db.from("articles").select(TEASER_COLUMNS)
   if (categoryId !== undefined) query = query.eq("category_id", categoryId)
   if (before) query = query.or(olderThan(before))
   else if (after) query = query.or(newerThan(after))
@@ -96,14 +124,14 @@ export async function listPublishedArticles(
     .order("published_at", { ascending })
     .order("id", { ascending })
     .limit(limit + 1)
-    .overrideTypes<SummaryRow[], { merge: false }>()
+    .overrideTypes<(SummaryRow & { body_html: string })[], { merge: false }>()
   if (error) {
     console.error(`mafk-web: list articles failed — ${error.message}`)
     return null
   }
 
   const hasMore = data.length > limit
-  const rows = data.slice(0, limit).map(toSummary)
+  const rows = data.slice(0, limit).map(toTeaser)
   const articles = ascending ? rows.reverse() : rows
   const first = articles[0]
   const last = articles[articles.length - 1]

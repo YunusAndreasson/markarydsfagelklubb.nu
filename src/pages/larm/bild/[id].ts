@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro"
+import { parsePhotoVariant } from "@/lib/alert-photo"
 import { openAlertPhoto } from "@/lib/public-alerts"
 
 export const prerender = false
@@ -10,6 +11,10 @@ export const prerender = false
  * storage path contains the member's user id, so a signed URL would publish it
  * in the page — and would expire while a cached page still pointed at it.
  *
+ * `?v=` names one of the fixed sizes in `alert-photo.ts`, which Storage
+ * resizes on the way out; without it the original is served. An unknown size
+ * gets the same 404 as everything else.
+ *
  * The body is never read here. `openAlertPhoto` resolves as soon as the
  * headers arrive, and the stream is handed straight to the visitor, so a 3 MB
  * JPEG costs no measurable CPU on the Workers free plan. Reading it into a
@@ -18,7 +23,7 @@ export const prerender = false
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** Member uploads are all JPEG today; the other two are allowed for later. */
+/** Member uploads are all JPEG today; a resized one comes back as WebP. */
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/webp", "image/png"])
 
 /**
@@ -43,13 +48,19 @@ function plain(body: string, status: number): Response {
 const notFound = () => plain("not_found", 404)
 const unavailable = () => plain("larm_unavailable", 503)
 
-export const GET: APIRoute = async ({ params, request }) => {
+export const GET: APIRoute = async ({ params, request, url }) => {
   const id = params.id
   if (!id || !UUID.test(id)) return notFound()
+  const size = parsePhotoVariant(url.searchParams.get("v"))
+  if (size.kind === "unknown") return notFound()
 
   let photo: Awaited<ReturnType<typeof openAlertPhoto>>
   try {
-    photo = await openAlertPhoto(id, request.signal)
+    photo = await openAlertPhoto(
+      id,
+      request.signal,
+      size.kind === "variant" ? size.transform : undefined
+    )
   } catch {
     // The visitor navigated away. Not an error, and not worth a log line.
     return plain("client_closed_request", 499)

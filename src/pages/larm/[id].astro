@@ -2,8 +2,12 @@
 export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
+import LarmRail from "@/components/site/LarmRail.astro"
+import SectionHeading from "@/components/site/SectionHeading.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
+import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
+import { splitLarm } from "@/lib/front-page"
 import { listPublicAlerts, loadPublicAlert } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
 import { isRare, rarityLabel } from "@/lib/rarity"
@@ -21,11 +25,16 @@ if (!alert.value) return new Response(null, { status: 404 })
 
 const larm = alert.value
 
-// "Fler larm": the newest few, minus this one. A failure costs the section.
-const recent = await listPublicAlerts({ limit: 4 })
-const more = (recent.ok ? recent.value.alerts : [])
-  .filter((other) => other.id !== larm.id)
-  .slice(0, 3)
+// "Fler larm": the newest three with a photo as prints; with no photos among
+// them, the newest three as rows. It is a pointer onwards, not the log — that
+// is /larm — so photo-less larm newer than the prints aren't listed here, as
+// they are on the home page. Never this larm itself. A failure costs the
+// section.
+const recent = await listPublicAlerts({ limit: 12 })
+const { prints, plain } = splitLarm(
+  (recent.ok ? recent.value.alerts : []).filter((other) => other.id !== larm.id),
+  3
+)
 
 const observed = larm.observedAt
 const title =
@@ -77,7 +86,9 @@ const title =
              the box reserves the space so nothing shifts as it loads. */
           <div class="aspect-3/2 w-full max-w-[45rem]">
             <img
-              src={larm.photoUrl}
+              src={alertPhotoSrc(larm.photoUrl, "960")}
+              srcset={alertPhotoSrcset(larm.photoUrl, "detail")}
+              sizes="(min-width: 48rem) 45rem, 100vw"
               alt={`Foto av ${larm.species}`}
               decoding="async"
               class="h-full w-full rounded-[4px] object-contain"
@@ -93,10 +104,16 @@ const title =
     </article>
 
     {
-      more.length > 0 && (
-        <section aria-labelledby="fler" class="flex flex-col gap-6">
-          <h2 id="fler" class="text-lg font-semibold md:pl-[7rem]">Fler larm</h2>
-          <AlertList alerts={more} headingLevel={3} years="other-years" photos={false} />
+      (prints.length > 0 || plain.length > 0) && (
+        <section aria-labelledby="fler" class="flex max-w-[45rem] flex-col gap-6">
+          <SectionHeading id="fler" href="/larm" link="Alla larm">
+            Fler larm
+          </SectionHeading>
+          {prints.length > 0 ? (
+            <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 42vw" />
+          ) : (
+            <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} />
+          )}
         </section>
       )
     }
