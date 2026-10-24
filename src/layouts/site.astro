@@ -1,6 +1,8 @@
 ---
+import { buttonVariants } from "@/components/ui/button"
 import BaseLayout from "@/layouts/base.astro"
 import { isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
+import { cn } from "@/lib/utils"
 
 interface Props {
   /** The page's own title; the club's name is appended. */
@@ -12,6 +14,13 @@ interface Props {
 
 const SITE_NAME = "Markaryds Fågelklubb"
 const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
+/**
+ * The header's one button (docs/design.md, "Klubben"): joining is what the
+ * section is for, so it is the one place the public site spends a filled
+ * button. In the bar from md up; on a phone, where the wordmark and "Meny"
+ * fill the bar, it opens the menu panel instead.
+ */
+const JOIN_PATH = "/om-foreningen/medlemskap"
 
 const { title, description, menu } = Astro.props
 const { pathname } = Astro.url
@@ -30,61 +39,66 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
     <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-4 sm:px-6 md:items-end md:py-7">
       <div class="flex flex-col gap-1">
         <a href="/" class="text-lg font-semibold tracking-tight md:text-xl">{SITE_NAME}</a>
-        <p class="text-muted-foreground hidden text-sm md:block">{TAGLINE}</p>
+        <p class="text-muted-foreground hidden text-sm lg:block">{TAGLINE}</p>
       </div>
 
-      {
-        menu.length > 0 && (
-          <nav aria-label="Huvudmeny" class="hidden md:block">
-            <ul class="flex flex-wrap justify-end gap-x-6 gap-y-2">
-              {menu.map((entry) => (
-                <li>
-                  <a
-                    href={entry.href}
-                    aria-current={current(entry)}
-                    class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
-                  >
-                    {entry.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )
-      }
-
-      {
-        menu.length > 0 && (
-          <details class="group md:hidden">
-            <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
-              <span class="group-open:hidden">Meny</span>
-              <span class="hidden group-open:inline">Stäng</span>
-            </summary>
-            <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6">
-              <ul class="flex flex-col">
+      <div class="flex items-center gap-3 lg:gap-8">
+        {
+          menu.length > 0 && (
+            <nav aria-label="Huvudmeny" class="hidden lg:block">
+              <ul class="flex flex-wrap justify-end gap-x-6 gap-y-2">
                 {menu.map((entry) => (
-                  <li class="border-b last:border-b-0">
-                    <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:text-primary flex min-h-12 items-center text-lg font-medium">
+                  <li>
+                    <a
+                      href={entry.href}
+                      aria-current={current(entry)}
+                      class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+                    >
                       {entry.title}
                     </a>
-                    {entry.children.length > 0 && (
-                      <ul class="flex flex-col pb-3 pl-4">
-                        {entry.children.map((child) => (
-                          <li>
-                            <a href={child.href} aria-current={pathname === child.href ? "page" : undefined} class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center">
-                              {child.title}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </li>
                 ))}
               </ul>
             </nav>
-          </details>
-        )
-      }
+          )
+        }
+
+        <a href={JOIN_PATH} class={cn(buttonVariants(), "hidden h-11 px-4 text-base md:inline-flex")}>Bli medlem</a>
+
+        {
+          menu.length > 0 && (
+            <details class="group lg:hidden">
+              <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
+                <span class="group-open:hidden">Meny</span>
+                <span class="hidden group-open:inline">Stäng</span>
+              </summary>
+              <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
+                <a href={JOIN_PATH} class={cn(buttonVariants(), "mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
+                <ul class="flex flex-col">
+                  {menu.map((entry) => (
+                    <li class="border-b last:border-b-0">
+                      <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:text-primary flex min-h-12 items-center text-lg font-medium">
+                        {entry.title}
+                      </a>
+                      {entry.children.length > 0 && (
+                        <ul class="flex flex-col pb-3 pl-4">
+                          {entry.children.map((child) => (
+                            <li>
+                              <a href={child.href} aria-current={pathname === child.href ? "page" : undefined} class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center">
+                                {child.title}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </details>
+          )
+        }
+      </div>
     </div>
   </header>
 

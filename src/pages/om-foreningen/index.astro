@@ -1,0 +1,82 @@
+---
+export const prerender = false
+
+import SiteLayout from "@/layouts/site.astro"
+import { loadMembership } from "@/lib/membership"
+import { resolvePath } from "@/lib/page-tree"
+import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
+
+// Klubben, for someone who might join (docs/design.md, "Klubben"): who the
+// club is, what membership costs, how the club meets, then the section's other
+// pages. A page of its own rather than the catch-all's plain list of children.
+// The text is the page's body in /admin, where each "## Rubrik" becomes the
+// word in the margin (`.content-register`); the fee line comes from
+// membership_settings, so it changes when the fee does.
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 503 })
+
+const [navigation, membership] = await Promise.all([loadNavigation(db), loadMembership(db)])
+const node = resolvePath(navigation.tree, ["om-foreningen"])
+if (!node) return new Response(null, { status: 404 })
+
+const page = await loadPageBody(db, node.id)
+if (page === "error") return new Response("Sidan kunde inte läsas just nu.", { status: 503 })
+if (!page) return new Response(null, { status: 404 })
+
+const children = node.children as (typeof node & Pick<PublicPageRow, "description">)[]
+const joinHref =
+  children.find((child) => child.slug === "medlemskap")?.path ?? "/om-foreningen/medlemskap"
+const hrefOf = (child: (typeof children)[number]) =>
+  child.kind === "link" ? (child.link_url ?? "/") : child.path
+---
+
+<SiteLayout title={page.title} description={page.description || undefined} menu={navigation.menu}>
+  <article class="flex flex-col gap-12">
+    <header class="flex flex-col gap-4 md:pl-[7rem]">
+      <h1 class="type-title">{page.title}</h1>
+      {page.description && <p class="type-ingress text-muted-foreground max-w-[38rem]">{page.description}</p>}
+    </header>
+
+    {
+      membership && (
+        <section aria-labelledby="bli-medlem" class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
+          <h2 id="bli-medlem" class="type-meta text-muted-foreground md:pt-[0.3rem] md:pr-4">
+            Bli medlem
+          </h2>
+          <div class="flex flex-col gap-1">
+            <p class="text-lg leading-relaxed text-pretty">
+              Det kostar {membership.fee_adult} kr om året, och {membership.fee_youth} kr om du är{" "}
+              {membership.youth_max_age} år eller yngre. Du får programbladet Cinclus och är välkommen
+              på exkursioner och innemöten.
+            </p>
+            <a href={joinHref} class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+              Så blir du medlem
+            </a>
+          </div>
+        </section>
+      )
+    }
+
+    {page.body_html && <div class="content content-register" set:html={page.body_html} />}
+
+    {
+      children.length > 0 && (
+        <section aria-labelledby="mer" class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,38rem)]">
+          <h2 id="mer" class="type-meta text-muted-foreground md:pt-[0.35rem] md:pr-4">
+            Mer om klubben
+          </h2>
+          <ul class="flex flex-col gap-5">
+            {children.map((child) => (
+              <li class="flex flex-col gap-0.5">
+                <a href={hrefOf(child)} class="decoration-primary w-fit text-lg leading-snug font-semibold underline-offset-4 hover:underline">
+                  {child.title}
+                </a>
+                {child.description && <p class="text-muted-foreground leading-relaxed">{child.description}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</SiteLayout>

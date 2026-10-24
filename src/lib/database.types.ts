@@ -333,6 +333,51 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_settings: {
+        Row: {
+          bankgiro: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          fee_adult: number
+          fee_family: number
+          fee_youth: number
+          id: boolean
+          swish: string
+          updated_at: string
+          year: number
+          youth_max_age: number
+        }
+        Insert: {
+          bankgiro?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          fee_adult: number
+          fee_family: number
+          fee_youth: number
+          id?: boolean
+          swish?: string
+          updated_at?: string
+          year: number
+          youth_max_age: number
+        }
+        Update: {
+          bankgiro?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          fee_adult?: number
+          fee_family?: number
+          fee_youth?: number
+          id?: boolean
+          swish?: string
+          updated_at?: string
+          year?: number
+          youth_max_age?: number
+        }
+        Relationships: []
+      }
       observations: {
         Row: {
           activity: string | null

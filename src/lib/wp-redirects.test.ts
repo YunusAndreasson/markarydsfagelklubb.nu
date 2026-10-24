@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import map from "@/data/wp-redirects.json"
 import { isValidSlug, RESERVED_ARTICLE_SLUGS, RESERVED_TOP_LEVEL_SLUGS } from "./slug"
-import { normaliseOldPath, wpRedirect } from "./wp-redirects"
+import { MOVED_PAGES, normaliseOldPath, wpRedirect } from "./wp-redirects"
 
 const paths = Object.entries(map.paths)
 const targets = [...paths.map(([, to]) => to), ...Object.values(map.ids)]
@@ -72,6 +72,16 @@ describe("wpRedirect", () => {
     expect(wpRedirect("/", new URLSearchParams("p=abc"))).toBeNull()
     expect(wpRedirect("/", none)).toBeNull()
     expect(wpRedirect("/artiklar", new URLSearchParams("p=10240"))).toBeNull()
+  })
+
+  it("sends the pages folded into Klubben there, and old URLs for them in one hop", () => {
+    expect(wpRedirect("/om-foreningen/verksamhet", none)).toBe("/om-foreningen")
+    expect(wpRedirect("/om-foreningen/allmant/", none)).toBe("/om-foreningen")
+    expect(wpRedirect("/program/allmant", none)).toBe("/om-foreningen")
+    expect(wpRedirect("/", new URLSearchParams("page_id=891"))).toBe("/om-foreningen")
+    for (const target of Object.values(MOVED_PAGES)) {
+      expect(MOVED_PAGES[target], target).toBeUndefined()
+    }
   })
 
   it("leaves everything else alone", () => {

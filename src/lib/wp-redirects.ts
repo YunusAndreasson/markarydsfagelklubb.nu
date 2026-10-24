@@ -13,6 +13,22 @@ import map from "@/data/wp-redirects.json"
 const PATHS: Readonly<Record<string, string>> = map.paths
 const IDS: Readonly<Record<string, string>> = map.ids
 
+/**
+ * Pages the site has moved since the import, kept by hand because the map
+ * above is regenerated from the import's cache. Verksamhet and Allmänt were
+ * folded into the Klubben page on 2026-10-24 (docs/design.md, "Klubben").
+ *
+ * Applied to the map's targets as well, so an old WordPress URL that pointed
+ * at one of these still arrives in a single hop.
+ */
+export const MOVED_PAGES: Readonly<Record<string, string>> = {
+  "/om-foreningen/verksamhet": "/om-foreningen",
+  "/om-foreningen/allmant": "/om-foreningen",
+}
+
+const settle = (target: string | undefined): string | null =>
+  target === undefined ? null : (MOVED_PAGES[target] ?? target)
+
 /** Decoded, lower-case, without a trailing slash: how the map's keys are stored. */
 export function normaliseOldPath(pathname: string): string {
   let path = pathname
@@ -26,13 +42,15 @@ export function normaliseOldPath(pathname: string): string {
 }
 
 /**
- * Where an old URL now lives, or null. `?p=<id>` and `?page_id=<id>` are
- * WordPress's shortlinks, which only ever appear on the home page.
+ * Where an old URL now lives, or null: a WordPress URL from the map, or a page
+ * the site itself has moved. `?p=<id>` and `?page_id=<id>` are WordPress's
+ * shortlinks, which only ever appear on the home page.
  */
 export function wpRedirect(pathname: string, searchParams: URLSearchParams): string | null {
   if (pathname === "/") {
     const id = searchParams.get("p") ?? searchParams.get("page_id")
-    return id && /^\d+$/.test(id) ? (IDS[id] ?? null) : null
+    return id && /^\d+$/.test(id) ? settle(IDS[id]) : null
   }
-  return PATHS[normaliseOldPath(pathname)] ?? null
+  const path = normaliseOldPath(pathname)
+  return settle(PATHS[path] ?? MOVED_PAGES[path])
 }

@@ -1,6 +1,7 @@
 import type { PostgrestError } from "@supabase/supabase-js"
 import type { Database } from "./database.types"
 import { type MediaFormat, mediaObjectPath, SITE_MEDIA_BUCKET } from "./media"
+import type { MembershipInput } from "./membership"
 import type { PageRow, PageTree } from "./page-tree"
 import type { SupabaseServerClient } from "./supabase-server"
 
@@ -256,4 +257,33 @@ export async function deleteMedia(
   }
   const { error } = await supabase.from("media").delete().eq("id", media.id)
   return error ? failure("delete media", error) : { ok: true, value: null }
+}
+
+// Membership
+
+/** The one row of fees and payment details (src/lib/membership.ts). */
+export async function loadMembershipSettings(supabase: SupabaseServerClient) {
+  return supabase.from("membership_settings").select("*").maybeSingle()
+}
+
+/**
+ * Update the one row. RLS turns a write by anyone but the admin into "no rows
+ * matched" rather than an error, so an empty result counts as a failure too.
+ */
+export async function saveMembershipSettings(
+  supabase: SupabaseServerClient,
+  input: MembershipInput
+): Promise<WriteResult> {
+  const { data, error } = await supabase
+    .from("membership_settings")
+    .update(input)
+    .eq("id", true)
+    .select("year")
+    .maybeSingle()
+  if (error) return failure("save membership settings", error)
+  if (!data) {
+    console.error("mafk-web: save membership settings matched no row")
+    return { ok: false, reason: "failed" }
+  }
+  return { ok: true, value: null }
 }

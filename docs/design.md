@@ -236,7 +236,8 @@ Markaryds Fågelklubb                    [ Meny ]
 ```
 
 - The club's name is a wordmark in Inter at 600 weight, linking home. The
-  tagline shows from 768 px up.
+  tagline shows from 1024 px up (`lg`; it was 768 until 2026-10-24, where it
+  widened the wordmark's column enough to wrap "Klubben" onto a second line).
 - **No dropdowns.** A top-level item links to its section page, and that page
   lists the section's pages. It's simple, accessible, and needs no JS.
 - **Mobile menu:** a `<details>` disclosure labelled "Meny", which opens the
@@ -519,6 +520,56 @@ The page title and body, in the same column. A section page (one with children)
 ends with "I det här avsnittet": a plain list of its pages, each with its
 description.
 
+### Klubben (`/om-foreningen`, `/om-foreningen/medlemskap`) — 2026-10-24
+
+Redesigned after an interview with the user, who called joining the section's
+most important job. Before, Klubben was a heading over eight bare links; the
+join facts were two paragraphs on Medlemskap with "2026" written into them, a
+QR code only as a PDF and a broken email link to the kassör. Decisions, in
+full, are in the roadmap's decision log.
+
+- **Newcomers first.** Klubben is its own route
+  (`src/pages/om-foreningen/index.astro`): the introduction, a "Bli medlem" row
+  with the fee and a link onward, the club's text, then "Mer om klubben", each
+  page with one line. Verksamhet's pitch and Allmänt's practical text folded in;
+  both are drafts now and their URLs 301 to Klubben (`MOVED_PAGES` in
+  `src/lib/wp-redirects.ts`, applied to the WordPress map's targets too).
+- **The register.** The body's `## Rubrik` headings become the word in the
+  7rem margin (`.content-register` in `content.css`), the same device as dates
+  on the lists and letters on the lokal register. On a phone the word sits
+  above its text, small. The admin keeps writing a plain column.
+- **The join page** (`src/pages/om-foreningen/medlemskap.astro`) is the header
+  button's target, in the order a newcomer acts:
+  - **Avgift <år>:** a real table, label and note in the first cell (who gets
+    Cinclus: vuxen and ungdom; a familjemedlem shares the household's) and the
+    price right-aligned. Calendar year, no autumn rule.
+  - **Så blir du medlem:** numbered, because it is a sequence. 1 pay (Swish
+    number, bankgiro), 2 the message ("Anna Svensson medlem 2027"), 3 send the
+    postal address by a **prefilled email or SMS** (Swish messages hold about
+    50 characters, too few for an address). Then "Klart!" and when Cinclus comes.
+  - **Frågor:** the contact person, with `tel:` and `mailto:` links.
+- **Swish by device.** On a phone (`pointer: coarse`) each fee row ends in a
+  "Swisha" link that opens the app with the amount and "medlem <år>" filled
+  in; on a computer (`pointer: fine`) one QR code does the same with the amount
+  left open. The link format is Swish's own QR generator output but **not
+  documented** (`swishLink` in `src/lib/membership.ts` says where it was
+  mapped); the number and bankgiro are always printed as text, so nothing
+  depends on it. **Test it on a phone before launch.**
+- **One source for the numbers:** `membership_settings`, one row, edited at
+  `/admin/medlemskap` (year, three fees, youth age, Swish, bankgiro, contact).
+  The contact holds the kassör's own address until the domain has role
+  addresses (kassor@…), then it is one edit.
+- **The header's one button.** "Bli medlem" is the public site's only filled
+  button (`site.astro`): in the bar from `md`, where the menu collapses to
+  "Meny" until `lg`; on a phone, the first thing in the opened menu. This
+  reverses step 3's decision below, because the user now puts joining first.
+- **Not done, waiting on the domain's email:** Kontaktpersoner rewritten around
+  role addresses, with phone numbers only for those who want them.
+- **Known contrast gap, shared with the app:** the dark theme's green with
+  near-white text is 3.26:1 (AA wants 4.5:1 for 16 px text; light mode is
+  4.96:1). Every filled button has it, the admin's included, and the app pairs
+  the same colours, so fixing it is a palette decision for both.
+
 ### Footer
 
 The club's name, the tagline and `webmaster@markarydsfagelklubb.nu`, aligned
@@ -570,8 +621,9 @@ Where the first draft drifted to a default, and what changed:
   piece of information.
 - **"Läs mer →" under the lead** was the generic link. Removed: the headline is
   the link.
-- **A "Bli medlem" button in the header** served newcomers, whom the brief
-  puts second. It moved to the footer and the Klubben section.
+- ~~**A "Bli medlem" button in the header** served newcomers, whom the brief
+  puts second. It moved to the footer and the Klubben section.~~ Reversed
+  2026-10-24: the user puts joining first, so the header has it (see Klubben).
 - **A green band behind the header** would have spent colour on decoration,
   which the app's own rule reserves for action. Dropped.
 - **Kept deliberately:**
