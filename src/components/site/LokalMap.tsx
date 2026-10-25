@@ -66,7 +66,7 @@ export default function LokalMap({ pins, still = false }: Props) {
       const L = (await import("leaflet")).default
       if (cancelled) return
 
-      const quiet = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+      const quiet = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
       /**
        * A dot, not a teardrop. Leaflet's default pin is a recognisable piece

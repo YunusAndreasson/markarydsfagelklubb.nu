@@ -46,11 +46,11 @@ const ATTRIBUTE = /([a-z-]+)="([^"]*)"/g
 /** sanitize-html escapes these four; `&amp;` goes last so `&amp;lt;` stays `&lt;`. */
 function decodeEntities(value: string): string {
   return value
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&amp;", "&")
 }
 
 function attributesOf(tag: string): Map<string, string> {

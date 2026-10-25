@@ -162,6 +162,14 @@ on render. The sanitizer's allowlist and the editor's extensions
 `editor-roundtrip.test.ts` checks that they do. UI conventions (shadcn, Base UI, tokens) are in
 `.claude/rules/ui.md` and load when you touch components or pages.
 
+**Browser floor**: Chrome/Edge 111, Firefox 114, Safari 16.4 — Vite 8's
+default `build.target` (Baseline Widely Available, 2026-01-01); Tailwind 4's
+CSS asks about the same (Firefox 128). Leave `build.target` at the default, and
+write plain modern code for it: no polyfills, no feature-detect fallbacks below
+it, no `@vitejs/plugin-legacy`. The one API above it is `AbortSignal.any`
+(Safari 17.4) in `src/lib/fetch.ts`, which reaches the browser only through
+the admin's image uploader.
+
 Until launch, every page carries `noindex` and `public/robots.txt` disallows
 all. Both come out together at the domain cutover.
 

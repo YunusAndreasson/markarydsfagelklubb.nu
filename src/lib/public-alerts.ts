@@ -193,7 +193,7 @@ export async function listPublicAlerts(options: {
   const rows = data.slice(0, limit).map((row) => publish(row, context.value))
   const alerts = ascending ? rows.reverse() : rows
   const first = alerts[0]
-  const last = alerts[alerts.length - 1]
+  const last = alerts.at(-1)
   return {
     ok: true,
     value: {
@@ -375,7 +375,7 @@ async function sweepAlerts<T extends { id: string; sent_at: string }>(
     }
     if (data.length < SWEEP_PAGE_SIZE) return { ok: true, value: await withNamed() }
 
-    const last = data[data.length - 1]
+    const last = data.at(-1)
     if (!last) return { ok: true, value: await withNamed() }
     cursor = { sentAt: last.sent_at, id: last.id }
   }

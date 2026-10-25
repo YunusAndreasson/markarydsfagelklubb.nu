@@ -134,7 +134,7 @@ export async function listPublishedArticles(
   const rows = data.slice(0, limit).map(toTeaser)
   const articles = ascending ? rows.reverse() : rows
   const first = articles[0]
-  const last = articles[articles.length - 1]
+  const last = articles.at(-1)
   return {
     articles,
     older: (ascending ? Boolean(after) : hasMore) && last ? cursorOf(last) : null,

@@ -75,7 +75,7 @@ export function groupByMonth<T extends { starts_at: string }>(
   for (const event of events) {
     const month = monthOf(event.starts_at)
     const key = monthKey(month)
-    const last = groups[groups.length - 1]
+    const last = groups.at(-1)
     if (last && last.key === key) last.events.push(event)
     else groups.push({ month, key, events: [event] })
   }

@@ -26,36 +26,16 @@ export const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp"
 
 export class ImagePrepareError extends Error {}
 
-type Canvas = OffscreenCanvas | HTMLCanvasElement
-
-function makeCanvas(width: number, height: number): Canvas {
-  if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(width, height)
-  const canvas = document.createElement("canvas")
-  canvas.width = width
-  canvas.height = height
-  return canvas
-}
-
-function context(canvas: Canvas): OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D {
-  const ctx = canvas.getContext("2d") as
-    | OffscreenCanvasRenderingContext2D
-    | CanvasRenderingContext2D
-    | null
+/**
+ * OffscreenCanvas everywhere the build targets reach (Safari 16.4 and up), so
+ * there is no `<canvas>` and `toBlob` path to keep.
+ */
+function context(canvas: OffscreenCanvas): OffscreenCanvasRenderingContext2D {
+  const ctx = canvas.getContext("2d")
   if (!ctx) throw new ImagePrepareError("Webbläsaren kan inte bearbeta bilder.")
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = "high"
   return ctx
-}
-
-async function encode(canvas: Canvas, type: string, quality: number): Promise<Blob> {
-  if ("convertToBlob" in canvas) return canvas.convertToBlob({ type, quality })
-  return new Promise((resolve, reject) =>
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new ImagePrepareError("Bilden kunde inte sparas."))),
-      type,
-      quality
-    )
-  )
 }
 
 /**
@@ -63,9 +43,9 @@ async function encode(canvas: Canvas, type: string, quality: number): Promise<Bl
  * with a single pixel and fall back to JPEG for every variant.
  */
 async function supportedFormat(): Promise<MediaFormat> {
-  const probe = makeCanvas(1, 1)
+  const probe = new OffscreenCanvas(1, 1)
   context(probe).fillRect(0, 0, 1, 1)
-  const blob = await encode(probe, "image/webp", 0.8)
+  const blob = await probe.convertToBlob({ type: "image/webp", quality: 0.8 })
   return blob.type === "image/webp" ? "webp" : "jpeg"
 }
 
@@ -78,14 +58,14 @@ function drawScaled(
   width: number,
   height: number,
   opaque: boolean
-): Canvas {
+): OffscreenCanvas {
   let current: CanvasImageSource & { width: number; height: number } = source
   while (current.width / 2 >= width) {
-    const half = makeCanvas(Math.round(current.width / 2), Math.round(current.height / 2))
+    const half = new OffscreenCanvas(Math.round(current.width / 2), Math.round(current.height / 2))
     context(half).drawImage(current, 0, 0, half.width, half.height)
     current = half
   }
-  const canvas = makeCanvas(width, height)
+  const canvas = new OffscreenCanvas(width, height)
   const ctx = context(canvas)
   if (opaque) {
     // JPEG has no transparency: a transparent PNG would otherwise turn black.
@@ -118,10 +98,13 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
     for (const width of widths) {
       const height = Math.max(1, Math.round((bitmap.height * width) / bitmap.width))
       const canvas = drawScaled(bitmap, width, height, format === "jpeg")
-      const blob = await encode(canvas, format === "webp" ? "image/webp" : "image/jpeg", 0.82)
+      const blob = await canvas.convertToBlob({
+        type: format === "webp" ? "image/webp" : "image/jpeg",
+        quality: 0.82,
+      })
       variants.push({ width, height, blob })
     }
-    const largest = variants[variants.length - 1]
+    const largest = variants.at(-1)
     return {
       format,
       width: largest?.width ?? bitmap.width,

@@ -47,7 +47,7 @@ export function splitLarm<T extends { photoUrl: string | null }>(
   count: number
 ): { prints: T[]; plain: T[] } {
   const prints = alerts.filter((alert) => alert.photoUrl !== null).slice(0, count)
-  const last = prints[prints.length - 1]
+  const last = prints.at(-1)
   if (!last) return { prints: [], plain: alerts.slice(0, count) }
   const newer = alerts.slice(0, alerts.indexOf(last))
   return { prints, plain: newer.filter((alert) => alert.photoUrl === null) }

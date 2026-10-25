@@ -66,7 +66,7 @@ export function buildLokaler(rows: readonly LokalRow[]): Lokal[] {
   const taken = new Set<string>()
   const slugs = new Map<number, string>()
 
-  for (const row of [...rows].sort((a, b) => a.id - b.id)) {
+  for (const row of rows.toSorted((a, b) => a.id - b.id)) {
     const base = lokalSlug(row.name)
     const usable = base !== "" && !RESERVED_TOP_LEVEL_SLUGS.has(base)
     let slug = usable ? base : `lokal-${row.id}`

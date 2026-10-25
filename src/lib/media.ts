@@ -40,7 +40,7 @@ export function planImageWidths(originalWidth: number): number[] {
   const width = Math.floor(originalWidth)
   if (!Number.isFinite(width) || width < 1) return []
   const widths: number[] = IMAGE_WIDTHS.filter((target) => target <= width)
-  const largest = IMAGE_WIDTHS[IMAGE_WIDTHS.length - 1] ?? width
+  const largest = IMAGE_WIDTHS.at(-1) ?? width
   // A smaller original is kept at its own width rather than dropped or blown up.
   if (width < largest && !widths.includes(width)) widths.push(width)
   return widths.slice(-IMAGE_WIDTHS.length)
@@ -63,7 +63,7 @@ export function mediaUrl(prefix: string, width: number, format: MediaFormat): st
 }
 
 function sortedWidths(image: MediaImage): number[] {
-  return [...image.widths].sort((a, b) => a - b)
+  return image.widths.toSorted((a, b) => a - b)
 }
 
 export function mediaSrcset(image: MediaImage): string {
@@ -78,7 +78,7 @@ export function mediaSrcset(image: MediaImage): string {
  */
 export function mediaFallbackUrl(image: MediaImage): string {
   const widths = sortedWidths(image)
-  const fallback = widths.find((width) => width >= 960) ?? widths[widths.length - 1] ?? image.width
+  const fallback = widths.find((width) => width >= 960) ?? widths.at(-1) ?? image.width
   return mediaUrl(image.storage_prefix, fallback, image.format)
 }
 

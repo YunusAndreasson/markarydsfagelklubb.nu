@@ -70,9 +70,9 @@ export function foldLine(line: string): string {
 /** Escape a TEXT value. The backslash goes first, or it would escape itself. */
 export function escapeText(value: string): string {
   return value
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
+    .replaceAll("\\", "\\\\")
+    .replaceAll(";", "\\;")
+    .replaceAll(",", "\\,")
     .replace(/\r\n|\r|\n/g, "\\n")
 }
 
@@ -86,14 +86,14 @@ function utcStamp(value: Date | string): string {
 
 /** "20261003" — the Swedish calendar date an instant falls on. */
 function dateValue(value: Date | string): string {
-  return toStockholmInputValue(value).slice(0, 10).replace(/-/g, "")
+  return toStockholmInputValue(value).slice(0, 10).replaceAll("-", "")
 }
 
 /** The day after, for an all-day DTEND, which is exclusive. */
 function dayAfter(value: Date | string): string {
   const day = new Date(`${toStockholmInputValue(value).slice(0, 10)}T00:00:00Z`)
   day.setUTCDate(day.getUTCDate() + 1)
-  return day.toISOString().slice(0, 10).replace(/-/g, "")
+  return day.toISOString().slice(0, 10).replaceAll("-", "")
 }
 
 function line(name: string, value: string): string {
