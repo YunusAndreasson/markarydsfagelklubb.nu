@@ -20,7 +20,7 @@ component.
   you edit it sparingly. `cn()` comes from the `cn` package (shadcn's
   clsx + tailwind-merge replacement), re-exported by `@/lib/utils`.
 - **Semantic tokens only** (`bg-primary`, `text-muted-foreground`), never raw
-  palette colours and never manual `dark:` colour overrides. The brand is
+  palette colours and no `dark:` classes: the site is light only. The brand is
   Markaryd green, defined in `src/styles/global.css`, and it must stay in step
   with `../mafk-mobie/src/constants/theme.ts`.
 - `className` is for layout, not for recolouring components. Use `gap-*`, not
@@ -44,4 +44,5 @@ component.
   use `sv-SE`.
 - **Mobile first**: design at 360 px, touch targets ≥ 44 px, and no horizontal
   scroll.
-- Verify visible changes with `pnpm preview` **in Zen**, in light and dark.
+- Verify visible changes with `pnpm preview` **in Zen**. The site is light
+  only (docs/design.md, "Colour"); there is no dark theme to check.

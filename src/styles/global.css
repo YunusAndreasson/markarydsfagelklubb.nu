@@ -6,6 +6,10 @@
 @import "@fontsource-variable/inter/opsz.css";
 @import "./content.css";
 
+/* The site is light only (2026-10-24). Nothing sets `.dark`, so the `dark:`
+   classes inside the generated shadcn components, and shadcn's own stylesheet,
+   never apply. Keep the line: without it Tailwind's default `dark` variant
+   follows the visitor's OS setting and those classes would switch on. */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -55,7 +59,9 @@
 
 /* Markaryd green on clean neutrals — the club's brand. The Expo app carries the
    same palette as hex in ../mafk-mobie/src/constants/theme.ts; change both
-   together or the site and the app drift apart. */
+   together or the site and the app drift apart. One neutral differs on purpose
+   since 2026-10-24, set for legibility in the site's light-only theme:
+   --muted-foreground (docs/design.md, "Colour"). */
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -69,7 +75,12 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  /* #585858: 7.1:1 on white (AAA), 6.5:1 on --muted; APCA Lc 85. The site sets
+     its ingresses, excerpts and 14 px meta lines (places, observers, dates) in
+     it, so it is reading text, not decoration. The app's #737373 is 4.7:1 and
+     fails AA on --muted. Still well clear of the ink, which carries the
+     hierarchy (docs/design.md, "Colour"). */
+  --muted-foreground: oklch(0.46 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -97,52 +108,25 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
-.dark {
-  --background: oklch(0.145 0.006 155);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0.007 155);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0.007 155);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.62 0.15 152);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0.008 155);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0.008 155);
-  --muted-foreground: oklch(0.708 0.014 155);
-  --accent: oklch(0.269 0.008 155);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  /* Lifted from the app's dark #D23B2E, which reads at 4.2:1 as text on this
-     background. 0.62 keeps the hue and clears AA, the same lift --primary
-     gets here. */
-  --rarity: oklch(0.62 0.19 29.2);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.68 0.16 152);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0.007 155);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.68 0.16 152);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0.008 155);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.68 0.16 152);
-}
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   html {
     @apply font-sans;
-    color-scheme: light dark;
+    /* `only` also opts out of forced darkening (Chrome on Android's auto dark
+       theme), which would otherwise repaint a light-only page itself. */
+    color-scheme: only light;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+  /* A focus ring that reaches 3:1: the inherited outline colour is --ring at
+     50%, 2.1:1 on white. Components with their own focus style (shadcn's
+     controls set outline-none and a ring) override this from the utilities
+     layer; it is for the public site's plain links. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground;
@@ -176,6 +160,16 @@
   font-weight: 600;
   text-wrap: balance;
 }
+/* The title of an entry in a list: an article, a larm, an event, a lokal, a
+   page. One size for every list, so a section heading always outranks the
+   entries under it. */
+@utility type-item {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  text-wrap: pretty;
+}
 @utility type-ingress {
   font-size: 1.1875rem;
   line-height: 1.5;
@@ -186,4 +180,18 @@
   line-height: 1.4;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+/* A green link: an action or a destination standing on its own ("Alla larm",
+   "App Store"), or a link inside a sentence. It looks like a link in body text
+   (content.css) and answers the pointer the same way. A title that is a link
+   stays ink, with a green underline on hover. */
+@utility link {
+  color: var(--primary);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
 }

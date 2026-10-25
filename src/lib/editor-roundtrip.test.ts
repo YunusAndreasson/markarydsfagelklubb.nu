@@ -1,5 +1,5 @@
 import type { JSONContent } from "@tiptap/core"
-import { generateHTML } from "@tiptap/html/server"
+import { generateHTML, generateJSON } from "@tiptap/html/server"
 import { describe, expect, it } from "vitest"
 
 import { editorExtensions } from "@/components/admin/editor-extensions"
@@ -65,6 +65,24 @@ const everything: JSONContent = {
       },
     },
     {
+      type: "figure",
+      attrs: {
+        src: `${IMG}/960.webp`,
+        srcset: `${IMG}/480.webp 480w, ${IMG}/960.webp 960w, ${IMG}/1600.webp 1600w`,
+        sizes: "(min-width: 40rem) 38rem, 100vw",
+        width: 1600,
+        height: 1067,
+        alt: "Gråhäger i vassen",
+      },
+      content: [
+        text("Gråhäger ("),
+        text("Ardea cinerea", [{ type: "italic" }]),
+        text(")."),
+        { type: "hardBreak" },
+        text("Foto: Anna"),
+      ],
+    },
+    {
       type: "table",
       content: [
         {
@@ -113,6 +131,8 @@ describe("the editor and the sanitizer", () => {
       "<blockquote>",
       "<hr",
       "<img ",
+      "<figure><img ",
+      "<figcaption>",
       "<table>",
       "<th ",
       "<td ",
@@ -122,5 +142,21 @@ describe("the editor and the sanitizer", () => {
     }
 
     expect(normaliseVoid(sanitizeContent(html))).toBe(normaliseVoid(html))
+  })
+
+  it("open a stored captioned photo as a figure and save it unchanged", () => {
+    const img = `<img src="${IMG}/960.webp" width="1600" height="1067" alt="Gråhäger" loading="lazy">`
+    const stored = `<figure>${img}<figcaption>Gråhäger (<em>Ardea cinerea</em>). Foto: Anna</figcaption></figure>`
+    const json = generateJSON(stored, editorExtensions)
+    expect(json.content?.[0]?.type).toBe("figure")
+    expect(normaliseVoid(sanitizeContent(generateHTML(json, editorExtensions)))).toBe(stored)
+  })
+
+  it("open a figure without a caption as a plain image", () => {
+    const json = generateJSON(
+      `<figure><img src="${IMG}/960.webp" alt=""></figure>`,
+      editorExtensions
+    )
+    expect(json.content?.[0]?.type).toBe("image")
   })
 })

@@ -19,7 +19,7 @@ const { id, href, link } = Astro.props
   <h2 id={id} class="type-section"><slot /></h2>
   {
     href && link && (
-      <a href={href} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+      <a href={href} class="link flex min-h-11 items-center font-medium">
         {link}
       </a>
     )

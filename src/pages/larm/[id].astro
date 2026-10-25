@@ -20,7 +20,7 @@ const id = Astro.params.id ?? ""
 if (!db || !UUID.test(id)) return new Response(null, { status: 404 })
 
 const [navigation, alert] = await Promise.all([loadNavigation(db), loadPublicAlert(id)])
-if (!alert.ok) return new Response("Larmet kunde inte läsas just nu.", { status: 503 })
+if (!alert.ok) return new Response("Larmet kunde inte hämtas just nu.", { status: 503 })
 if (!alert.value) return new Response(null, { status: 404 })
 
 const larm = alert.value
@@ -39,11 +39,16 @@ const { prints, plain } = splitLarm(
 const observed = larm.observedAt
 const title =
   larm.count !== null && larm.count > 1 ? `${larm.species} ${larm.count} ex.` : larm.species
+// The place ladder writes "Nära Hualtet" for a blurred place, and "vid Nära
+// Hualtet" isn't Swedish: such a place takes no preposition of its own.
+const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` : `vid ${larm.place}`
 ---
 
 <SiteLayout
   title={title}
-  description={`${larm.species} vid ${larm.place}, ${formatDate(observed, "long")}.`}
+  description={`${larm.species} ${where}, ${formatDate(observed, "long")}.`}
+  image={larm.photoUrl ? alertPhotoSrc(larm.photoUrl, "960") : undefined}
+  type="article"
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-16">
@@ -53,12 +58,17 @@ const title =
           <a href="/larm" class="hover:text-foreground underline-offset-4 hover:underline">Larm</a>
         </nav>
 
-        <h1 class="type-title md:col-start-2">
-          {larm.species}
-          {larm.count !== null && larm.count > 1 && (
-            <span class="text-muted-foreground font-normal">{larm.count} ex.</span>
-          )}
-        </h1>
+        {/* The scientific name belongs to the species, so it sits under it, as
+            in a field guide, rather than among the facts about this larm. */}
+        <div class="flex flex-col gap-2 md:col-start-2">
+          <h1 class="type-title">
+            {larm.species}
+            {larm.count !== null && larm.count > 1 && (
+              <span class="text-muted-foreground font-normal">{larm.count} ex.</span>
+            )}
+          </h1>
+          {larm.scientificName && <p class="text-muted-foreground text-lg italic">{larm.scientificName}</p>}
+        </div>
 
         <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
           <time datetime={isoDateTime(observed)} class="flex flex-wrap gap-x-1 md:flex-col">
@@ -69,13 +79,14 @@ const title =
           </time>
         </div>
 
+        {/* Two tiers beside the date: where (ink, the fact a reader acts on),
+            then how rare and who saw it, in the margin's own meta style. */}
         <div class="flex flex-col gap-1 md:col-start-2 md:row-start-3">
-          <p class="text-lg">{larm.place}</p>
-          {larm.scientificName && <p class="text-muted-foreground italic">{larm.scientificName}</p>}
-          <p class:list={["type-meta", isRare(larm.rarity) ? "text-rarity" : "text-muted-foreground"]}>
-            {rarityLabel(larm.rarity)}
+          <p class="text-lg font-medium">{larm.place}</p>
+          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
+            <span class:list={[isRare(larm.rarity) && "text-rarity"]}>{rarityLabel(larm.rarity)}</span>
+            <span>Rapporterat av {larm.observer ?? ANONYMOUS_OBSERVER}</span>
           </p>
-          <p class="text-muted-foreground mt-1">Rapporterat av {larm.observer ?? ANONYMOUS_OBSERVER}</p>
         </div>
       </header>
 
@@ -98,7 +109,7 @@ const title =
       }
 
       <p class="text-muted-foreground max-w-prose text-sm md:ml-[7rem]">
-        Platsen visas ungefärligt. Larmet skickades i klubbens app{" "}
+        Platsen är ungefärlig. Larmet skickades i klubbens app{" "}
         <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
       </p>
     </article>
@@ -110,7 +121,7 @@ const title =
             Fler larm
           </SectionHeading>
           {prints.length > 0 ? (
-            <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 42vw" />
+            <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 64vw" />
           ) : (
             <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} />
           )}

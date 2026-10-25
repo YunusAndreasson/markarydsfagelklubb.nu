@@ -75,8 +75,10 @@ everywhere" becomes **"the members' photos carry the page"**.
 
 1. **Anything with a photo shows it**, at the ratio its role uses.
 2. **The date margin stays the spine**, on the lead and in every list.
-3. **Size makes the hierarchy:** a 2:1 lead, then 4:5 prints, then 3:2 tiles,
-   then 3:2 thumbnails. No kicker labels beyond the lead's category.
+3. **Size makes the hierarchy:** a 2:1 lead, then 3:2 for everything else, at
+   the size its role gives it: tiles, prints, thumbnails. No kicker labels
+   beyond the lead's category. (The larm prints were 4:5 until 2026-10-24; see
+   the rail below.)
 4. **No placeholders.** A story without a photo is type, never a grey box. That
    is honest because those stories are notices.
 5. **No text over photos**, no gradient scrims, no carousels, no hover zoom.
@@ -106,9 +108,9 @@ Tävlingar                               (≤ 3 events)  opening line …
                                         Hela progr.   Närmast i programmet (≤ 3)
 
 Senaste larmen                          Alla larm     Senaste larmen       Alla larm
-[4:5][4:5][4:5][4:5][4:5]                             [4:5][4:5][4  → swipe
+[3:2][3:2][3:2][3:2][3:2]                             [3:2 ][3:2   → swipe
 Järnsparv / Nära Klintbadet / i går 08:25
-        Också larmat
+        Övriga larm
 22 okt. 12:46  Kungsfiskare  Reningsdammarna  Åsa Andersen   ← one line each
 
 Fler artiklar                       Alla artiklar
@@ -127,9 +129,12 @@ Fler artiklar                       Alla artiklar
 - **"Närmast i programmet"** takes the column beside the headline from `lg` up.
   At `md` the container is only 45rem, so it sits under the lead there.
 - **The larm rail** is the page's live part: the five newest larm with a photo,
-  as 4:5 prints with the species, place and "i dag" / "i går" / date under each
-  (`dayLabel`). Below `lg` it scrolls sideways inside itself, snapping print by
-  print, with no script. **"Också larmat"** lists every photo-less larm newer
+  as 3:2 prints with the species, place and "i dag" / "i går" / date under each
+  (`dayLabel`). They were 4:5 at first, to make the bird larger, but the
+  members' photos are camera frames of about 3:2, so a portrait print kept half
+  the width and cut off heads and tails (changed 2026-10-24 at the user's
+  request). Below `lg` it scrolls sideways inside itself, snapping print by
+  print, with no script. **"Övriga larm"** lists every photo-less larm newer
   than the last print, uncapped, so a rare bird reported without a picture is
   never hidden behind older photos (`splitLarm`). It is one line per larm,
   because full notebook rows under the rail outweighed the photos.
@@ -155,9 +160,10 @@ Fler artiklar                       Alla artiklar
 ### Photo sizes
 
 Larm photos are members' full-size originals, so the route asks Storage for
-fixed sizes (`src/lib/alert-photo.ts`; roadmap decision log, 2026-10-24): 4:5
-prints of 480×600 and 960×1200 for the rail, and 480/960/1600 wide in the
-photo's own shape for the feed and a larm's page. Measured on the preview,
+fixed sizes (`src/lib/alert-photo.ts`; roadmap decision log, 2026-10-24):
+480/960/1600 wide in the photo's own shape. The feed and the rail share the
+480/960 files and crop them to 3:2 in CSS; a larm's page shows 960/1600 whole.
+(The rail's Storage-cropped 4:5 sizes, `p480`/`p960`, went with the 4:5 prints.) Measured on the preview,
 `/larm` went from 3.9 MB to 0.34 MB, and the home page shows 12 photos instead
 of 2 in less weight than before (520–625 KB against 685 KB).
 
@@ -170,20 +176,155 @@ of 2 in less weight than before (520–625 KB against 685 KB).
 - Imported titles in lowercase or capitals ("programändring!", "EKEBACKEN 28
   APRIL") are for the editor to fix, not CSS.
 
+## Polish pass (2026-10-24)
+
+Every main page screenshotted at 360 and 1280 px (Gecko), reviewed, fixed and
+shot again; the event page checked in Zen. Besides the footer, the article grid
+and the section lists above:
+
+- **Pages that can't read the menu still have one.** The prerendered 404 and
+  legal pages, and any page whose navigation query fails, show
+  `FALLBACK_MENU` (`src/lib/page-tree.ts`), the tree's six top-level sections.
+  On a phone they had no "Meny" at all.
+- **Events:** the time is a range, "18:30–21:00", on the start's day; "till …"
+  only when it runs past the day. "Hela programmet" closes the page.
+- **Article categories on a phone** are one row that scrolls sideways; wrapped,
+  they took three rows of 44 px targets above the first article.
+- **Every page intro is the grey ingress.** Larm and Lokaler had theirs in ink.
+- **Icons:** the club's emblem is the favicon (64 px) and the home-screen icon
+  (180 px, on white because iOS fills transparency with black), both imported
+  so they get `/_astro/` names. The green SVG favicon read as a tick at tab size
+  and is gone, with its `run_worker_first` exclusion.
+- **Link previews:** Open Graph and Twitter-card tags in `base.astro`; the home
+  page, articles and larm pass a photo. A larm's description says "nära
+  Klintbadet", not "vid Nära Klintbadet".
+
+## Ordval (2026-10-24)
+
+The copy was benchmarked against how Swedish bird clubs actually write:
+BirdLife Sverige (birdlife.se), Skånes Ornitologiska Förening (skof.se),
+BirdLife Västmanland (vof.birdlife.se and its printed autumn programme) and
+BirdLife Östra Småland (osof.se). The brief was copy that reads less generated.
+
+**The clubs' vocabulary, which the site follows:** *Bli medlem*, *Program*,
+*exkursion*, *innemöte*, *samling* ("Samling: 18:00 vid …"), *samåka*, *fika*,
+*Fågellokaler* (SkOF, BirdLife Västmanland), *Aktuella obsar* (SkOF), *Rapportera
+fåglar*, *prenumerera på programmet* (BirdLife Västmanland: "Vill du få VOF:s
+program i din kalender kan du prenumerera på det"), *Ändringar i programmet kan
+tillkomma*.
+
+**What read as generated, and what replaced it:**
+
+| Before | After | Why |
+|---|---|---|
+| Lokaler (heading), "Klubbens lokaler" | Fågellokaler | "lokaler" alone is also the club's premises; the clubs write *fågellokaler* |
+| "Platsen visas ungefärligt, som närmaste lokal." | "Platsen anges ungefärligt, med närmaste fågellokal." | the old clause didn't parse |
+| "Med klubbens app larmar du själv och får larmen som notiser i mobilen." | "Ladda ner klubbens app, så kan du själv larma och få larmen direkt i mobilen." | a plain instruction, not a feature list |
+| "… och nya datum kommer med av sig själva." | "… och ändringar kommer med automatiskt." | personified dates |
+| Också larmat | Övriga larm | |
+| I det här avsnittet | Här hittar du | a translation of "In this section" |
+| "så att Cinclus hittar fram" | "så att Cinclus kommer fram" | the post *kommer fram* |
+| "Klart! Programmet och Cinclus kommer …" | "Sedan är du medlem. Cinclus med årets program kommer i brevlådan …" | |
+| "… kunde inte läsas just nu" | "… kunde inte hämtas just nu" | "could not be read" |
+| Till innehållet | Gå direkt till innehållet | the standard Swedish skip link |
+
+**Rules of thumb:** name things the way a member says them, not by what they
+do ("Övriga larm", not a description); no exclamation marks in running text;
+no personified objects (dates that arrive, magazines that find their way);
+don't promise members something the programme gives everyone (excursions are
+open to all, so membership is Cinclus and supporting the club, not access).
+
+The Klubben page's own membership paragraph (code, not `pages`) had the same
+promise; it now reads "Som medlem får du programbladet Cinclus och stöttar
+klubbens fågelskydd".
+
+Not changed, as the user's to decide: the menu's *Artiklar* (every benchmark
+says *Nyheter*) and *Lokaler* (*Fågellokaler*), which live in the page tree,
+and Klubben's body copy, which lives in `pages`.
+
+## Hierarki (2026-10-24)
+
+A review of type, visual hierarchy and semantic colour across the public
+pages, at 360 and 1280 px in Gecko and in Zen. Every type size on the public
+site now comes from a named role (see "Type"); the ad-hoc `text-lg
+font-semibold` and `text-xl` titles are gone.
+
+**Found and fixed:**
+
+- **Headings the size of what they head.** The programme's month headings and
+  the lokal page's "På lokalen" / "I närheten" were 18 px semibold, the same as
+  the entries under them. They are `type-section` now.
+- **Four sizes within 2 px** for titles (18, 20) and leads (18, 19). Article
+  tiles were 20 px and the rows under them 18 px, in the same section; all
+  entries are `type-item` (18 px), so "Fler artiklar" clearly outranks them.
+- **The larm page stacked four grey styles** under the place (italic 16,
+  meta 14/500, body 16, then a margin). The scientific name now sits under the
+  species, as in a field guide; under the place, one meta line holds the
+  rarity and the observer.
+- **The event page put the ingress below the place**, a 19 px grey line under
+  an 18 px one. The summary is the ingress, under the title; the place sits
+  level with the date, as on a larm.
+- **The larm rail mixed two 14 px weights** (place 400, time 500); both are
+  `type-meta`.
+- **Green links gave no hover feedback** unless they were in body text. The
+  `link` utility gives every green link the body's 2 px hover underline.
+- **The phone menu marked the current page in green**, which elsewhere means
+  "action"; it now has the desktop menu's ink and green underline.
+- **Blyerts** went from 6.0:1 to 7.1:1 (see "Colour").
+
+~~**Left open:** photo captions are paragraphs at body size.~~ Done the same
+day: the editor has a figure node, and the stored articles' captions went back
+into figures (see "Rendered content" and docs/wp-import.md, "Tidying").
+
 ## Tokens
 
-### Colour (existing, shared with the app; unchanged)
+### Colour: light only
 
-| Name | Light | Dark | Use |
+The site has one theme, light, since 2026-10-24 (the user's call: simpler, and
+done properly). The dark theme, its tokens and the script that switched to it
+are gone.
+
+| Name | Value | Contrast on Papper | Use |
 |---|---|---|---|
-| Papper (background) | `#FFFFFF` | `#080B09` | page |
-| Bläck (foreground) | `#0A0A0A` | `#FAFAFA` | text |
-| Markarydsgrön (primary) | `#137D41` | `#259F56` | links, the one button, focus |
-| Blyerts (muted-foreground) | `#737373` | `#9AA49D` | dates, ingress, meta |
-| Linje (border) | `#E5E5E5` | `rgb(255 255 255 / 10%)` | the header rule, tables |
+| Papper (background) | `#FFFFFF` | | page |
+| Bläck (foreground) | `#0A0A0A` | 19.8:1 | text |
+| Markarydsgrön (primary) | `#137D41` | 5.2:1; white on it 5.0:1 | links, the one button, focus |
+| Blyerts (muted-foreground) | `#585858` | 7.1:1 (AAA), APCA Lc 85; 6.5:1 on `muted` | dates, ingress, excerpts, meta |
+| Larmrött (rarity) | `#C42A20` | 5.7:1 | the two rarest levels |
+| Linje (border) | `#E5E5E5` | 1.3:1 | the header rule, tables (decoration) |
+
+- **Blyerts differs from the app.** It was the app's `#737373`: 4.7:1 on
+  white passes AA, but the public site sets places, observers and dates in it
+  at 14 px, and it failed AA on the `muted` grey (4.3:1). It went to `#636363`
+  (6.0:1), then to `#585858` in the hierarchy pass: ingresses and excerpts are
+  read, not glanced at, so all text on the page now meets AAA. It stays well
+  clear of Bläck, so grey still means "secondary". Green, Inter and everything
+  else stay shared.
+- **Open, admin only:** the admin's fields are shadcn `base-luma` pills, filled
+  with `--input` at 50% (`#F2F2F2`) and no border, so their edge is about
+  1.1:1 against the card; WCAG 1.4.11 asks 3:1. Darkening the fill only made
+  heavy grey bars. The fix is outlined fields, an edit to the generated
+  `input`, `textarea` and `native-select`. The public site has no fields.
+- **Focus:** a 2 px `--ring` outline, offset 2 px, on anything without its own
+  focus style. The inherited outline was the ring at 50%, 2.1:1.
+- **Light only, enforced:** `color-scheme: only light` (meta and CSS), which
+  also keeps Chrome on Android from darkening the page itself; `theme-color`
+  white, so a phone's toolbar meets the header. The `dark` variant is kept but
+  never matches, so the `dark:` classes in the generated shadcn components stay
+  off.
 
 Colour stays reserved for action and status, as in the app. Nothing on the
 public site is green unless it is a link or a control.
+
+- **Links, three kinds, one meaning each.** A standalone action or a link in
+  a sentence is green and underlined (`link` in `global.css`, 2 px on hover,
+  like `.content a`). A title that links stays ink, with a green underline on
+  hover. Navigation is Blyerts, and the current page is ink with a 2 px green
+  underline, on the desktop menu, the phone menu and the category tabs alike.
+- **Status:** Larmrött marks the two rarest levels, always beside the label
+  ("Sällsynt"), never colour alone. A green map pin marks a lokal with larm in
+  the last fortnight; the pins are controls, and the ingress says what green
+  means.
 
 ### Type: Inter with its optical-size axis
 
@@ -197,14 +338,21 @@ joins. The scale roughly follows a classic progression (16 · 18 · 21 · 24 · 
 |---|---|---|---|---|
 | Display (lead story) | `clamp(2.5rem, 1.3rem + 5.2vw, 4.5rem)` | 700 | −0.035em | 1.02 |
 | H1 (article, page) | `clamp(2rem, 1.5rem + 2.4vw, 3rem)` | 650 | −0.025em | 1.08 |
-| H2 | 1.5rem | 600 | −0.015em | 1.2 |
+| H2 (`type-section`) | 1.5rem | 600 | −0.015em | 1.2 |
 | H3 | 1.25rem | 600 | −0.01em | 1.3 |
 | H4 | 1.0625rem | 600 | 0 | 1.4 |
+| Entry title (`type-item`) | 1.125rem | 600 | −0.01em | 1.35 |
+| Fact line (place on a larm or event) | 1.125rem | 500 | 0 | 1.55 |
 | Ingress | 1.1875rem | 400, muted | 0 | 1.5 |
 | Body | 1rem → 1.0625rem | 400 | 0 | 1.65 |
 | Meta / dates | 0.875rem, `tabular-nums` | 500 | 0 | 1.4 |
 
 - The reading measure is at most **38rem** (about 68 characters).
+- **Every list uses `type-item`** for its entries' titles: articles (tiles and
+  rows alike), larm, events, lokaler, a page's subpages, the fee table. A
+  heading over a list is always `type-section`, so it outranks its entries
+  by at least 1.33×; the month headings in the programme and "På lokalen" /
+  "I närheten" were the size of their own entries until 2026-10-24.
 - No all-caps anywhere. Labels are sentence case.
 
 ### Space and shape
@@ -226,15 +374,25 @@ the left from 768 px up. The header and footer span a 64rem container.
 
 ```
 desktop ≥ 768 px
-Markaryds Fågelklubb                         Artiklar  Program  Obsar  Lokaler  Klubben
-Fågelskådning och naturliv i Markaryds kommun
+( ◉ ) Markaryds Fågelklubb          Artiklar  Larm  Program  Obsar  Lokaler  Klubben  [Bli medlem]
+      Fågelskådning och naturliv
+      i Markaryds kommun
 ────────────────────────────────────────────────────────────────────────────────────
 
 360 px
-Markaryds Fågelklubb                    [ Meny ]
+( ◉ ) Markaryds Fågelklubb              [ Meny ]
 ────────────────────────────────────────────────
 ```
 
+- **The club's emblem** (the dipper and "1986", added 2026-10-24) stands left of
+  the wordmark, as tall as the name and tagline together: 44 px on a phone, to
+  match "Meny", 48 at `md`, 64 at `lg`. On a phone the name wraps to two lines
+  beside it, "Markaryds" over "Fågelklubb", as the emblem itself sets them. From
+  `lg` the tagline is two lines, broken after "naturliv": on one line, beside
+  the emblem, it pushed "Klubben" under the menu. It is the app's own artwork
+  (`splash-icon.png`), a white disc in a black ring; it is not redrawn or
+  recoloured. It links home but is hidden from
+  assistive tech and the tab order, since the name beside it is the same link.
 - The club's name is a wordmark in Inter at 600 weight, linking home. The
   tagline shows from 1024 px up (`lg`; it was 768 until 2026-10-24, where it
   widened the wordmark's column enough to wrap "Klubben" onto a second line).
@@ -244,6 +402,42 @@ Markaryds Fågelklubb                    [ Meny ]
   whole tree, children indented. No JS, and it works in every browser the club
   uses.
 - The current section is marked with `aria-current` and underlined in green.
+
+### Sponsorer (2026-10-24)
+
+The WordPress site showed four sponsors in its left rail, under "Sponsrad av:".
+The brief: on the first screen, but not overly exposed.
+
+```
+desktop ≥ 768 px
+( ◉ ) Markaryds Fågelklubb          Artiklar  Larm  Program …  [Bli medlem]
+────────────────────────────────────────────────────────────────────────────
+                     Sponsrad av   Sparbank   Balkheds   Gränsbygden   Derome
+[ lead photo, 2:1                                                          ]
+
+360 px, after the lead and "Närmast i programmet"
+Sponsrad av
+Sparbank      Balkheds
+Gränsbygden   Derome
+```
+
+- **A credit line, not an ad slot.** From `md` up the sponsors sit right-aligned
+  between the header and the lead photo, the way a magazine credits a sponsor
+  beside its masthead. They are on the first screen at every desktop size and
+  push the lead down about 20 px. On a phone the same line would put the lead
+  photo below the fold, so there they follow the lead and the programme. The
+  component renders twice, one hidden at each width (`Sponsors.astro`).
+- **One ink.** The logos came in four styles (three white for WordPress's black
+  sidebar, one blue on a white box), so each file is an alpha mask and CSS
+  paints them all `muted-foreground`, `foreground` on hover. That makes them
+  quiet, makes them agree with each other and keeps the site's colour on
+  action. It costs the bank's orange coin, which reads as a
+  grey one.
+- **Sized by eye to weigh the same**, not to one height: equal height made the
+  bold wordmarks (Derome, Balkheds) shout and equal area lost the bank's thin
+  serif.
+- Home page only. `rel="sponsored"` on each link. The list lives in the
+  component; making it editable in `/admin` needs a table and is not built.
 
 ### Home
 
@@ -304,17 +498,25 @@ back through time reads like turning notebook pages.
 desktop
 Artiklar / Referat                        ← breadcrumb links
                Sträckräkning på Skararps ängar          ← H1
-lördag         Ingress …
+lördag         Ingress … (or the cover, or the body: whatever comes first)
 19 september
 2026
 Text: Anna A.
-               [ cover photo, column + margin width ]
+               [ cover photo, column width ]
                Body, content.css, 38rem …
 ```
 
+- **The date sits beside the first thing after the title.** The article is one
+  grid; the margin block is placed in row 2 spanning two rows, and everything
+  else flows down the reading column. As a header row of its own it opened a
+  120 px gap between title and text on every article without an ingress, which
+  is nearly all of them (fixed 2026-10-24). The event page works the same way.
+
 - On mobile, the margin collapses into one meta line above the body: the date,
   then "Text: …" on the next line. There are no middle-dot strings.
-- After the body comes "Mer i Referat": three links, the same list pattern.
+- After the body comes "Mer i Referat", with "Visa alla" to the category.
+- A shared article shows its first photo and opening line (Open Graph), so a
+  link posted in a Facebook group isn't a bare URL.
 
 ### Larm (`/larm`, `/larm/<id>`)
 
@@ -364,6 +566,12 @@ desktop
 - **The page says the place is approximate**, under the heading on `/larm` and
   again on the detail page. Readers deserve to know that "Nära Hualtet" is a
   deliberate blur, not a measurement.
+- **Where to get the app** (`AppLinks.astro`, 2026-10-24): one sentence in the
+  app's own verbs ("larmar", "notiser") and two plain links, App Store and
+  Google Play. It sits under the ingress on `/larm` and closes "Senaste larmen"
+  on the home page, after the larm rather than before them. Not the stores'
+  badges: two black slabs would be the loudest thing in the section. Both links
+  always show, because the pages are cached alike for every visitor.
 
 ### Kalender (`/kalender`, `/kalender/<månad>`, `/kalender/<slug>`)
 
@@ -399,9 +607,11 @@ fredag         Ugglespaning vid Hualtet      ← title is the link
   edges, where they read as unrelated.
 - **The clock is dropped for an all-day event** rather than printed as 00:00.
 
-An event's own page follows the article page, with the **place where the
-article has its ingress**: where to meet is the fact a member acts on, so it
-leads, exactly as the larm page leads with where the bird was. The margin
+An event's own page follows the article page: the summary is the ingress,
+under the title, and the **place sits level with the date**, as the first line
+of the reading column, in 18 px medium ink (since 2026-10-24; before, the place
+came above the ingress and was outsized by it). When and where read as one
+row, the way the larm page sets where the bird was beside when. The margin
 carries weekday, date, year, time, then the type. "Anmäl dig" is a plain green
 link, not a button — the site spends colour on what can be clicked and keeps
 the one button for elsewhere.
@@ -474,8 +684,7 @@ B      Broarna i Timsfors    9 larm   senast 16 aug.
   neighbouring län and kommuner too, so ours has to be the darkest line.
 - **The map never eats the page's scroll** (`scrollWheelZoom` off; the zoom
   buttons and pinch-zoom remain), and its animation respects
-  `prefers-reduced-motion`. In dark mode the tiles are **dimmed, not inverted** —
-  inverting turns water into land and reads as a different map.
+  `prefers-reduced-motion`.
 
 A lokal's own page follows the article page, with the map **where the article
 has its cover photo**: where it is, is what a visitor acts on, the same reason
@@ -509,7 +718,7 @@ I närheten
   must be there. The second is context, and 3 km around tätorten is 60 larm and
   growing.
 - **No counts in the headings** and no "Andra lokaler i närheten" at the foot.
-  The site writes "Fler larm" and "I det här avsnittet", not "Fler larm (6)",
+  The site writes "Fler larm" and "Här hittar du", not "Fler larm (6)",
   and the breadcrumb already leads back to the map.
 - A lokal with nothing says `Inga larm har skickats härifrån ännu.` and offers
   `Se alla larm`.
@@ -517,8 +726,10 @@ I närheten
 ### Page
 
 The page title and body, in the same column. A section page (one with children)
-ends with "I det här avsnittet": a plain list of its pages, each with its
-description.
+ends with "Här hittar du", a small grey label over the list Klubben uses:
+each title in ink at 18 px, green underline on hover, its description under it.
+(It was a column of green underlined links until 2026-10-24, which read as a
+sitemap.)
 
 ### Klubben (`/om-foreningen`, `/om-foreningen/medlemskap`) — 2026-10-24
 
@@ -565,17 +776,34 @@ full, are in the roadmap's decision log.
   reverses step 3's decision below, because the user now puts joining first.
 - **Not done, waiting on the domain's email:** Kontaktpersoner rewritten around
   role addresses, with phone numbers only for those who want them.
-- **Known contrast gap, shared with the app:** the dark theme's green with
-  near-white text is 3.26:1 (AA wants 4.5:1 for 16 px text; light mode is
-  4.96:1). Every filled button has it, the admin's included, and the app pairs
-  the same colours, so fixing it is a palette decision for both.
+- ~~**Known contrast gap, shared with the app:** the dark theme's green with
+  near-white text is 3.26:1.~~ Gone with the dark theme (2026-10-24); light
+  mode's button is 4.96:1.
 
 ### Footer
 
-The club's name, the tagline and `webmaster@markarydsfagelklubb.nu`, aligned
-with the reading column, in muted text on the page background, with no band of
-colour. Links to Medlemskap and Kontaktpersoner come with the real page tree
-(step 8); until then, those pages don't exist.
+~~The club's name, the tagline and the webmaster address in muted text on the
+page background, with no band of colour.~~ Rebuilt 2026-10-24 (polish pass): the
+old footer floated halfway up every short page and gave a visitor at the end of
+an article nowhere to go.
+
+```
+( ◉ ) Markaryds Fågelklubb                    Klubben              Appen
+      Fågelskådning och naturliv …            Om klubben           Larm
+      webmaster@markarydsfagelklubb.nu        Bli medlem           App Store
+                                              Program              Google Play
+                                              Prenumerera på …     Integritetspolicy
+                                              Artiklar som RSS-…   Användarvillkor
+```
+
+- **A `muted` band** the width of the window: it marks the end of the page
+  without a rule, and it sits at the bottom of a short page (the layout is a
+  column of the window's height, `main` takes the slack).
+- **Only routes that live in code**, so renaming a page in `/admin` can't break
+  the footer; the page tree's pages are one click away in the menu.
+- Two link groups side by side even on a phone, so the band stays short.
+  Group names are small grey labels, links are ink with a green underline on
+  hover, 44 px tall below `md`.
 
 ## Menu (signed off 2026-09-20)
 
@@ -645,18 +873,33 @@ editor loads it too, so the admin sees what gets published.
 - `blockquote` is indented, in the muted colour, with no quote glyphs or bars.
 - **Images:** full column width, `height: auto`, 4 px radius, `1.5em` vertical
   space. `width`/`height` are always present, so nothing shifts.
+- **Captions** (`<figure><img><figcaption>`, 2026-10-24): meta size (14 px),
+  Blyerts, 0.625rem under the photo, so a photo credit never reads as a
+  paragraph of the article. The figure is as wide as its photo and the
+  caption wraps under it (`contain: inline-size`), which matters for the
+  300 px originals. In the editor, a selected photo gets a "Bild" row with
+  "Lägg till bildtext" / "Ta bort bildtexten"; an empty caption shows a
+  placeholder and is stored as the plain image.
 - **Tables:** full width, meta-size text, a bottom border per row, and the
   header row at 600 weight. Tables scroll horizontally inside themselves at
   360 px; the page never does.
 - **Embeds:** full width, no border, a 4:3 ratio for maps.
 - `em` is italic (scientific names), and `strong` is 600.
 
+## RSS (`/feed`, 2026-10-24)
+
+The newest twenty articles as RSS 2.0, with each article's opening line,
+category and photo (Media RSS), for feed readers and for the tools that post
+a club's news to Facebook. It lives at `/feed` because WordPress had it at
+`/feed/`, which the site 301s to `/feed`, so old subscribers keep it. Every
+page links it for discovery (`rel="alternate"`), and the footer's Klubben group
+lists it as "Artiklar som RSS-flöde". An hour's cache, as for the calendar.
+
 ## Notes for later passes
 
 - ~~Larm (step 4) brings the first colour beyond green: rarity.~~ Done: a
-  `--rarity` token (`oklch(0.536 0.191 29)` light, `oklch(0.62 0.19 29.2)`
-  dark), taken from the app's `RarityScale` 0–1 (`#C42A20` / `#D23B2E`) and
-  lifted in dark mode to clear AA as text, the same lift `--primary` gets. It is
+  `--rarity` token (`oklch(0.536 0.191 29)`), taken from the app's
+  `RarityScale` 0–1 (`#C42A20`); its dark lift went with the dark theme. It is
   deliberately **not** `--destructive`, which means "this will break something".
   Spent on rarity levels 0–1 only.
 - If the display lead ever feels too loud for a trivial post (e.g. "Inställt

@@ -1,34 +1,56 @@
 ---
-// The document shell every page shares: head, theme, noindex. It queries
+// The document shell every page shares: head, noindex. It queries
 // nothing, so the prerendered 404 can use it at build time. The public header
 // and menu live in site.astro, the admin chrome in admin.astro.
+import appleTouchIcon from "@/assets/apple-touch-icon.png"
+import icon from "@/assets/icon-64.png"
 import "@/styles/global.css"
 
 interface Props {
   title: string
   description?: string
+  /**
+   * The picture a shared link shows (Open Graph): an article's photo, a larm's.
+   * Root-relative or absolute; made absolute against the request here.
+   */
+  image?: string
+  type?: "website" | "article"
 }
 
-const { title, description } = Astro.props
+const { title, description, image, type = "website" } = Astro.props
+// Prerendered pages have no request to resolve against, and pass no image.
+const imageUrl = image ? new URL(image, Astro.url).href : null
 ---
 
 <html lang="sv">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light dark" />
+    {/* Light only (docs/design.md, "Colour"). `only` keeps browsers from
+        darkening the page on their own; theme-color matches the browser's
+        toolbar to the white header. */}
+    <meta name="color-scheme" content="only light" />
+    <meta name="theme-color" content="#ffffff" />
     {/* Until the domain cutover: workers.dev must not compete with the live
         WordPress site in search. Remove together with public/robots.txt. */}
     <meta name="robots" content="noindex, nofollow" />
     {description && <meta name="description" content={description} />}
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {/* The club's emblem, as in the header and on the app's icon. Imported, so
+        it gets an immutable /_astro/ name and never wakes the Worker. The
+        home-screen icon sits on white: iOS fills transparency with black. */}
+    <link rel="icon" type="image/png" sizes="64x64" href={icon.src} />
+    <link rel="apple-touch-icon" href={appleTouchIcon.src} />
+    {/* Lets a feed reader find the articles' feed from any page. */}
+    <link rel="alternate" type="application/rss+xml" title="Markaryds Fågelklubb" href="/feed" />
+    {/* How a link looks when it's shared, in Facebook groups above all. */}
+    <meta property="og:site_name" content="Markaryds Fågelklubb" />
+    <meta property="og:locale" content="sv_SE" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
     <title>{title}</title>
-    {/* Before first paint, so the page never flashes the wrong theme. */}
-    <script is:inline>
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        document.documentElement.classList.add("dark")
-      }
-    </script>
   </head>
   <body class="bg-background text-foreground min-h-svh">
     <slot />

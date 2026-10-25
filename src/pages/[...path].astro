@@ -26,7 +26,7 @@ const node = resolvePath(navigation.tree, segments)
 if (!node) return new Response(null, { status: 404 })
 
 const page = await loadPageBody(db, node.id)
-if (page === "error") return new Response("Sidan kunde inte läsas just nu.", { status: 503 })
+if (page === "error") return new Response("Sidan kunde inte hämtas just nu.", { status: 503 })
 if (!page) return new Response(null, { status: 404 })
 
 // A section page lists what's in it.
@@ -44,14 +44,17 @@ const children = node.children as (typeof node & Pick<PublicPageRow, "descriptio
     {
       children.length > 0 && (
         <section aria-labelledby="avsnitt" class="flex max-w-[38rem] flex-col gap-4">
-          <h2 id="avsnitt" class="text-lg font-semibold">I det här avsnittet</h2>
-          <ul class="flex flex-col gap-4">
+          <h2 id="avsnitt" class="type-meta text-muted-foreground">Här hittar du</h2>
+          {/* The list Klubben uses for its pages (src/pages/om-foreningen/index.astro):
+              each title in ink, green only on hover, its description under it.
+              A column of green underlined links read as a sitemap. */}
+          <ul class="flex flex-col gap-5">
             {children.map((child) => (
               <li class="flex flex-col gap-0.5">
-                <a href={child.kind === "link" ? (child.link_url ?? "/") : child.path} class="text-primary font-medium underline underline-offset-4">
+                <a href={child.kind === "link" ? (child.link_url ?? "/") : child.path} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
                   {child.title}
                 </a>
-                {child.description && <p class="text-muted-foreground">{child.description}</p>}
+                {child.description && <p class="text-muted-foreground leading-relaxed">{child.description}</p>}
               </li>
             ))}
           </ul>

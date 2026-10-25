@@ -114,6 +114,35 @@ describe("sanitizeContent: what survives", () => {
   })
 })
 
+describe("sanitizeContent: photo captions", () => {
+  const img = `<img src="${IMG}/960.webp" width="1600" height="1067" alt="Gråhäger" loading="lazy" />`
+
+  it("keeps a figure with its caption and the caption's own markup", () => {
+    const html = `<figure>${img}<figcaption>Gråhäger (<em>Ardea cinerea</em>).<br />Foto: Anna</figcaption></figure>`
+    expect(sanitizeContent(html)).toBe(html)
+  })
+
+  it("drops attributes on figures and captions", () => {
+    expect(
+      sanitizeContent(
+        `<figure class="wp-block-image" style="x">${img}<figcaption class="c">Foto: Anna</figcaption></figure>`
+      )
+    ).toBe(`<figure>${img}<figcaption>Foto: Anna</figcaption></figure>`)
+  })
+
+  it("stores a figure whose caption is empty as the plain image", () => {
+    expect(sanitizeContent(`<figure>${img}<figcaption> <br /> </figcaption></figure>`)).toBe(img)
+  })
+
+  it("keeps the caption as a paragraph when the photo is refused", () => {
+    expect(
+      sanitizeContent(
+        '<figure><img src="https://evil.example/x.jpg" /><figcaption>Foto: Anna</figcaption></figure>'
+      )
+    ).toBe("<p>Foto: Anna</p>")
+  })
+})
+
 describe("sanitizeContent: tidying", () => {
   it("drops the editor's empty paragraphs at the edges, but not inside", () => {
     expect(sanitizeContent("<p></p><p>Text</p><p></p>")).toBe("<p>Text</p>")

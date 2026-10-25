@@ -134,6 +134,8 @@ export function RichTextEditor({
             blockquote: current.isActive("blockquote"),
             link: current.isActive("link"),
             inTable: current.isActive("table"),
+            image: current.isActive("image"),
+            figure: current.isActive("figure"),
             canUndo: current.can().undo(),
             canRedo: current.can().redo(),
           }
@@ -382,6 +384,30 @@ export function RichTextEditor({
             >
               Ta bort tabellen
             </Button>
+          </div>
+        )}
+
+        {!sourceView && (state.image || state.figure) && (
+          <div role="toolbar" aria-label="Bild" className="flex flex-wrap gap-1 border-b p-1.5">
+            {state.figure ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => run((c) => c.removeCaption())}
+              >
+                Ta bort bildtexten
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => run((c) => c.addCaption())}
+              >
+                Lägg till bildtext
+              </Button>
+            )}
           </div>
         )}
 

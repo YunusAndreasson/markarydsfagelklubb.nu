@@ -1,19 +1,42 @@
 ---
+/**
+ * The club's emblem, the dipper of 1986, from the app
+ * (`../mafk-mobie/assets/images/splash-icon.png`, which the app shows on both
+ * themes): trimmed, squared and cut to 144 px, enough for 2× at the header's
+ * 64 px and 3× at 48. It is imported rather than put in public/, so it gets a hashed
+ * `/_astro/` name, immutable caching and no Worker invocation. The image
+ * service passes images through untouched on rendered pages, so the file is
+ * sized here, not at request time.
+ */
+import logo from "@/assets/logo.webp"
 import { buttonVariants } from "@/components/ui/button"
 import BaseLayout from "@/layouts/base.astro"
-import { isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/app-stores"
+import { FALLBACK_MENU, isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
 import { cn } from "@/lib/utils"
 
 interface Props {
   /** The page's own title; the club's name is appended. */
   title?: string
   description?: string
-  /** From the page tree. Each route loads it; the layout queries nothing. */
+  /**
+   * From the page tree. Each route loads it; the layout queries nothing. Empty
+   * (a prerendered page, or a failed read) shows FALLBACK_MENU.
+   */
   menu: MenuEntry[]
+  /** For a shared link's preview; see base.astro. */
+  image?: string
+  type?: "website" | "article"
 }
 
 const SITE_NAME = "Markaryds Fågelklubb"
-const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
+/**
+ * Two lines beside the emblem, broken where the phrase breaks. On one line it
+ * made the left column 392 px, and the menu and "Bli medlem" (592 px) no
+ * longer fit the 976 px row, so "Klubben" wrapped under the menu.
+ */
+const TAGLINE_LINES = ["Fågelskådning och naturliv", "i Markaryds kommun"]
+const TAGLINE = TAGLINE_LINES.join(" ")
 /**
  * The header's one button (docs/design.md, "Klubben"): joining is what the
  * section is for, so it is the one place the public site spends a filled
@@ -22,99 +45,166 @@ const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
  */
 const JOIN_PATH = "/om-foreningen/medlemskap"
 
-const { title, description, menu } = Astro.props
+const { title, description, menu: loaded, image, type } = Astro.props
+const menu = loaded.length > 0 ? loaded : FALLBACK_MENU
+
+/**
+ * The footer's links (docs/design.md, "Footer"): only routes that live in code,
+ * so renaming a page in /admin can't break them. The tree's own pages are one
+ * click away in the menu above.
+ */
+const footerGroups = [
+  {
+    title: "Klubben",
+    links: [
+      { label: "Om klubben", href: "/om-foreningen" },
+      { label: "Bli medlem", href: JOIN_PATH },
+      { label: "Program", href: "/kalender" },
+      { label: "Prenumerera på programmet", href: "/kalender.ics" },
+      { label: "Artiklar som RSS-flöde", href: "/feed" },
+    ],
+  },
+  {
+    title: "Appen",
+    links: [
+      { label: "Larm", href: "/larm" },
+      { label: "App Store", href: APP_STORE_URL },
+      { label: "Google Play", href: GOOGLE_PLAY_URL },
+      {
+        label: "Integritetspolicy",
+        href: "/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen",
+      },
+      {
+        label: "Användarvillkor",
+        href: "/om-foreningen/anvandarvillkor-markaryds-fagelklubb-appen",
+      },
+    ],
+  },
+]
 const { pathname } = Astro.url
 const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" : undefined)
 ---
 
-<BaseLayout title={title ? `${title} · ${SITE_NAME}` : SITE_NAME} description={description ?? TAGLINE}>
+<BaseLayout title={title ? `${title} · ${SITE_NAME}` : SITE_NAME} description={description ?? TAGLINE} image={image} type={type}>
   <a
     href="#innehall"
     class="bg-background focus:ring-ring sr-only z-10 rounded-md px-4 py-3 focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:ring-2"
   >
-    Till innehållet
+    Gå direkt till innehållet
   </a>
 
-  <header class="relative border-b">
-    <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-4 sm:px-6 md:items-end md:py-7">
-      <div class="flex flex-col gap-1">
-        <a href="/" class="text-lg font-semibold tracking-tight md:text-xl">{SITE_NAME}</a>
-        <p class="text-muted-foreground hidden text-sm lg:block">{TAGLINE}</p>
-      </div>
+  {/* A column the height of the window, so the footer sits at the bottom of a
+      short page instead of halfway up it. */}
+  <div class="flex min-h-svh flex-col">
+    <header class="relative border-b">
+      <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-4 sm:px-6 md:items-end md:py-7">
+        <div class="flex items-center gap-3 lg:gap-4">
+          <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
+            <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12 lg:size-16" />
+          </a>
+          <div class="flex flex-col gap-1">
+            <a href="/" class="text-lg font-semibold tracking-tight md:text-xl">{SITE_NAME}</a>
+            <p class="text-muted-foreground hidden text-sm lg:block">
+              {TAGLINE_LINES.map((line) => <span class="block">{line}</span>)}
+            </p>
+          </div>
+        </div>
 
-      <div class="flex items-center gap-3 lg:gap-8">
+        <div class="flex items-center gap-3 lg:gap-8">
+          {
+            menu.length > 0 && (
+              <nav aria-label="Huvudmeny" class="hidden lg:block">
+                <ul class="flex flex-wrap justify-end gap-x-6 gap-y-2">
+                  {menu.map((entry) => (
+                    <li>
+                      <a
+                        href={entry.href}
+                        aria-current={current(entry)}
+                        class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+                      >
+                        {entry.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )
+          }
+
+          <a href={JOIN_PATH} class={cn(buttonVariants(), "hidden h-11 px-4 text-base md:inline-flex")}>Bli medlem</a>
+
+          {
+            menu.length > 0 && (
+              <details class="group lg:hidden">
+                <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
+                  <span class="group-open:hidden">Meny</span>
+                  <span class="hidden group-open:inline">Stäng</span>
+                </summary>
+                <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
+                  <a href={JOIN_PATH} class={cn(buttonVariants(), "mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
+                  <ul class="flex flex-col">
+                    {menu.map((entry) => (
+                      <li class="border-b last:border-b-0">
+                        <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:decoration-primary flex min-h-12 items-center text-lg font-medium underline-offset-[0.4em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                          {entry.title}
+                        </a>
+                        {entry.children.length > 0 && (
+                          <ul class="flex flex-col pb-3 pl-4">
+                            {entry.children.map((child) => (
+                              <li>
+                                <a href={child.href} aria-current={pathname === child.href ? "page" : undefined} class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center">
+                                  {child.title}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </details>
+            )
+          }
+        </div>
+      </div>
+    </header>
+
+    <main id="innehall" class="mx-auto w-full max-w-[64rem] flex-1 px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
+      <slot />
+    </main>
+
+    <footer class="bg-muted">
+      <div class="mx-auto grid w-full max-w-[64rem] grid-cols-2 gap-x-6 gap-y-10 px-4 pt-12 pb-14 sm:gap-x-8 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-x-20 md:pt-14 md:pb-16">
+        <div class="col-span-2 flex items-start gap-3 md:col-span-1">
+          <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" class="size-10 shrink-0" />
+          <div class="flex flex-col gap-1 text-sm">
+            <p class="text-foreground font-semibold">{SITE_NAME}</p>
+            <p class="text-muted-foreground">{TAGLINE}</p>
+            <p>
+              <a href="mailto:webmaster@markarydsfagelklubb.nu" class="text-muted-foreground hover:text-foreground flex min-h-11 w-fit items-center underline underline-offset-4 md:min-h-8">
+                webmaster@markarydsfagelklubb.nu
+              </a>
+            </p>
+          </div>
+        </div>
         {
-          menu.length > 0 && (
-            <nav aria-label="Huvudmeny" class="hidden lg:block">
-              <ul class="flex flex-wrap justify-end gap-x-6 gap-y-2">
-                {menu.map((entry) => (
+          footerGroups.map((group) => (
+            <nav aria-label={group.title} class="flex flex-col gap-2 text-sm">
+              <h2 class="type-meta text-muted-foreground">{group.title}</h2>
+              <ul class="flex flex-col">
+                {group.links.map((link) => (
                   <li>
-                    <a
-                      href={entry.href}
-                      aria-current={current(entry)}
-                      class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
-                    >
-                      {entry.title}
+                    <a href={link.href} class="hover:decoration-primary flex min-h-11 w-fit items-center underline-offset-4 hover:underline md:min-h-8">
+                      {link.label}
                     </a>
                   </li>
                 ))}
               </ul>
             </nav>
-          )
-        }
-
-        <a href={JOIN_PATH} class={cn(buttonVariants(), "hidden h-11 px-4 text-base md:inline-flex")}>Bli medlem</a>
-
-        {
-          menu.length > 0 && (
-            <details class="group lg:hidden">
-              <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
-                <span class="group-open:hidden">Meny</span>
-                <span class="hidden group-open:inline">Stäng</span>
-              </summary>
-              <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
-                <a href={JOIN_PATH} class={cn(buttonVariants(), "mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
-                <ul class="flex flex-col">
-                  {menu.map((entry) => (
-                    <li class="border-b last:border-b-0">
-                      <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:text-primary flex min-h-12 items-center text-lg font-medium">
-                        {entry.title}
-                      </a>
-                      {entry.children.length > 0 && (
-                        <ul class="flex flex-col pb-3 pl-4">
-                          {entry.children.map((child) => (
-                            <li>
-                              <a href={child.href} aria-current={pathname === child.href ? "page" : undefined} class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center">
-                                {child.title}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </details>
-          )
+          ))
         }
       </div>
-    </div>
-  </header>
-
-  <main id="innehall" class="mx-auto w-full max-w-[64rem] px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
-    <slot />
-  </main>
-
-  <footer class="mx-auto w-full max-w-[64rem] px-4 pb-12 sm:px-6">
-    <div class="text-muted-foreground flex flex-col gap-1 text-sm md:pl-[7rem]">
-      <p class="text-foreground font-medium">{SITE_NAME}</p>
-      <p>{TAGLINE}</p>
-      <p>
-        <a href="mailto:webmaster@markarydsfagelklubb.nu" class="hover:text-foreground underline underline-offset-4">
-          webmaster@markarydsfagelklubb.nu
-        </a>
-      </p>
-    </div>
-  </footer>
+    </footer>
+  </div>
 </BaseLayout>

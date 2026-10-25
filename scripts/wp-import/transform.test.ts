@@ -40,7 +40,7 @@ function stored(html: string, ctx = context()) {
 }
 
 describe("transformBody", () => {
-  it("turns a WordPress figure into a site image and its caption into a paragraph", () => {
+  it("keeps a WordPress photo and its caption as a figure with a site image", () => {
     const { html, images, captions } = stored(
       `<figure class="wp-block-image size-large is-resized"><img src="${UPLOADS}/2026/06/familj-strand-1032x688.jpg" alt="" class="wp-image-10151" width="504" height="336" srcset="${UPLOADS}/2026/06/familj-strand-300x200.jpg 300w" sizes="(max-width: 504px) 100vw, 504px" /><figcaption>Strandskata <strong>(Haematopus ostralegus</strong>). <em>Foto: Olof Bergqvist.&nbsp; </em> </figcaption></figure>`
     )
@@ -50,11 +50,31 @@ describe("transformBody", () => {
     expect(captions).toBe(1)
     expect(html).toContain(`src="${SITE_MEDIA_PUBLIC_PREFIX}2026/06/`)
     expect(html).toContain('width="1343" height="895"')
-    expect(html).toContain(
-      "<p>Strandskata <strong>(Haematopus ostralegus</strong>). <em>Foto: Olof Bergqvist."
+    expect(html).toMatch(
+      /^<figure><img [^>]*\/><figcaption>Strandskata <strong>\(Haematopus ostralegus<\/strong>\)\. <em>Foto: Olof Bergqvist\./
     )
-    expect(html).not.toContain("figure")
+    expect(html).not.toContain("wp-block")
     expect(html).not.toContain("markarydsfagelklubb.nu")
+  })
+
+  it("drops every other figure's wrapper: galleries, embeds, photos without a caption", () => {
+    const photo = `<img src="${UPLOADS}/2026/06/familj-strand.jpg" class="wp-image-10151">`
+    const { html, captions } = stored(
+      `<figure class="wp-block-gallery"><figure class="wp-block-image">${photo}<figcaption>Ett</figcaption></figure><figure class="wp-block-image">${photo}</figure></figure>` +
+        `<figure class="wp-block-embed"><div><iframe src="https://www.google.com/maps/embed?pb=1"></iframe></div></figure>`
+    )
+    expect(captions).toBe(1)
+    expect(html.match(/<figure>/g)).toHaveLength(1)
+    expect(html).toMatch(/^<figure><img [^>]*\/><figcaption>Ett<\/figcaption><\/figure><img /)
+    expect(html).toContain("<iframe ")
+  })
+
+  it("keeps a caption whose photo is gone as a paragraph", () => {
+    const { html, captions } = stored(
+      `<figure><img src="data:image/gif;base64,R0lGOD"><figcaption>Foto: Olof</figcaption></figure>`
+    )
+    expect(captions).toBe(1)
+    expect(html).toBe("<p>Foto: Olof</p>")
   })
 
   it("finds the original from the URL when the class is missing", () => {

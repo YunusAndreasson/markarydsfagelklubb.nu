@@ -26,7 +26,7 @@ const [navigation, events] = await Promise.all([
   loadNavigation(db),
   listUpcomingEvents(db, { limit: UPCOMING_LIMIT, from: startOfStockholmDay(now) }),
 ])
-if (!events) return new Response("Programmet kunde inte läsas just nu.", { status: 503 })
+if (!events) return new Response("Programmet kunde inte hämtas just nu.", { status: 503 })
 
 const months = groupByMonth(events)
 const previousMonth = monthKey(shiftMonth(monthOf(now), -1))
@@ -48,18 +48,18 @@ const heading = (key: string) => {
         Klubbens exkursioner, möten och resor. Alla är välkomna, även den som inte är medlem.
       </p>
       <p class="text-muted-foreground max-w-[38rem]">
-        <a href="/kalender.ics" class="text-primary underline underline-offset-4">
+        <a href="/kalender.ics" class="link">
           Prenumerera på programmet
         </a>
-        {" "}så dyker det upp i din egen kalender, och nya datum kommer med av sig själva.
+        {" "}så hamnar det i kalendern i din mobil eller dator, och ändringar kommer med automatiskt.
       </p>
     </header>
 
     {
       months.length === 0 && (
         <p class="text-muted-foreground max-w-[38rem] md:pl-[7rem]">
-          Inget är inlagt framåt just nu. Titta in igen, eller läs vad klubben har gjort under
-          <a href="/artiklar" class="text-primary underline underline-offset-4"> Artiklar</a>.
+          Inget nytt är inlagt i programmet ännu. Om tidigare exkursioner kan du läsa under
+          <a href="/artiklar" class="link"> Artiklar</a>.
         </p>
       )
     }
@@ -67,7 +67,7 @@ const heading = (key: string) => {
     {
       months.map((group) => (
         <section aria-labelledby={`manad-${group.key}`} class="flex flex-col gap-6">
-          <h2 id={`manad-${group.key}`} class="text-lg font-semibold md:pl-[7rem]">
+          <h2 id={`manad-${group.key}`} class="type-section md:pl-[7rem]">
             {heading(group.key)}
           </h2>
           <EventList events={group.events} headingLevel={3} />
@@ -78,7 +78,7 @@ const heading = (key: string) => {
     {/* The link says what it does, not just where it goes: a bare month name
         at the foot of the page reads as a stray heading. */}
     <nav aria-label="Tidigare i programmet" class="md:pl-[7rem]">
-      <a href={`/kalender/${previousMonth}`} class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+      <a href={`/kalender/${previousMonth}`} class="link flex min-h-11 w-fit items-center font-medium">
         Tidigare i programmet
       </a>
     </nav>

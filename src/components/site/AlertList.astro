@@ -26,7 +26,7 @@ interface Props {
    * `md` up, so the photos line up like a contact strip and the log stays
    * scannable; full width under the row on a phone. Cropped to 3:2 to keep the
    * rhythm — a larm's own page shows the photo whole. `false` shows none, as
-   * the lokal pages and the home page's "Också larmat" do.
+   * the lokal pages and the home page's "Övriga larm" do.
    */
   photos?: boolean
   /**
@@ -38,7 +38,7 @@ interface Props {
   place?: boolean
   /**
    * One line per larm — date and time, then species, place and observer in a
-   * row — for the home page's "Också larmat" under the photo rail, where full
+   * row — for the home page's "Övriga larm" under the photo rail, where full
    * notebook rows would outweigh the photos they sit beneath.
    */
   compact?: boolean
@@ -93,8 +93,8 @@ const yearLabel = (index: number): number | null => {
           >
             <Heading
               class:list={[
-                "flex flex-wrap items-baseline gap-x-2 leading-snug font-semibold text-pretty",
-                compact ? "text-base" : "text-lg",
+                "flex flex-wrap items-baseline gap-x-2",
+                compact ? "leading-snug font-semibold" : "type-item",
               ]}
             >
               <a href={`/larm/${alert.id}`} class="decoration-primary underline-offset-4 hover:underline">

@@ -24,16 +24,19 @@ const tab = (active: boolean) => (active ? "page" : undefined)
     <h1 class="type-title">{heading}</h1>
     {
       categories.length > 0 && (
-        <nav aria-label="Kategorier">
-          <ul class="flex flex-wrap gap-x-5">
+        /* One row that scrolls sideways on a phone, where wrapping took three
+           rows of 44 px targets above the first article. The page's heading
+           names the current category, so an off-screen tab loses nothing. */
+        <nav aria-label="Kategorier" class="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:overflow-visible md:px-0">
+          <ul class="flex w-max gap-x-5 md:w-auto md:flex-wrap">
             <li>
-              <a href="/artiklar" aria-current={tab(currentCategory === null)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+              <a href="/artiklar" aria-current={tab(currentCategory === null)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center whitespace-nowrap underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
                 Alla
               </a>
             </li>
             {categories.map((category) => (
               <li>
-                <a href={`/artiklar/kategori/${category.slug}`} aria-current={tab(currentCategory === category.slug)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                <a href={`/artiklar/kategori/${category.slug}`} aria-current={tab(currentCategory === category.slug)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center whitespace-nowrap underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
                   {category.name}
                 </a>
               </li>
@@ -56,12 +59,12 @@ const tab = (active: boolean) => (active ? "page" : undefined)
     (page.older || page.newer) && (
       <nav aria-label="Fler artiklar" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
         {page.newer && (
-          <a href={link("efter", page.newer)} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={link("efter", page.newer)} class="link flex min-h-11 items-center font-medium">
             Nyare artiklar
           </a>
         )}
         {page.older && (
-          <a href={link("fore", page.older)} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={link("fore", page.older)} class="link flex min-h-11 items-center font-medium">
             Äldre artiklar
           </a>
         )}

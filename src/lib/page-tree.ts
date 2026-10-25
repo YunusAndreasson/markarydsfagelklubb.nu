@@ -109,6 +109,21 @@ function toMenuEntry(node: PageNode): MenuEntry {
   }
 }
 
+/**
+ * The top of the menu as it stands in the page tree, for the pages that can't
+ * read it: the prerendered 404 and legal pages, and any page whose navigation
+ * query failed. Without it those pages had no way into the site but "Till
+ * startsidan". Keep it in step with the tree's top level when that changes.
+ */
+export const FALLBACK_MENU: MenuEntry[] = [
+  { title: "Artiklar", href: "/artiklar", external: false, children: [] },
+  { title: "Larm", href: "/larm", external: false, children: [] },
+  { title: "Program", href: "/kalender", external: false, children: [] },
+  { title: "Obsar", href: "/obsar", external: false, children: [] },
+  { title: "Lokaler", href: "/lokaler", external: false, children: [] },
+  { title: "Klubben", href: "/om-foreningen", external: false, children: [] },
+]
+
 /** The menu: every visible entry, in order, with its visible children. */
 export function buildMenu(tree: PageTree): MenuEntry[] {
   return tree.roots.filter((node) => node.show_in_menu).map(toMenuEntry)

@@ -120,6 +120,34 @@
     margin-bottom: 1.5em;
   }
 
+  /*
+   * A photo and its caption. The caption belongs to the photo, not to the
+   * text: tight under it, in the meta size and Blyerts, so a photo credit never
+   * reads as a paragraph of the article. The figure takes the image's space
+   * above and below, and the photo's width: a small original keeps its size
+   * (see img below), and its caption wraps under it instead of running on
+   * across the column. `contain: inline-size` keeps the caption's own length
+   * out of the figure's width.
+   */
+  .content figure {
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+  }
+  .content figure img {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .content figcaption {
+    contain: inline-size;
+    margin-top: 0.625rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--muted-foreground);
+    text-wrap: pretty;
+  }
+
   /* Tables scroll inside themselves at 360 px; the page never does. */
   .content table {
     display: block;
@@ -214,5 +242,14 @@
   }
   .content .tableWrapper {
     overflow-x: auto;
+  }
+  /* An empty caption says what it is for; ProseMirror holds an empty block
+     open with a lone trailing <br>. */
+  .content figcaption:has(> .ProseMirror-trailingBreak:only-child)::before {
+    content: "Skriv en bildtext";
+    float: left;
+    height: 0;
+    pointer-events: none;
+    font-style: italic;
   }
 }

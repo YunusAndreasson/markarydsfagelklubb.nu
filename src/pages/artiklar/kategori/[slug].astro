@@ -24,7 +24,7 @@ const page = await listPublishedArticles(db, {
   before: decodeCursor(params.get("fore")),
   after: decodeCursor(params.get("efter")),
 })
-if (!page) return new Response("Artiklarna kunde inte läsas just nu.", { status: 503 })
+if (!page) return new Response("Artiklarna kunde inte hämtas just nu.", { status: 503 })
 ---
 
 <SiteLayout title={category.name} menu={navigation.menu}>

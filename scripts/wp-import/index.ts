@@ -4,6 +4,8 @@ import { parseArgs } from "node:util"
 import { sanitizeContent } from "../../src/lib/sanitize"
 import { pickCategory, SITE_CATEGORIES } from "./categories"
 import { fetchPosts, readExport, WordPressClient, type WpCategory } from "./sources"
+import { tidyLineBreaks } from "./tidy"
+import { TITLE_FIXES } from "./title-fixes"
 import {
   cleanExcerpt,
   cleanTitle,
@@ -126,7 +128,8 @@ for (const post of posts) {
     problems.push("password-protected: the body is not readable anonymously")
 
   const wpTitle = cleanTitle(post.title.rendered)
-  const title = wpTitle || fallbackTitle(post.content.rendered)
+  // The reviewed spelling wins over what WordPress has (title-fixes.ts).
+  const title = TITLE_FIXES[post.id] ?? (wpTitle || fallbackTitle(post.content.rendered))
   if (!title) problems.push("no title, and no bold line in the body to take one from")
 
   const slug = siteSlug(post.slug)
@@ -166,7 +169,8 @@ for (const post of posts) {
       }
     }
   }
-  let html = sanitizeContent(bodyHtml)
+  // Line breaks from WordPress's classic editor sorted out (tidy.ts).
+  let html = sanitizeContent(tidyLineBreaks(bodyHtml))
 
   // The two checks the spec asks a human to make, made here first.
   const keptImages = (html.match(/<img\s/g) ?? []).length

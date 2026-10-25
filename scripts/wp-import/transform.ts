@@ -266,14 +266,19 @@ function fileKind(url: string): FileNeed["kind"] {
  *
  * - every `<img>` becomes a site image at its planned storage prefix, or is
  *   dropped when nothing identifies its original;
- * - a `<figcaption>` (113 posts, nearly all photo credits) becomes a
- *   paragraph under its image, since the editor has no caption node;
+ * - a photo with its `<figcaption>` (nearly all photo credits) stays a
+ *   `<figure>`, the editor's figure node; any other figure (a gallery's, an
+ *   embed's, a photo without a caption) is only a wrapper and is dropped, and
+ *   a caption whose photo is gone becomes a paragraph;
  * - a link wrapped around an image and pointing at the uploaded file is
  *   unwrapped, because it would point at WordPress after the cutover;
  * - links to uploaded documents are recorded, to be copied;
  * - links to other WordPress pages become site-relative, for the redirects;
  * - tags the sanitizer would flatten into loose text are renamed first.
  */
+const INNERMOST_FIGURE = /<figure\b[^>]*>((?:(?!<\/?figure\b)[\s\S])*)<\/figure>/gi
+const FIGCAPTION = /<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i
+
 export function transformBody(html: string, context: ResolveContext): BodyResult {
   const images: ImageNeed[] = []
   const files: FileNeed[] = []
@@ -323,12 +328,32 @@ export function transformBody(html: string, context: ResolveContext): BodyResult
       droppedImages.push(src)
       return ""
     })
+
+  // Innermost figures first: a gallery's photos are figures inside a figure.
+  // A photo and its caption are kept aside while every other figure tag goes.
+  const figures: string[] = []
+  out = out
+    .replace(INNERMOST_FIGURE, (_whole, inner: string) => {
+      const caption =
+        inner
+          .match(FIGCAPTION)?.[1]
+          ?.replace(/&nbsp;/g, " ")
+          .trim() ?? ""
+      const photo = inner.replace(FIGCAPTION, "").trim()
+      if (!caption.replace(/<[^>]*>/g, "").trim() || !/^<img\s[^>]*>$/.test(photo)) return inner
+      captions++
+      figures.push(`<figure>${photo}<figcaption>${caption}</figcaption></figure>`)
+      return `\uE000${figures.length - 1}\uE000`
+    })
+    .replace(/<\/?figure\b[^>]*>/gi, "")
+    // A caption left over has lost its photo: it stays, as a paragraph.
     .replace(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/gi, (_whole, inner: string) => {
       const text = inner.replace(/&nbsp;/g, " ").trim()
       if (!text.replace(/<[^>]*>/g, "").trim()) return ""
       captions++
       return `<p>${text}</p>`
     })
+    .replace(/\uE000(\d+)\uE000/g, (_whole, index: string) => figures[Number(index)] ?? "")
     .replace(/<a\s[^>]*href="([^"]+)"[^>]*>/gi, (tag, rawHref: string) => {
       const href = decodeEntities(rawHref)
       // An address linked without its scheme resolves as a page path and
@@ -360,8 +385,6 @@ export function transformBody(html: string, context: ResolveContext): BodyResult
     .replace(/<(\/?)del\b[^>]*>/gi, "<$1s>")
 
   out = out
-    // A figure without its image left behind is just an empty wrapper.
-    .replace(/<figure[^>]*>\s*<\/figure>/gi, "")
     // WordPress's spacers: <p>&nbsp;</p>, and <br>s at a paragraph's edges.
     .replace(/(<p[^>]*>)(?:\s|&nbsp;| |<br\s*\/?>)+/gi, "$1")
     .replace(/(?:\s|&nbsp;| |<br\s*\/?>)+(<\/p>)/gi, "$1")

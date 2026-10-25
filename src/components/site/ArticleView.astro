@@ -12,9 +12,14 @@ const { article } = Astro.props
 const published = article.published_at
 ---
 
-<article class="flex flex-col gap-8">
-  <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
-    <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
+{/* One grid, so the date and byline sit in the margin beside whatever follows
+    the title (the excerpt, the cover or the text) instead of taking a row of
+    their own: as a header row of their own they opened a 120 px gap between
+    the title and the text on every article. The margin column is placed
+    explicitly; everything else flows down the reading column. */}
+<article class="grid gap-y-8 md:grid-cols-[7rem_minmax(0,38rem)]">
+  <header class="flex flex-col gap-4 md:col-start-2">
+    <nav aria-label="Du är här" class="type-meta text-muted-foreground">
       <a href="/artiklar" class="hover:text-foreground underline-offset-4 hover:underline">Artiklar</a>
       {
         article.category && (
@@ -27,36 +32,38 @@ const published = article.published_at
         )
       }
     </nav>
-    <h1 class="type-title md:col-start-2">{article.title}</h1>
-    <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
-      {
-        published && (
-          <time datetime={isoDateTime(published)} class="flex flex-wrap gap-x-1 md:flex-col">
-            <span>{formatDate(published, "weekdayName")}</span>
-            <span>{formatDate(published, "dayMonth")}</span>
-            <span>{stockholmYear(published)}</span>
-          </time>
-        )
-      }
-      {article.author_name && <span class="mt-1">Text: {article.author_name}</span>}
-    </div>
-    {article.excerpt && <p class="type-ingress text-muted-foreground md:col-start-2 md:row-start-3">{article.excerpt}</p>}
+    <h1 class="type-title">{article.title}</h1>
   </header>
+
+  <div class="type-meta text-muted-foreground -mt-4 flex flex-col md:col-start-1 md:row-[2/span_2] md:mt-0 md:pt-1">
+    {
+      published && (
+        <time datetime={isoDateTime(published)} class="flex flex-wrap gap-x-1 md:flex-col">
+          <span>{formatDate(published, "weekdayName")}</span>
+          <span>{formatDate(published, "dayMonth")}</span>
+          <span>{stockholmYear(published)}</span>
+        </time>
+      )
+    }
+    {article.author_name && <span class="mt-1">Text: {article.author_name}</span>}
+  </div>
+
+  {article.excerpt && <p class="type-ingress text-muted-foreground md:col-start-2">{article.excerpt}</p>}
 
   {
     article.cover && (
       <img
         src={mediaFallbackUrl(article.cover)}
         srcset={mediaSrcset(article.cover)}
-        sizes="(min-width: 48rem) 45rem, 100vw"
+        sizes="(min-width: 48rem) 38rem, 100vw"
         width={article.cover.width}
         height={article.cover.height}
         alt={article.cover.alt}
         fetchpriority="high"
-        class="h-auto w-full max-w-[45rem] rounded-[4px]"
+        class="h-auto w-full rounded-[4px] md:col-start-2"
       />
     )
   }
 
-  <div class="content md:ml-[7rem]" set:html={article.body_html} />
+  <div class="content md:col-start-2" set:html={article.body_html} />
 </article>

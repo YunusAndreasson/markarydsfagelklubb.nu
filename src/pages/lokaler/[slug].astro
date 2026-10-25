@@ -27,7 +27,7 @@ const { db } = Astro.locals
 if (!db || !slug || !isValidSlug(slug)) return new Response(null, { status: 404 })
 
 const [navigation, found] = await Promise.all([loadNavigation(db), loadPublicLokal(slug)])
-if (!found.ok) return new Response("Lokalen kunde inte läsas just nu.", { status: 503 })
+if (!found.ok) return new Response("Lokalen kunde inte hämtas just nu.", { status: 503 })
 if (!found.value) return new Response(null, { status: 404 })
 
 /**
@@ -62,7 +62,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
   <article class="flex flex-col gap-10">
     <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
       <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
-        <a href="/lokaler" class="hover:text-foreground underline-offset-4 hover:underline">Lokaler</a>
+        <a href="/lokaler" class="hover:text-foreground underline-offset-4 hover:underline">Fågellokaler</a>
         <span aria-hidden="true"> / </span>
         <span>{lokal.name}</span>
       </nav>
@@ -77,7 +77,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
       at.length === 0 && near.length === 0 ? (
         <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
           Inga larm har skickats härifrån ännu.{" "}
-          <a href="/larm" class="text-primary underline underline-offset-4">
+          <a href="/larm" class="link">
             Se alla larm
           </a>
           .
@@ -88,7 +88,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
     {
       at.length > 0 && (
         <section aria-labelledby="pa-lokalen" class="flex flex-col gap-5">
-          <h2 id="pa-lokalen" class="text-lg font-semibold md:pl-[7rem]">På lokalen</h2>
+          <h2 id="pa-lokalen" class="type-section md:pl-[7rem]">På lokalen</h2>
           <AlertList alerts={at} headingLevel={3} years="other-years" photos={false} place={false} />
         </section>
       )
@@ -98,13 +98,13 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
       near.length > 0 && (
         <section aria-labelledby="i-narheten" class="flex flex-col gap-5">
           <div class="flex flex-col gap-2 md:pl-[7rem]">
-            <h2 id="i-narheten" class="text-lg font-semibold">I närheten</h2>
+            <h2 id="i-narheten" class="type-section">I närheten</h2>
             <p class="text-muted-foreground max-w-prose">
               {
                 near.length > NEAR_LIMIT
                   ? `De ${NEAR_LIMIT} senaste larmen inom tre kilometer från lokalen.`
                   : "Larm inom tre kilometer från lokalen."
-              } Platsen för ett larm är alltid ungefärlig.
+              } Platserna är ungefärliga.
             </p>
           </div>
           <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} />

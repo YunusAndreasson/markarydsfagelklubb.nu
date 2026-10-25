@@ -2,10 +2,12 @@
 export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
+import AppLinks from "@/components/site/AppLinks.astro"
 import ArticleList from "@/components/site/ArticleList.astro"
 import ArticleTiles from "@/components/site/ArticleTiles.astro"
 import LarmRail from "@/components/site/LarmRail.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
+import Sponsors from "@/components/site/Sponsors.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { pickLead, splitFeatured, splitLarm } from "@/lib/front-page"
 import { listPublicAlerts } from "@/lib/public-alerts"
@@ -36,13 +38,19 @@ const { prints, plain } = splitLarm(larm.ok ? larm.value.alerts : [], 5)
 const events = upcoming ?? []
 ---
 
-<SiteLayout menu={navigation.menu}>
+<SiteLayout menu={navigation.menu} image={leadImage?.src}>
   <h1 class="sr-only">Markaryds Fågelklubb</h1>
+
+  {/* The sponsors, twice, one shown at a time (docs/design.md, "Sponsorer"):
+      from md up a credit line over the lead, as a magazine credits a sponsor
+      beside its masthead; on a phone, where it would push the lead photo off
+      the first screen, after the lead and the programme. */}
+  <Sponsors class="hidden md:-mt-8 md:mb-2 md:flex md:justify-end" />
 
   {
     !lead && (
       <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
-        {page ? "Här kommer klubbens nyheter att synas." : "Nyheterna kunde inte läsas just nu. Ladda om sidan om en stund."}
+        {page ? "Här kommer klubbens nyheter att synas." : "Nyheterna kunde inte hämtas just nu. Ladda om sidan om en stund."}
       </p>
     )
   }
@@ -110,13 +118,15 @@ const events = upcoming ?? []
               </li>
             ))}
           </ol>
-          <a href="/kalender" class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+          <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
             Hela programmet
           </a>
         </section>
       )
     }
   </div>
+
+  <Sponsors class="mt-12 md:hidden" />
 
   {
     (prints.length > 0 || plain.length > 0) && (
@@ -125,14 +135,15 @@ const events = upcoming ?? []
           Senaste larmen
         </SectionHeading>
         {prints.length > 0 && (
-          <LarmRail alerts={prints} layout="five" sizes="(min-width: 64rem) 11rem, (min-width: 48rem) 14rem, 42vw" />
+          <LarmRail alerts={prints} layout="five" sizes="(min-width: 64rem) 11rem, (min-width: 48rem) 18rem, 64vw" />
         )}
         {plain.length > 0 && (
           <div class="flex flex-col gap-5">
-            {prints.length > 0 && <p class="type-meta text-muted-foreground md:pl-[7rem]">Också larmat</p>}
+            {prints.length > 0 && <p class="type-meta text-muted-foreground md:pl-[7rem]">Övriga larm</p>}
             <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} compact />
           </div>
         )}
+        <AppLinks class="md:pl-[7rem]" />
       </section>
     )
   }

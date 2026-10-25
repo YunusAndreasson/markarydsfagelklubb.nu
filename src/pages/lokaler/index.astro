@@ -21,22 +21,22 @@ const { db } = Astro.locals
 if (!db) return new Response(null, { status: 503 })
 
 const [navigation, lokaler] = await Promise.all([loadNavigation(db), listPublicLokaler()])
-if (!lokaler.ok) return new Response("Lokalerna kunde inte läsas just nu.", { status: 503 })
+if (!lokaler.ok) return new Response("Lokalerna kunde inte hämtas just nu.", { status: 503 })
 
 const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
 ---
 
 <SiteLayout
-  title="Lokaler"
-  description="Markaryds Fågelklubbs lokaler, med larmen som skickats från dem."
+  title="Fågellokaler"
+  description="Fågellokaler i Markaryds kommun, med larmen därifrån."
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-10">
     <header class="flex flex-col gap-3 md:pl-[7rem]">
-      <h1 class="type-title">Lokaler</h1>
-      <p class="type-ingress max-w-prose">
-        Klubbens lokaler i Markaryds kommun. En grön prick betyder att någon larmat därifrån de
-        senaste två veckorna.
+      <h1 class="type-title">Fågellokaler</h1>
+      <p class="type-ingress text-muted-foreground max-w-prose">
+        Platserna där klubben skådar i Markaryds kommun. En grön prick på kartan betyder att någon
+        har larmat därifrån de senaste två veckorna.
       </p>
     </header>
 
@@ -51,7 +51,7 @@ const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
     {
       lokaler.value.length === 0 ? (
         <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
-          Inga lokaler är upplagda ännu. Klubbens lokaler läggs till i appen och dyker upp här.
+          Inga fågellokaler är upplagda ännu. De läggs till i appen och syns sedan här.
         </p>
       ) : (
         <LokalList lokaler={lokaler.value} headingLevel={2} />

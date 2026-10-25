@@ -21,9 +21,9 @@ const [navigation, categories, page] = await Promise.all([
     after: decodeCursor(params.get("efter")),
   }),
 ])
-if (!page) return new Response("Artiklarna kunde inte läsas just nu.", { status: 503 })
+if (!page) return new Response("Artiklarna kunde inte hämtas just nu.", { status: 503 })
 ---
 
-<SiteLayout title="Artiklar" description="Nyheter och reseberättelser från Markaryds Fågelklubb." menu={navigation.menu}>
+<SiteLayout title="Artiklar" description="Nyheter och exkursionsreferat från Markaryds Fågelklubb." menu={navigation.menu}>
   <ArticleIndex heading="Artiklar" basePath="/artiklar" categories={categories} currentCategory={null} page={page} />
 </SiteLayout>

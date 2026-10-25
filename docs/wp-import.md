@@ -19,8 +19,9 @@ the old site. Its output is in `.wp-import/dry-run/` (gitignored).
 
 Decided while building it (reversible, flagged to the user):
 
-- **Captions become a paragraph under the image.** 113 posts have a
-  `<figcaption>`, nearly all photo credits, and the editor has no caption node.
+- ~~**Captions become a paragraph under the image.**~~ Since 2026-10-24 a
+  photo and its `<figcaption>` stay a `<figure>`: the editor has a figure node
+  now (see "Tidying" below).
 - **Only hand-written excerpts are kept** (3 of 354, read from the export). The
   automatic ones repeat the first paragraph, which the article page would then
   print twice.
@@ -85,9 +86,37 @@ dummy pages. "Allmänt" is in the menu. No body links to WordPress's uploads any
 more. Empty links left behind by missing images (or holding only `&nbsp;`) are
 dropped on the way in.
 
-**Still open:** Tånnerydsdammen (no lokal matches it; its old URL 404s), and
-whether captions should sit tighter under their image. The dummy events stay
+**Still open:** Tånnerydsdammen (no lokal matches it; its old URL 404s). The dummy events stay
 until the club's real programme is in /admin/kalender.
+
+## Tidying (2026-10-24)
+
+The user's go: fix the imported articles' titles, line breaks and captions.
+The import now does all three, so a re-run keeps them, and
+`scripts/wp-import/tidy-stored.ts` applied them once to the articles already
+stored. No article had been edited since the import (every `updated_at` was
+the import's), and each update was guarded by the row's checksum anyway.
+
+- **Titles** (`title-fixes.ts`, 195 of 353): a reviewed list keyed by
+  WordPress id, not rules: caps lock, a lowercase first letter, glued
+  separators ("november-Medlemsmöte" → "november – Medlemsmöte"), months in
+  lowercase, en-dash ranges, typos (Skararaps, Alhegonarallyt, Holkfösäljning,
+  februarie), split compounds. Place names keep their capitals. Slugs are
+  untouched, so no address changed.
+- **Line breaks** (`tidy.ts`, 321 bodies): WordPress's classic editor made a
+  `<br>` where the club pressed Enter. A break in mid-sentence is joined (74
+  of them, all reviewed); each prose line becomes a paragraph; a run of short
+  lines (a sign-off, a contact block, a list of species) stays one paragraph;
+  lines typed with "•" become a real list. Breaks inside captions, list items,
+  cells and quotes are left alone.
+- **Captions** (398 of 406): the paragraph the old import wrote after a photo
+  went back into a `<figure>` with it, but only when its text matched one of
+  that post's WordPress captions. The rest (the photo is gone, or the caption
+  runs on into other text) stay paragraphs.
+
+The rows as they were, the SQL that was run, a before/after report and a
+`rollback.sql` (guarded by the new checksums) are in
+`.wp-import/tidy-2026-10-24/`. Pages were not touched.
 
 ## Sources
 

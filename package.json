@@ -63,6 +63,7 @@
     "@types/node": "^26.6.1",
     "@types/sanitize-html": "^2.16.1",
     "fast-xml-parser": "^5.11.2",
+    "happy-dom": "20.14.5",
     "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",

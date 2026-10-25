@@ -2,6 +2,7 @@
 export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
+import AppLinks from "@/components/site/AppLinks.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { decodeAlertCursor, encodeAlertCursor } from "@/lib/alert-keyset"
 import { listPublicAlerts } from "@/lib/public-alerts"
@@ -27,7 +28,7 @@ const [navigation, page] = await Promise.all([
     after: decodeAlertCursor(params.get("efter")),
   }),
 ])
-if (!page.ok) return new Response("Larmen kunde inte läsas just nu.", { status: 503 })
+if (!page.ok) return new Response("Larmen kunde inte hämtas just nu.", { status: 503 })
 
 const { alerts, older, newer } = page.value
 const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCursor>[0]) =>
@@ -42,16 +43,17 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
   <div class="flex flex-col gap-10">
     <header class="flex flex-col gap-3 md:pl-[7rem]">
       <h1 class="type-title">Larm</h1>
-      <p class="type-ingress max-w-prose">
-        Fynd som medlemmarna larmat om i klubbens app. Platsen visas ungefärligt, som närmaste
-        lokal.
+      <p class="type-ingress text-muted-foreground max-w-prose">
+        Fynd som medlemmarna larmat om i klubbens app. Platsen anges ungefärligt, med närmaste
+        fågellokal.
       </p>
+      <AppLinks />
     </header>
 
     {
       alerts.length === 0 ? (
         <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
-          Inga larm att visa ännu. Klubbens larm skickas från appen och dyker upp här.
+          Inga larm ännu. Larmen skickas från klubbens app och syns sedan här.
         </p>
       ) : (
         <AlertList alerts={alerts} headingLevel={2} years="changes" />
@@ -64,7 +66,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
           {newer && (
             <a
               href={link("efter", newer)}
-              class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4"
+              class="link flex min-h-11 items-center font-medium"
             >
               Nyare larm
             </a>
@@ -72,7 +74,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
           {older && (
             <a
               href={link("fore", older)}
-              class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4"
+              class="link flex min-h-11 items-center font-medium"
             >
               Äldre larm
             </a>

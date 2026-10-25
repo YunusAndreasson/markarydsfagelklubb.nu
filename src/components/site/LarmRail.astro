@@ -8,8 +8,9 @@ import { dayLabel, formatDate, isoDateTime } from "@/lib/stockholm-time"
  * The newest larm photos as a row of prints, the caption under each — a
  * contact sheet of what members have seen (docs/design.md, "Tidskriften").
  *
- * 4:5, cropped by Storage (`p480`/`p960`), because a portrait print makes the
- * bird larger than a landscape tile of the same width would. Below the
+ * 3:2, the shape of the members' camera photos, cropped by CSS from the feed's
+ * files. The first rail was 4:5, which made the bird larger but cut most
+ * photos to half their width, and with it heads and tails. Below the
  * breakpoint the row scrolls sideways inside itself, snapping print by print,
  * with no script; the page never scrolls sideways.
  *
@@ -46,21 +47,21 @@ const now = new Date()
         alert.photoUrl && (
           <li
             class:list={[
-              "flex w-[42vw] max-w-56 shrink-0 snap-start flex-col gap-3",
-              layout === "five" ? "md:w-56 lg:w-auto lg:max-w-none" : "md:w-auto md:max-w-none",
+              "flex w-[64vw] max-w-72 shrink-0 snap-start flex-col gap-3",
+              layout === "five" ? "md:w-72 lg:w-auto lg:max-w-none" : "md:w-auto md:max-w-none",
             ]}
           >
             <a href={`/larm/${alert.id}`} tabindex="-1" aria-hidden="true">
               <img
-                src={alertPhotoSrc(alert.photoUrl, "p480")}
-                srcset={alertPhotoSrcset(alert.photoUrl, "print")}
+                src={alertPhotoSrc(alert.photoUrl, "480")}
+                srcset={alertPhotoSrcset(alert.photoUrl, "feed")}
                 sizes={sizes}
                 width="480"
-                height="600"
+                height="320"
                 alt=""
                 loading="lazy"
                 decoding="async"
-                class="bg-muted aspect-4/5 w-full rounded-[4px] object-cover"
+                class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
               />
             </a>
             <div class="flex flex-col gap-0.5">
@@ -77,7 +78,7 @@ const now = new Date()
                   {rarityLabel(alert.rarity)}
                 </p>
               )}
-              <p class="text-muted-foreground text-sm leading-snug">{alert.place}</p>
+              <p class="type-meta text-muted-foreground">{alert.place}</p>
               <p class="type-meta text-muted-foreground">
                 <time datetime={isoDateTime(alert.observedAt)}>
                   {dayLabel(alert.observedAt, now)} {formatDate(alert.observedAt, "clock")}

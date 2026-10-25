@@ -17,17 +17,10 @@ export type PhotoTransform = {
 }
 
 const VARIANTS = {
-  /** Width only, the photo's own shape: the /larm feed and a larm's page. */
+  /** Width only, the photo's own shape: every page that shows a larm photo. */
   "480": { width: 480 },
   "960": { width: 960 },
   "1600": { width: 1600 },
-  /**
-   * 4:5 prints for the rail, cropped by Storage rather than by CSS, so a
-   * landscape photo in a portrait box arrives sharp at 2× instead of as a
-   * 480-wide file stretched to fill it.
-   */
-  p480: { width: 480, height: 600 },
-  p960: { width: 960, height: 1200 },
 } as const satisfies Record<string, PhotoTransform>
 
 export type PhotoVariant = keyof typeof VARIANTS
@@ -52,10 +45,8 @@ export function alertPhotoSrc(photoUrl: string, variant: PhotoVariant): string {
 }
 
 const SETS = {
-  /** The /larm feed's column. */
+  /** The /larm feed's column and the rail's 3:2 prints, cropped by CSS. */
   feed: ["480", "960"],
-  /** The rail's 4:5 prints. */
-  print: ["p480", "p960"],
   /** A larm's own page, shown whole at up to 45rem. */
   detail: ["960", "1600"],
 } as const satisfies Record<string, readonly PhotoVariant[]>

@@ -29,7 +29,7 @@ const node = resolvePath(navigation.tree, ["om-foreningen", "medlemskap"])
 if (!node) return new Response(null, { status: 404 })
 
 const page = await loadPageBody(db, node.id)
-if (page === "error") return new Response("Sidan kunde inte läsas just nu.", { status: 503 })
+if (page === "error") return new Response("Sidan kunde inte hämtas just nu.", { status: 503 })
 if (!page) return new Response(null, { status: 404 })
 
 const m = membership
@@ -57,9 +57,8 @@ const recipient = m?.contact_name || "kassören"
 // in Klubben's list ("Vad det kostar och hur du betalar …"), and the meta
 // description, where a plain summary serves better.
 const PITCH =
-  "Som medlem får du programbladet Cinclus, är välkommen på exkursioner och innemöten och stöttar fågelskyddet i Markaryds kommun."
-const linkClass =
-  "text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4"
+  "Som medlem får du programbladet Cinclus med årets program, och du stöttar klubbens fågelskydd i Markaryds kommun."
+const linkClass = "link flex min-h-11 w-fit items-center font-medium"
 ---
 
 <SiteLayout
@@ -79,8 +78,8 @@ const linkClass =
     {
       !m && (
         <p class="text-muted-foreground max-w-prose md:ml-[7rem]">
-          Avgifterna kunde inte läsas just nu. Ladda om sidan om en stund, eller fråga någon av{" "}
-          <a href="/om-foreningen/kontaktpersoner" class="text-primary underline underline-offset-4">
+          Avgifterna kunde inte hämtas just nu. Ladda om sidan om en stund, eller fråga någon av{" "}
+          <a href="/om-foreningen/kontaktpersoner" class="link">
             kontaktpersonerna
           </a>
           .
@@ -103,14 +102,14 @@ const linkClass =
                   return (
                     <tr class="border-b align-baseline">
                       <th scope="row" class="py-3 pr-4 text-left font-normal">
-                        <span class="block text-lg leading-snug font-semibold">{fee.label}</span>
+                        <span class="type-item block">{fee.label}</span>
                         <span class="text-muted-foreground block leading-snug">{fee.note}</span>
                       </th>
-                      <td class="py-3 text-right text-lg font-semibold whitespace-nowrap tabular-nums">{fee.amount} kr</td>
+                      <td class="type-item py-3 text-right whitespace-nowrap tabular-nums">{fee.amount} kr</td>
                       {/* On a phone, open Swish with this amount; a computer has the QR code below. */}
                       {pay && (
                         <td class="hidden py-3 pl-4 text-right pointer-coarse:table-cell">
-                          <a href={pay} class="text-primary font-medium underline underline-offset-4">
+                          <a href={pay} class="link font-medium">
                             Swisha<span class="sr-only"> {fee.amount} kr</span>
                           </a>
                         </td>
@@ -171,20 +170,20 @@ const linkClass =
               <li class="grid grid-cols-[1.75rem_minmax(0,1fr)]">
                 <span aria-hidden="true" class="text-lg font-semibold tabular-nums">3</span>
                 <div class="flex flex-col gap-1">
-                  <p class="text-lg leading-relaxed">Skicka din postadress till {recipient}, så att Cinclus hittar fram.</p>
+                  <p class="text-lg leading-relaxed">Skicka din postadress till {recipient}, så att Cinclus kommer fram.</p>
                   {(mailto || sms) && (
                     <>
                       <p class="flex flex-wrap gap-x-6">
                         {mailto && <a href={mailto} class={linkClass}>Skicka e-post</a>}
                         {sms && <a href={sms} class={linkClass}>Skicka sms</a>}
                       </p>
-                      <p class="text-muted-foreground leading-relaxed">Texten är redan ifylld. Du skriver bara ditt namn och din adress.</p>
+                      <p class="text-muted-foreground leading-relaxed">Meddelandet är redan skrivet, du fyller bara i namn och adress.</p>
                     </>
                   )}
                 </div>
               </li>
             </ol>
-            <p class="text-lg leading-relaxed">Klart! Programmet och Cinclus kommer i mitten av januari.</p>
+            <p class="text-lg leading-relaxed">Sedan är du medlem. Cinclus med årets program kommer i brevlådan i mitten av januari.</p>
           </div>
         </section>
       )

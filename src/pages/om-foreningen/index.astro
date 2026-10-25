@@ -20,7 +20,7 @@ const node = resolvePath(navigation.tree, ["om-foreningen"])
 if (!node) return new Response(null, { status: 404 })
 
 const page = await loadPageBody(db, node.id)
-if (page === "error") return new Response("Sidan kunde inte läsas just nu.", { status: 503 })
+if (page === "error") return new Response("Sidan kunde inte hämtas just nu.", { status: 503 })
 if (!page) return new Response(null, { status: 404 })
 
 const children = node.children as (typeof node & Pick<PublicPageRow, "description">)[]
@@ -46,10 +46,10 @@ const hrefOf = (child: (typeof children)[number]) =>
           <div class="flex flex-col gap-1">
             <p class="text-lg leading-relaxed text-pretty">
               Det kostar {membership.fee_adult} kr om året, och {membership.fee_youth} kr om du är{" "}
-              {membership.youth_max_age} år eller yngre. Du får programbladet Cinclus och är välkommen
-              på exkursioner och innemöten.
+              {membership.youth_max_age} år eller yngre. Som medlem får du programbladet Cinclus och
+              stöttar klubbens fågelskydd.
             </p>
-            <a href={joinHref} class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+            <a href={joinHref} class="link flex min-h-11 w-fit items-center font-medium">
               Så blir du medlem
             </a>
           </div>
@@ -68,7 +68,7 @@ const hrefOf = (child: (typeof children)[number]) =>
           <ul class="flex flex-col gap-5">
             {children.map((child) => (
               <li class="flex flex-col gap-0.5">
-                <a href={hrefOf(child)} class="decoration-primary w-fit text-lg leading-snug font-semibold underline-offset-4 hover:underline">
+                <a href={hrefOf(child)} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
                   {child.title}
                 </a>
                 {child.description && <p class="text-muted-foreground leading-relaxed">{child.description}</p>}

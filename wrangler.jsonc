@@ -47,7 +47,7 @@
     //
     // The prerendered 404 needs no exclusion: the adapter serves it from the
     // assets when no route matches.
-    "run_worker_first": ["/*", "!/_astro/*", "!/favicon.svg", "!/robots.txt"]
+    "run_worker_first": ["/*", "!/_astro/*", "!/robots.txt"]
   },
 
   // Both values are public by design: the publishable key ships to the browser

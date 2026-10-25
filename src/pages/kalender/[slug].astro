@@ -44,7 +44,7 @@ if (month) {
     loadNavigation(db),
     listEventsInMonth(db, monthRange(month)),
   ])
-  if (!found) return new Response("Programmet kunde inte läsas just nu.", { status: 503 })
+  if (!found) return new Response("Programmet kunde inte hämtas just nu.", { status: 503 })
   events = found
   previous = monthKey(shiftMonth(month, -1))
   next = monthKey(shiftMonth(month, 1))
@@ -52,7 +52,7 @@ if (month) {
 } else {
   const [navigation, found] = await Promise.all([loadNavigation(db), loadPublishedEvent(db, slug)])
   if (found === "error") {
-    return new Response("Evenemanget kunde inte läsas just nu.", { status: 503 })
+    return new Response("Evenemanget kunde inte hämtas just nu.", { status: 503 })
   }
   if (!found) return new Response(null, { status: 404 })
   event = found
@@ -63,19 +63,23 @@ const monthTitle = month ? monthLabel(slug) : ""
 const kind = event ? publicEventKindLabel(event.kind) : null
 const eventMonth = event ? stockholmMonthKey(event.starts_at) : ""
 
-// An end is only worth printing when it says something new: the same day and
-// the same clock as the start is noise.
+// An end is only worth printing when it says something new. On the start's
+// own day it joins the clock as a range, "18:30–21:00", the way Swedish writes
+// it; past that day it gets a line of its own, "till 2 nov. 16:00".
 const sameDay =
   event?.ends_at && formatDate(event.ends_at, "long") === formatDate(event.starts_at, "long")
-const endLabel = !event?.ends_at
-  ? null
-  : event.all_day
-    ? sameDay
-      ? null
-      : formatDate(event.ends_at, "dayMonth")
-    : sameDay
-      ? formatDate(event.ends_at, "clock")
-      : `${formatDate(event.ends_at, "dayMonth")} ${formatDate(event.ends_at, "clock")}`
+const startClock = event && !event.all_day ? formatDate(event.starts_at, "clock") : null
+const endClock = event?.ends_at && !event.all_day ? formatDate(event.ends_at, "clock") : null
+const clockLabel =
+  startClock && sameDay && endClock && endClock !== startClock
+    ? `${startClock}–${endClock}`
+    : startClock
+const untilLabel =
+  !event?.ends_at || sameDay
+    ? null
+    : event.all_day
+      ? formatDate(event.ends_at, "dayMonth")
+      : `${formatDate(event.ends_at, "dayMonth")} ${endClock}`
 
 const title = month ? `${monthTitle} · Program` : `${event?.title} · Program`
 const description = month
@@ -96,7 +100,7 @@ const description = month
 
         {events.length === 0 ? (
           <p class="text-muted-foreground max-w-[38rem] md:pl-[7rem]">
-            Inget stod i programmet den här månaden.
+            Inga aktiviteter den här månaden.
           </p>
         ) : (
           <EventList events={events} />
@@ -105,10 +109,10 @@ const description = month
         {/* Side by side in the reading column, like the article paging: pushed
             to the edges of the 64rem container they read as unrelated. */}
         <nav aria-label="Fler månader" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
-          <a href={`/kalender/${previous}`} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={`/kalender/${previous}`} class="link flex min-h-11 items-center font-medium">
             {monthLabel(previous)}
           </a>
-          <a href={`/kalender/${next}`} class="text-primary flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={`/kalender/${next}`} class="link flex min-h-11 items-center font-medium">
             {monthLabel(next)}
           </a>
         </nav>
@@ -118,43 +122,53 @@ const description = month
 
   {
     event && (
-      <article class="flex flex-col gap-8">
-        <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
-          <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
+      /* One grid, as on an article: the title and its ingress, then the date
+         in the margin beside the place and the text, never in a row of its
+         own. */
+      <article class="grid gap-y-8 md:grid-cols-[7rem_minmax(0,38rem)]">
+        <header class="flex flex-col gap-4 md:col-start-2">
+          <nav aria-label="Du är här" class="type-meta text-muted-foreground">
             <a href="/kalender" class="hover:text-foreground underline-offset-4 hover:underline">Program</a>
             <span aria-hidden="true"> / </span>
             <a href={`/kalender/${eventMonth}`} class="hover:text-foreground underline-offset-4 hover:underline">
               {monthLabel(eventMonth)}
             </a>
           </nav>
-          <h1 class="type-title md:col-start-2">{event.title}</h1>
-          <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
-            <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-1 md:flex-col">
-              <span>{formatDate(event.starts_at, "weekdayName")}</span>
-              <span>{formatDate(event.starts_at, "dayMonth")}</span>
-              <span>{stockholmYear(event.starts_at)}</span>
-              {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
-            </time>
-            {endLabel && <span class="mt-1">till {endLabel}</span>}
-            {kind && <span class="mt-1">{kind}</span>}
-          </div>
-          <div class="flex flex-col gap-1 md:col-start-2 md:row-start-3">
-            {/* Where to meet is the fact a member acts on, so it leads here,
-                the way the larm page leads with the place it was seen. */}
-            {event.place && <p class="text-lg">{event.place}</p>}
-            {event.summary && <p class="type-ingress text-muted-foreground">{event.summary}</p>}
-          </div>
+          <h1 class="type-title">{event.title}</h1>
+          {event.summary && <p class="type-ingress text-muted-foreground">{event.summary}</p>}
         </header>
 
-        {event.body_html && <div class="content md:ml-[7rem]" set:html={event.body_html} />}
+        <div class="type-meta text-muted-foreground -mt-4 flex flex-col md:col-start-1 md:row-start-2 md:mt-0 md:pt-1">
+          <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-1 md:flex-col">
+            <span>{formatDate(event.starts_at, "weekdayName")}</span>
+            <span>{formatDate(event.starts_at, "dayMonth")}</span>
+            <span>{stockholmYear(event.starts_at)}</span>
+            {clockLabel && <span>{clockLabel}</span>}
+          </time>
+          {untilLabel && <span class="mt-1">till {untilLabel}</span>}
+          {kind && <span class="mt-1">{kind}</span>}
+        </div>
 
-        {event.registration_url && (
-          <p class="md:ml-[7rem]">
-            <a href={event.registration_url} class="text-primary flex min-h-11 w-fit items-center font-medium underline underline-offset-4">
+        {/* When and where, together: the place, the fact a member acts on (as
+            on a larm), sits level with the date. On a phone it follows the
+            date closely rather than at the grid's gap. */}
+        {(event.place || event.body_html) && (
+          <div class:list={["flex flex-col gap-6 md:col-start-2 md:row-start-2", event.place && "-mt-7 md:mt-0"]}>
+            {event.place && <p class="text-lg font-medium">{event.place}</p>}
+            {event.body_html && <div class="content" set:html={event.body_html} />}
+          </div>
+        )}
+
+        <nav aria-label="Mer i programmet" class="flex flex-wrap gap-x-8 md:col-start-2">
+          {event.registration_url && (
+            <a href={event.registration_url} class="link flex min-h-11 w-fit items-center font-medium">
               Anmäl dig
             </a>
-          </p>
-        )}
+          )}
+          <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
+            Hela programmet
+          </a>
+        </nav>
       </article>
     )
   }

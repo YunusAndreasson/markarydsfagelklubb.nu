@@ -41,24 +41,12 @@ const { pins, still = false, class: className = "" } = Astro.props
     font: inherit;
 
     /*
-     * Ink for things drawn *on the map*, which is not the page.
-     *
-     * These deliberately do not flip with the theme. The tiles are a light
-     * surface in both — dark mode dims them, it does not invert them — so a
-     * marker built from `--foreground` and `--background` turns inside out at
-     * night: the first dark pass drew a pale dot inside a near-black halo, and
-     * over the dimmed green the halo won and every lokal read as a hole
-     * punched in the map. Seen in Zen, not in the headless run.
+     * Ink for things drawn *on the map*, which is not the page: a dark dot in a
+     * pale halo reads over water, forest and road alike.
      */
     --map-ink: oklch(0.36 0.012 155);
     --map-halo: oklch(0.99 0 0 / 0.92);
   }
-  /* Tiles are a bright white sheet on a near-black page. Dimming beats
-     inverting, which turns water into land and reads as a different map. */
-  .dark .leaflet-container .leaflet-tile-pane {
-    filter: brightness(0.72) saturate(0.85);
-  }
-
   .lokal-pin__dot {
     display: block;
     height: 9px;

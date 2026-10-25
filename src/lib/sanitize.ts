@@ -22,9 +22,11 @@ import { isSiteMediaUrl, srcsetIsSiteMedia } from "./media"
 const TEXT_TAGS = ["p", "h2", "h3", "h4", "strong", "em", "s", "u", "br", "hr", "blockquote"]
 const LIST_TAGS = ["ul", "ol", "li"]
 const TABLE_TAGS = ["table", "tbody", "tr", "th", "td"]
+/** A photo and its caption: the editor's figure node. */
+const FIGURE_TAGS = ["figure", "figcaption"]
 
 const OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: [...TEXT_TAGS, ...LIST_TAGS, ...TABLE_TAGS, "a", "img", "iframe"],
+  allowedTags: [...TEXT_TAGS, ...LIST_TAGS, ...TABLE_TAGS, ...FIGURE_TAGS, "a", "img", "iframe"],
   // No `class` and no `style` anywhere: the site's stylesheet decides looks.
   allowedAttributes: {
     a: ["href", "title", "target", "rel"],
@@ -64,6 +66,8 @@ const OPTIONS: sanitizeHtml.IOptions = {
       return srcset !== undefined && !srcsetIsSiteMedia(srcset)
     }
     if (frame.tag === "iframe") return !isAllowedEmbed(frame.attribs.src ?? "")
+    // A caption the editor left empty is no caption.
+    if (frame.tag === "figcaption") return frame.text.trim() === ""
     return false
   },
 }
@@ -71,6 +75,19 @@ const OPTIONS: sanitizeHtml.IOptions = {
 /** The editor keeps a paragraph at the end to type in; it isn't content. */
 const EDGE_EMPTY_PARAGRAPHS = /^(?:<p><\/p>)+|(?:<p><\/p>)+$/g
 
+/**
+ * A figure whose caption was empty (and so dropped above) holds only its
+ * photo; it is stored as the plain image the editor would make of it.
+ */
+const BARE_FIGURE = /<figure>\s*(<img\s[^>]*>)\s*<\/figure>/g
+/** A figure whose photo was refused above keeps its caption as text. */
+const ORPHAN_CAPTION = /<figure>\s*<figcaption>([\s\S]*?)<\/figcaption>\s*<\/figure>/g
+
 export function sanitizeContent(html: string): string {
-  return sanitizeHtml(html, OPTIONS).trim().replace(EDGE_EMPTY_PARAGRAPHS, "").trim()
+  return sanitizeHtml(html, OPTIONS)
+    .replace(BARE_FIGURE, "$1")
+    .replace(ORPHAN_CAPTION, "<p>$1</p>")
+    .trim()
+    .replace(EDGE_EMPTY_PARAGRAPHS, "")
+    .trim()
 }

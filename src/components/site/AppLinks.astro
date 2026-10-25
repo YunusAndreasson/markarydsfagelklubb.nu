@@ -1,0 +1,25 @@
+---
+/**
+ * Where to get the club's app, beside the larm (docs/design.md, "Larm"). The
+ * larm are sent from the app, so this is where a visitor who wants them on
+ * their own phone is reading. Two plain links in the site's link style rather
+ * than the stores' badges, which would be the loudest thing in the section.
+ */
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/app-stores"
+
+interface Props {
+  class?: string
+}
+
+const { class: className } = Astro.props
+---
+
+<div class:list={["flex flex-wrap items-center gap-x-8", className]}>
+  <p class="text-muted-foreground w-full text-pretty">Ladda ner klubbens app, så kan du själv larma och få larmen direkt i mobilen.</p>
+  <a href={APP_STORE_URL} class="link flex min-h-11 items-center font-medium">
+    App Store
+  </a>
+  <a href={GOOGLE_PLAY_URL} class="link flex min-h-11 items-center font-medium">
+    Google Play
+  </a>
+</div>

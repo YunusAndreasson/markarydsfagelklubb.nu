@@ -655,8 +655,9 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
 - **Photo sizes (2026-10-24).** `?v=` names one of a fixed table in
   `src/lib/alert-photo.ts`, and the route asks Storage's render endpoint for it:
   `480`, `960` and `1600` keep the photo's shape (`resize=contain` — width alone
-  under the default `cover` crops to the original's height), and `p480`/`p960`
-  are the home rail's 4:5 prints, cropped by Storage. No `v` streams the
+  under the default `cover` crops to the original's height). `p480`/`p960`, the
+  home rail's 4:5 prints cropped by Storage, were removed the same day when the
+  rail went to 3:2 and reused the feed's files (docs/design.md). No `v` streams the
   original, as before. An HTTP error from the resizer (transformations switched
   off) falls back to the original; a throw or a timeout does not get a second
   try. Measured on the preview: `/larm` went from 3.9 MB to 0.34 MB, an average
