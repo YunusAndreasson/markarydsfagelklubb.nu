@@ -1,28 +1,18 @@
-import { isHeroWorthy, type TeaserImage } from "./teaser"
+import type { TeaserImage } from "./teaser"
 
 /**
  * What goes where on the home page (docs/design.md, "Tidskriften"). Pure, so
  * the editorial rules are tested rather than buried in a template.
  */
 
-/** How far down the newest articles the lead may come from. */
-const LEAD_WINDOW = 4
-
 /**
- * The lead is the newest of the latest four with a large landscape photo, so
- * the page opens on a picture rather than on "Inställt arbetsmöte" at 72 px.
- * When none of them has one, the newest leads as plain type. The rest keep
- * their order.
+ * The newest article always leads, photo or not (2026-10-28). Until then an
+ * older article with a wide photo could lead instead, and a programme change
+ * ended up below the story it changed. Whether the lead gets the wide photo is
+ * the page's call (`isHeroWorthy`); without one it leads as plain type.
  */
-export function pickLead<T extends { image: TeaserImage | null }>(
-  articles: T[]
-): { lead: T | null; rest: T[] } {
-  const found = articles
-    .slice(0, LEAD_WINDOW)
-    .findIndex((article) => article.image !== null && isHeroWorthy(article.image))
-  const index = found === -1 ? 0 : found
-  const lead = articles[index] ?? null
-  return { lead, rest: articles.filter((_, i) => i !== index) }
+export function pickLead<T>(articles: T[]): { lead: T | null; rest: T[] } {
+  return { lead: articles[0] ?? null, rest: articles.slice(1) }
 }
 
 /** Up to `count` articles with a photo become tiles; the rest stay a list, in order. */

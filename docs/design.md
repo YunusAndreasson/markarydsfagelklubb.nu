@@ -121,11 +121,15 @@ Fler artiklar                       Alla artiklar
 18 juni     upprop 2026!                 [3:2]
 ```
 
-- **The lead** is the newest of the latest four articles with a hero-worthy
-  photo (`pickLead` in `src/lib/front-page.ts`), so the page opens on a picture
-  rather than on "programändring!" at 72 px. When none of the four has one,
-  the newest leads as plain type, as before. The photo is cropped to 2:1 from
-  `md` up (3:2 on a phone) so the headline stays above the fold at 1280×900.
+- ~~**The lead** is the newest of the latest four articles with a hero-worthy
+  photo, so the page opens on a picture rather than on "programändring!" at
+  72 px.~~ Reversed 2026-10-28: it put "Inför Smålandsrallyt" (30 Sep, wide
+  photo) above "Programändring!" (18 Oct), the post that moved its date, and
+  the page read as out of date. **The newest article always leads**
+  (`pickLead` in `src/lib/front-page.ts`). It gets the photo only when its
+  first one is hero-worthy; otherwise it leads as plain type. The photo is
+  cropped to 2:1 from `md` up (3:2 on a phone) so the headline stays above the
+  fold at 1280×900.
 - **"Närmast i programmet"** takes the column beside the headline from `lg` up.
   At `md` the container is only 45rem, so it sits under the lead there.
 - **The larm rail** is the page's live part: the five newest larm with a photo,

@@ -15,8 +15,8 @@ import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib
 import { formatDate, isoDateTime, startOfStockholmDay } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
 
-// The club's magazine (docs/design.md, "Tidskriften"): a lead story on a wide
-// photo with the programme beside it, then the newest larm photos as a rail,
+// The club's magazine (docs/design.md, "Tidskriften"): the newest article as
+// the lead, on a wide photo when it has one, with the programme beside it, then the newest larm photos as a rail,
 // then three more articles with their photos and the rest as a dated list.
 // front-page.ts decides what goes where; this file only lays it out.
 const { db } = Astro.locals

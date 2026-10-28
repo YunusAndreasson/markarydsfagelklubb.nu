@@ -23,7 +23,7 @@ describe("pickLead", () => {
     expect(ids(rest)).toEqual([2])
   })
 
-  it("skips a newer article without a good photo, keeping it first in the rest", () => {
+  it("leads with the newest even when an older article has a better photo", () => {
     const articles = [
       article(1, null),
       article(2, portrait),
@@ -31,15 +31,8 @@ describe("pickLead", () => {
       article(4, null),
     ]
     const { lead, rest } = pickLead(articles)
-    expect(lead?.id).toBe(3)
-    expect(ids(rest)).toEqual([1, 2, 4])
-  })
-
-  it("looks only at the latest four, then falls back to the newest", () => {
-    const articles = [1, 2, 3, 4].map((id) => article(id, null)).concat(article(5, landscape))
-    const { lead, rest } = pickLead(articles)
     expect(lead?.id).toBe(1)
-    expect(ids(rest)).toEqual([2, 3, 4, 5])
+    expect(ids(rest)).toEqual([2, 3, 4])
   })
 
   it("has no lead when there are no articles", () => {
