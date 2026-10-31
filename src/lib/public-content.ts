@@ -1,4 +1,5 @@
 import { type Cursor, newerThan, olderThan } from "./keyset"
+import type { LokalPointRow } from "./lokal-points"
 import type { MediaFormat, MediaImage } from "./media"
 import { buildMenu, buildPageTree, type MenuEntry, type PageRow, type PageTree } from "./page-tree"
 import { searchFilter } from "./search"
@@ -195,6 +196,27 @@ export async function searchPages(db: SupabasePublicClient, search: string, limi
   if (error) {
     console.error(`mafk-web: search pages failed — ${error.message}`)
     return null
+  }
+  return data
+}
+
+/**
+ * The places on a lokal, and any lokal it is itself a place on. Empty on a failed
+ * read: a lokal page without them still answers where and what was seen.
+ */
+export async function listLokalPoints(
+  db: SupabasePublicClient,
+  lokalId: number
+): Promise<LokalPointRow[]> {
+  const { data, error } = await db
+    .from("lokal_points")
+    .select(
+      "id, location_id, linked_location_id, kind, name, note, latitude, longitude, sort_order"
+    )
+    .or(`location_id.eq.${lokalId},linked_location_id.eq.${lokalId}`)
+  if (error) {
+    console.error(`mafk-web: list lokal points failed — ${error.message}`)
+    return []
   }
   return data
 }

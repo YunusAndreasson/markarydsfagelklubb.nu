@@ -1,6 +1,7 @@
 ---
 import LokalMap from "@/components/site/LokalMap"
 import type { LokalPin } from "@/lib/lokal"
+import type { MapPoint } from "@/lib/lokal-points"
 
 /**
  * The map's frame: the box it fills, and the only CSS Leaflet's runtime DOM
@@ -19,15 +20,17 @@ interface Props {
   pins: LokalPin[]
   /** A still of one place, on a lokal's own page. */
   still?: boolean
+  /** A lokal's numbered places. */
+  points?: MapPoint[]
   /** Tailwind aspect and width; the map is the loud thing on /lokaler and a picture on a lokal page. */
   class?: string
 }
 
-const { pins, still = false, class: className = "" } = Astro.props
+const { pins, still = false, points, class: className = "" } = Astro.props
 ---
 
 <div class:list={["bg-muted relative overflow-hidden rounded-[4px]", className]}>
-  <LokalMap pins={pins} still={still} client:visible />
+  <LokalMap pins={pins} still={still} points={points} client:visible />
   <noscript>
     <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-6 text-center">
       Kartan behöver JavaScript. Alla lokaler står i listan här under.
@@ -70,6 +73,26 @@ const { pins, still = false, class: className = "" } = Astro.props
     height: 13px;
     width: 13px;
     background: var(--primary);
+  }
+  /* The same mark as the number in the list under the map. */
+  .lokal-point {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lokal-point__mark {
+    display: flex;
+    height: 22px;
+    width: 22px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--gran);
+    box-shadow: 0 0 0 2px var(--map-halo);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
   .leaflet-marker-icon {
     cursor: pointer;

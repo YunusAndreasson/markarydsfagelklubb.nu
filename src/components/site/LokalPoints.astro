@@ -1,0 +1,47 @@
+---
+import type { LokalPoint } from "@/lib/lokal-points"
+
+/**
+ * A lokal's places as a list keyed to its map (docs/design.md, "Platser på lokalen").
+ * The number stands in the margin where dates and letters do elsewhere, and is the
+ * same mark as the pin, because on a phone there is no hover to name a pin. A place
+ * with a lokal page of its own links there.
+ */
+
+interface Props {
+  points: LokalPoint[]
+  /** Slugs by lokal id, for the links. */
+  slugs: ReadonlyMap<number, string>
+}
+
+const { points, slugs } = Astro.props
+---
+
+<ol class="flex flex-col gap-4">
+  {
+    points.map((point) => {
+      const slug = point.linked_location_id === null ? undefined : slugs.get(point.linked_location_id)
+      return (
+        <li id={point.number === null ? undefined : `plats-${point.number}`} class="grid scroll-mt-4 grid-cols-[2.25rem_minmax(0,1fr)] md:grid-cols-[7rem_minmax(0,38rem)]">
+          <div>
+            {point.number !== null && (
+              <span class="bg-gran type-meta inline-flex size-6 items-center justify-center rounded-full font-semibold text-white" aria-hidden="true">
+                {point.number}
+              </span>
+            )}
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <h3 class="type-item">
+              {slug ? (
+                <a href={`/lokaler/${slug}`} class="link">{point.name}</a>
+              ) : (
+                point.name
+              )}
+            </h3>
+            {point.note && <p class="text-muted-foreground leading-relaxed text-pretty">{point.note}</p>}
+          </div>
+        </li>
+      )
+    })
+  }
+</ol>

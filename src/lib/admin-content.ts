@@ -155,6 +155,50 @@ export async function deleteCategory(
   return error ? failure("delete category", error) : { ok: true, value: null }
 }
 
+// Places on a lokal
+
+/** The app's lokaler, only read: the site never writes that table. */
+export async function listLokalNames(supabase: SupabaseServerClient) {
+  return supabase.from("locations").select("id, name").order("name")
+}
+
+export async function listAllLokalPoints(supabase: SupabaseServerClient) {
+  return supabase
+    .from("lokal_points")
+    .select(
+      "id, location_id, linked_location_id, kind, name, note, latitude, longitude, sort_order"
+    )
+    .order("sort_order")
+}
+
+export async function saveLokalPoint(
+  supabase: SupabaseServerClient,
+  id: number | null,
+  locationId: number,
+  values: {
+    name: string
+    note: string
+    kind: string
+    latitude: number | null
+    longitude: number | null
+    sort_order: number
+  }
+): Promise<WriteResult> {
+  const { error } =
+    id === null
+      ? await supabase.from("lokal_points").insert({ ...values, location_id: locationId })
+      : await supabase.from("lokal_points").update(values).eq("id", id)
+  return error ? failure("save lokal point", error) : { ok: true, value: null }
+}
+
+export async function deleteLokalPoint(
+  supabase: SupabaseServerClient,
+  id: number
+): Promise<WriteResult> {
+  const { error } = await supabase.from("lokal_points").delete().eq("id", id)
+  return error ? failure("delete lokal point", error) : { ok: true, value: null }
+}
+
 // Pages
 
 const PAGE_TREE_COLUMNS =

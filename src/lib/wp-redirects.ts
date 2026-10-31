@@ -24,6 +24,8 @@ const IDS: Readonly<Record<string, string>> = map.ids
 export const MOVED_PAGES: Readonly<Record<string, string>> = {
   "/om-foreningen/verksamhet": "/om-foreningen",
   "/om-foreningen/allmant": "/om-foreningen",
+  // Tånnerydsdammen is no lokal of its own; its places are listed on this one.
+  "/fagellokaler/tanneryd-damm": "/lokaler/jacobssons-udde",
 }
 
 const settle = (target: string | undefined): string | null =>

@@ -155,6 +155,19 @@ at render (`linkPhones`), because the club's sign-ups run on them. Tiles never r
 photo, or show the article's own. Filled buttons and search fields get the same 2 px focus
 outline as links (`focus-strong`).
 
+**Platser på lokalen (same evening).** The old Lokalrapporter's Google My Maps became the
+site's own data: 51 places on eight lokaler in `lokal_points`, a table the app doesn't read,
+edited at `/admin/lokalplatser`. Not embedded: Google's frame would load a third party on
+each visit, trap scrolling on a phone, and hide the tips inside a popup. The hierarchy is
+**Fågellokaler → lokal → plats**, with no third kind of page. A lokal page reads: where it
+is (map with numbered pins), "Bra att veta" (how to get there, where to park, where we
+meet), "Platser på lokalen", then larm. The number sits in the margin, as dates and letters
+do, and is the same mark as the pin, since a phone has no hover. A place that is a lokal
+itself links there, and that lokal gets the parent in its breadcrumb and the club's note as
+its ingress. What this costs is Google's satellite view. The Lokasjöområdet map no longer
+exports (404), so that lokal has no places. Tånnerydsdammen is not one of the app's lokaler,
+so its places are on Jacobssons udde.
+
 **Stora dagar** (same day, the user's note: "alldeles för många larm"). On a rally day
 the log ran to four pages and the band pushed the lead down. A busy day now
 discloses in steps, with no script, and an ordinary day looks as before:

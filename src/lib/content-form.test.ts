@@ -6,6 +6,7 @@ import {
   parseCategoryForm,
   parseEventForm,
   parseLinkForm,
+  parseLokalPointForm,
   parsePageForm,
   parseRouteId,
 } from "./content-form"
@@ -307,5 +308,50 @@ describe("parseEventForm", () => {
     data.delete("body_html")
     const result = parseEventForm(data)
     expect(result.ok && result.value.body_html).toBeNull()
+  })
+})
+
+describe("parseLokalPointForm", () => {
+  it("reads a place, with a Swedish decimal comma", () => {
+    const result = parseLokalPointForm(
+      form({
+        name: "Röda ladan",
+        note: "Samlingsplats.",
+        kind: "practical",
+        latitude: "56,6483",
+        longitude: "13.7637",
+        sort_order: "10",
+      })
+    )
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        name: "Röda ladan",
+        note: "Samlingsplats.",
+        kind: "practical",
+        latitude: 56.6483,
+        longitude: 13.7637,
+        sort_order: 10,
+      },
+    })
+  })
+
+  it("takes a place with no position", () => {
+    const result = parseLokalPointForm(form({ name: "Hitta hit", latitude: "", longitude: "" }))
+    expect(result.ok && result.value.latitude).toBeNull()
+  })
+
+  it("wants both coordinates or neither, and real ones", () => {
+    expect(parseLokalPointForm(form({ name: "A", latitude: "56.5", longitude: "" })).ok).toBe(false)
+    expect(parseLokalPointForm(form({ name: "A", latitude: "fel", longitude: "13.5" })).ok).toBe(
+      false
+    )
+    expect(parseLokalPointForm(form({ name: "A", latitude: "95", longitude: "13.5" })).ok).toBe(
+      false
+    )
+  })
+
+  it("wants a name", () => {
+    expect(parseLokalPointForm(form({ name: "" })).ok).toBe(false)
   })
 })

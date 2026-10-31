@@ -453,6 +453,8 @@ export type PublicLokal = {
   at: PublicAlert[]
   /** The rest of the three-kilometre band — the larm the feed labels "Nära …". */
   near: PublicAlert[]
+  /** Every lokal's id, address and name, for links between them. No member data. */
+  directory: { id: number; slug: string; name: string }[]
 }
 
 /** One lokal with its larm, or null when no lokal has that slug. */
@@ -480,5 +482,13 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
     ;(relation === "at" ? at : near).push(publish(row, context.value))
   }
   const newestFirst = (a: PublicAlert, b: PublicAlert) => (a.observedAt < b.observedAt ? 1 : -1)
-  return { ok: true, value: { lokal, at: at.sort(newestFirst), near: near.sort(newestFirst) } }
+  return {
+    ok: true,
+    value: {
+      lokal,
+      at: at.sort(newestFirst),
+      near: near.sort(newestFirst),
+      directory: lokaler.map(({ id, slug: address, name }) => ({ id, slug: address, name })),
+    },
+  }
 }

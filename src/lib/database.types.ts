@@ -309,6 +309,48 @@ export type Database = {
         }
         Relationships: []
       }
+      lokal_points: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          latitude: number | null
+          linked_location_id: number | null
+          location_id: number
+          longitude: number | null
+          name: string
+          note: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          kind?: string
+          latitude?: number | null
+          linked_location_id?: number | null
+          location_id: number
+          longitude?: number | null
+          name: string
+          note?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          kind?: string
+          latitude?: number | null
+          linked_location_id?: number | null
+          location_id?: number
+          longitude?: number | null
+          name?: string
+          note?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media: {
         Row: {
           alt: string

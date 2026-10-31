@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react"
 
 import boundary from "@/data/markaryd-boundary.json"
 import type { LokalPin } from "@/lib/lokal"
+import { type MapPoint, pointsToFrame } from "@/lib/lokal-points"
 
 /**
  * The club's lokaler on a map (docs/design.md, "Lokaler").
@@ -37,6 +38,8 @@ type Props = {
    * zooming, no navigating. The map answers "where is this" and nothing else.
    */
   still?: boolean
+  /** A lokal's numbered places, on its own page, keyed to the list under the map. */
+  points?: MapPoint[]
 }
 
 /** Standard OpenStreetMap raster tiles. The host is in the CSP's `img-src`. */
@@ -53,7 +56,7 @@ const boundaryRings: LatLngExpression[][] = (boundary.rings as [number, number][
   ring.map(([lng, lat]) => [lat, lng] as LatLngExpression)
 )
 
-export default function LokalMap({ pins, still = false }: Props) {
+export default function LokalMap({ pins, still = false, points = [] }: Props) {
   const container = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -132,8 +135,39 @@ export default function LokalMap({ pins, still = false }: Props) {
         marker.addTo(map)
       }
 
+      for (const point of points) {
+        const marker = L.marker([point.latitude, point.longitude], {
+          icon: L.divIcon({
+            className: "lokal-point",
+            html: `<span class="lokal-point__mark">${point.number}</span>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          }),
+          keyboard: false,
+          title: point.name,
+        })
+        marker.bindTooltip(point.name, {
+          direction: "top",
+          offset: [0, -12],
+          className: "lokal-tip",
+        })
+        marker.on("click", () => {
+          window.location.href = point.href
+        })
+        marker.addTo(map)
+      }
+
       const first = pins[0]
-      if (still && first) {
+      if (first && points.length > 0) {
+        const framed = pointsToFrame(points, first)
+        map.fitBounds(
+          L.latLngBounds([
+            [first.latitude, first.longitude],
+            ...framed.map((point): [number, number] => [point.latitude, point.longitude]),
+          ]),
+          { padding: FIT_PADDING, animate: false, maxZoom: 17 }
+        )
+      } else if (still && first) {
         map.setView([first.latitude, first.longitude], STILL_ZOOM)
       } else if (pins.length > 0) {
         map.fitBounds(L.latLngBounds(pins.map((pin) => [pin.latitude, pin.longitude])), {
@@ -151,7 +185,7 @@ export default function LokalMap({ pins, still = false }: Props) {
       cancelled = true
       map?.remove()
     }
-  }, [pins, still])
+  }, [pins, still, points])
 
   return <div ref={container} className="h-full w-full" aria-hidden="true" />
 }

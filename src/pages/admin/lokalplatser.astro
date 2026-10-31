@@ -1,0 +1,164 @@
+---
+export const prerender = false
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import { Textarea } from "@/components/ui/textarea"
+import AdminLayout from "@/layouts/admin.astro"
+import {
+  deleteLokalPoint,
+  listAllLokalPoints,
+  listLokalNames,
+  saveLokalPoint,
+  WRITE_MESSAGES,
+} from "@/lib/admin-content"
+import { type FieldErrors, parseLokalPointForm, parseRouteId } from "@/lib/content-form"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+
+const lokalId = parseRouteId(Astro.url.searchParams.get("lokal") ?? undefined)
+const back = (extra: string) => `/admin/lokalplatser?lokal=${lokalId}&${extra}`
+
+let errors: FieldErrors = {}
+let errorFor: number | "new" | null = null
+let formError: string | null = null
+
+if (Astro.request.method === "POST" && lokalId !== null) {
+  const form = await Astro.request.formData()
+  const id = parseRouteId(String(form.get("id") ?? ""))
+  if (form.get("intent") === "delete" && id !== null) {
+    const result = await deleteLokalPoint(supabase, id)
+    if (result.ok) return Astro.redirect(back("borttagen=1"), 303)
+    formError = WRITE_MESSAGES.failed
+  } else {
+    const parsed = parseLokalPointForm(form)
+    if (parsed.ok) {
+      const result = await saveLokalPoint(supabase, id, lokalId, parsed.value)
+      if (result.ok) return Astro.redirect(back("sparad=1"), 303)
+      if (result.reason === "duplicate")
+        errors = { name: "Lokalen har redan en plats med det namnet." }
+      else formError = WRITE_MESSAGES[result.reason]
+    } else {
+      errors = parsed.errors
+    }
+    errorFor = id ?? "new"
+  }
+}
+
+const [lokaler, points] = await Promise.all([
+  listLokalNames(supabase),
+  listAllLokalPoints(supabase),
+])
+const rows = points.data ?? []
+const lokal = lokaler.data?.find((entry) => entry.id === lokalId)
+const here = rows.filter((row) => row.location_id === lokalId)
+const count = (id: number) => rows.filter((row) => row.location_id === id).length
+const nextOrder = Math.max(0, ...here.map((row) => row.sort_order)) + 10
+const params = Astro.url.searchParams
+const confirming = here.find((row) => row.id === parseRouteId(params.get("ta-bort") ?? undefined))
+const failed = lokaler.error || points.error
+---
+
+<AdminLayout title="Lokalplatser">
+  <div class="flex max-w-2xl flex-col gap-6">
+    {lokal && <a href="/admin/lokalplatser" class="text-muted-foreground text-sm underline-offset-4 hover:underline">Lokalplatser</a>}
+    <h1 class="text-2xl font-semibold tracking-tight">{lokal?.name ?? "Lokalplatser"}</h1>
+
+    {params.has("sparad") && <Alert><AlertDescription>Sparad.</AlertDescription></Alert>}
+    {params.has("borttagen") && <Alert><AlertDescription>Platsen är borttagen.</AlertDescription></Alert>}
+    {(formError || failed) && (
+      <Alert variant="destructive">
+        <AlertDescription>{formError ?? "Platserna kunde inte läsas just nu."}</AlertDescription>
+      </Alert>
+    )}
+
+    {
+      !lokal && (
+        <>
+          <p class="text-muted-foreground leading-7">
+            Platser, parkering och tips som visas på en lokals sida. Själva lokalerna ändras i appen.
+          </p>
+          <ul class="flex flex-col divide-y rounded-2xl border">
+            {(lokaler.data ?? []).map((entry) => (
+              <li>
+                <a href={`/admin/lokalplatser?lokal=${entry.id}`} class="hover:bg-muted flex min-h-11 items-center justify-between gap-4 px-3">
+                  <span>{entry.name}</span>
+                  {count(entry.id) > 0 && <span class="text-muted-foreground text-sm tabular-nums">{count(entry.id)}</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+
+    {
+      confirming && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            <p>Ta bort ”{confirming.name}”?</p>
+            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+              <input type="hidden" name="id" value={confirming.id} />
+              <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">Ta bort platsen</Button>
+              <a href={`/admin/lokalplatser?lokal=${lokalId}`} class={buttonVariants({ variant: "ghost", className: "h-11" })}>Avbryt</a>
+            </form>
+          </AlertDescription>
+        </Alert>
+      )
+    }
+
+    {
+      lokal &&
+        [...here, null].map((row) => {
+          const key = row?.id ?? "new"
+          const shown = errorFor === key ? errors : {}
+          return (
+            <form method="POST" class="flex flex-col gap-3 rounded-2xl border p-4">
+              {!row && <h2 class="text-sm font-semibold">Ny plats</h2>}
+              {row && <input type="hidden" name="id" value={row.id} />}
+              <Field data-invalid={shown.name ? true : undefined}>
+                <FieldLabel htmlFor={`name-${key}`}>Namn</FieldLabel>
+                <Input id={`name-${key}`} name="name" value={row?.name ?? ""} required className="h-11" aria-invalid={shown.name ? true : undefined} />
+                <FieldError>{shown.name}</FieldError>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`note-${key}`}>Text</FieldLabel>
+                <Textarea id={`note-${key}`} name="note" rows={2} defaultValue={row?.note ?? ""} />
+              </Field>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor={`kind-${key}`}>Typ</FieldLabel>
+                  <NativeSelect id={`kind-${key}`} name="kind" className="w-full" defaultValue={row?.kind ?? "place"}>
+                    <NativeSelectOption value="place">Plats</NativeSelectOption>
+                    <NativeSelectOption value="practical">Bra att veta</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={`order-${key}`}>Ordning</FieldLabel>
+                  <Input id={`order-${key}`} name="sort_order" type="number" value={row?.sort_order ?? nextOrder} className="h-11" />
+                </Field>
+                <Field data-invalid={shown.latitude ? true : undefined}>
+                  <FieldLabel htmlFor={`lat-${key}`}>Latitud</FieldLabel>
+                  <Input id={`lat-${key}`} name="latitude" inputMode="decimal" value={row?.latitude ?? ""} className="h-11" aria-invalid={shown.latitude ? true : undefined} />
+                  <FieldError>{shown.latitude}</FieldError>
+                </Field>
+                <Field data-invalid={shown.longitude ? true : undefined}>
+                  <FieldLabel htmlFor={`lng-${key}`}>Longitud</FieldLabel>
+                  <Input id={`lng-${key}`} name="longitude" inputMode="decimal" value={row?.longitude ?? ""} className="h-11" aria-invalid={shown.longitude ? true : undefined} />
+                  <FieldError>{shown.longitude}</FieldError>
+                </Field>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <Button type="submit" name="intent" value="save" variant={row ? "outline" : "default"} className="h-11">{row ? "Spara" : "Lägg till"}</Button>
+                {row && <a href={`/admin/lokalplatser?lokal=${lokalId}&ta-bort=${row.id}`} class={buttonVariants({ variant: "ghost", className: "h-11" })}>Ta bort</a>}
+              </div>
+            </form>
+          )
+        })
+    }
+  </div>
+</AdminLayout>

@@ -4,11 +4,13 @@ export const prerender = false
 import AlertList from "@/components/site/AlertList.astro"
 import LarmFold from "@/components/site/LarmFold.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
+import LokalPoints from "@/components/site/LokalPoints.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { toPin } from "@/lib/lokal"
 import { ACTIVE_DAYS } from "@/lib/lokal-alerts"
+import { type MapPoint, splitForLokal } from "@/lib/lokal-points"
 import { loadPublicLokal } from "@/lib/public-alerts"
-import { loadNavigation } from "@/lib/public-content"
+import { listLokalPoints, loadNavigation } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
 
 /**
@@ -42,11 +44,31 @@ if (!found.value) return new Response(null, { status: 404 })
  */
 const NEAR_LIMIT = 12
 
-const { lokal, at, near } = found.value
+const { lokal, at, near, directory } = found.value
+const pointRows = await listLokalPoints(db, lokal.id)
+const { own, partOf } = splitForLokal(pointRows, lokal.id)
+const slugs = new Map(directory.map((entry) => [entry.id, entry.slug]))
+const practical = own.filter((point) => point.kind === "practical")
+const places = own.filter((point) => point.kind !== "practical")
+const parent = partOf ? directory.find((entry) => entry.id === partOf.location_id) : undefined
+const mapPoints = own.flatMap((point): MapPoint[] => {
+  if (point.number === null || point.latitude === null || point.longitude === null) return []
+  const linked = point.linked_location_id === null ? undefined : slugs.get(point.linked_location_id)
+  return [
+    {
+      number: point.number,
+      name: point.name,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      href: linked ? `/lokaler/${linked}` : `#plats-${point.number}`,
+    },
+  ]
+})
 const nearShown = near.slice(0, NEAR_LIMIT)
 /** The newest in full; the whole history stays here, a tap away. */
 const AT_SHOWN = 6
-const description = lokal.description?.trim() || null
+// What the app holds on this lokal, or failing that what the club's map said of it.
+const description = lokal.description?.trim() || partOf?.note || null
 
 // The dot means the same here as on the map: a larm from this lokal inside the
 // fortnight. Worked out from the larm already on the page rather than fetched
@@ -67,14 +89,42 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
       <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
         <a href="/lokaler" class="crumb">Fågellokaler</a>
         <span aria-hidden="true"> / </span>
+        {parent && (
+          <>
+            <a href={`/lokaler/${parent.slug}`} class="crumb">{parent.name}</a>
+            <span aria-hidden="true"> / </span>
+          </>
+        )}
         <span>{lokal.name}</span>
       </nav>
       <h1 class="type-title md:col-start-2">{lokal.name}</h1>
-      <div class="flex flex-col gap-4 md:col-start-2 md:row-start-3">
-        {pin && <LokalMapFrame pins={[pin]} still class="aspect-2/1" />}
-        {description && <p class="type-ingress text-muted-foreground">{description}</p>}
-      </div>
+      {description && <p class="type-ingress text-muted-foreground md:col-start-2">{description}</p>}
+      {pin && (
+        mapPoints.length > 0 ? (
+          <LokalMapFrame pins={[pin]} points={mapPoints} class="aspect-square sm:aspect-3/2 md:col-span-2" />
+        ) : (
+          <LokalMapFrame pins={[pin]} still class="aspect-2/1 md:col-start-2" />
+        )
+      )}
     </header>
+
+    {
+      practical.length > 0 && (
+        <section aria-labelledby="bra-att-veta" class="flex flex-col gap-5">
+          <h2 id="bra-att-veta" class="type-section md:pl-[7rem]">Bra att veta</h2>
+          <LokalPoints points={practical} slugs={slugs} />
+        </section>
+      )
+    }
+
+    {
+      places.length > 0 && (
+        <section aria-labelledby="platser" class="flex flex-col gap-5">
+          <h2 id="platser" class="type-section md:pl-[7rem]">Platser på lokalen</h2>
+          <LokalPoints points={places} slugs={slugs} />
+        </section>
+      )
+    }
 
     {
       at.length === 0 && near.length === 0 ? (
@@ -91,7 +141,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
     {
       at.length > 0 && (
         <section aria-labelledby="pa-lokalen" class="flex flex-col gap-5">
-          <h2 id="pa-lokalen" class="type-section md:pl-[7rem]">På lokalen</h2>
+          <h2 id="pa-lokalen" class="type-section md:pl-[7rem]">Larm på lokalen</h2>
           <AlertList alerts={at.slice(0, AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} />
           {at.length > AT_SHOWN && (
             <LarmFold count={at.length - AT_SHOWN}>

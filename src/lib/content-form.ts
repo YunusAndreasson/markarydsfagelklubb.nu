@@ -359,6 +359,44 @@ export function parseCategoryForm(form: FormData): Parsed<CategoryForm> {
   return done(errors, { name, slug })
 }
 
+export type LokalPointForm = {
+  name: string
+  note: string
+  kind: "practical" | "place"
+  latitude: number | null
+  longitude: number | null
+  sort_order: number
+}
+
+/** A place on a lokal (`/admin/lokalplatser`). Position: both or neither. */
+export function parseLokalPointForm(form: FormData): Parsed<LokalPointForm> {
+  const errors: FieldErrors = {}
+  const name = text(form, "name")
+  checkTitle(name, errors, "name")
+  const decimal = (field: string, low: number, high: number) => {
+    const raw = text(form, field).replace(",", ".")
+    if (raw === "") return null
+    const value = Number(raw)
+    if (Number.isFinite(value) && value >= low && value <= high) return value
+    errors[field] = "Skriv ett decimaltal, till exempel 56.6446."
+    return null
+  }
+  const latitude = decimal("latitude", -90, 90)
+  const longitude = decimal("longitude", -180, 180)
+  if (!errors.latitude && !errors.longitude && (latitude === null) !== (longitude === null)) {
+    errors.latitude = "Fyll i både latitud och longitud, eller ingen av dem."
+  }
+  const order = Number(text(form, "sort_order") || "0")
+  return done(errors, {
+    name,
+    note: text(form, "note"),
+    kind: text(form, "kind") === "practical" ? "practical" : "place",
+    latitude,
+    longitude,
+    sort_order: Number.isInteger(order) ? order : 0,
+  })
+}
+
 /** A row id from a route parameter, or null for anything that isn't one. */
 export function parseRouteId(value: string | undefined): number | null {
   return value !== undefined && /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null

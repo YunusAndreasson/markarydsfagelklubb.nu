@@ -62,6 +62,10 @@ that the app reads none of them: `events.contact_name`, `contact_phone`,
 `articles` and `pages`. **The contact's phone number is public by design**, as it
 was in the old site's programme.
 
+Created by `20261031220000_lokal_points.sql` (2026-10-31): `public.lokal_points`, the places
+within a lokal. read: anon and authenticated · write: `private.is_admin()`. Its two lokal ids
+have no foreign keys, for the reason below. Seeded once from `scripts/lokal-points.sql`.
+
 `hidden_alerts` has **no foreign keys**, on purpose. `alert_id → public.alerts`
 would put a constraint on the app's own table and change what happens when a row
 there is deleted; `hidden_by → auth.users` would block deleting the account of
