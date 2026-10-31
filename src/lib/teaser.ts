@@ -161,6 +161,12 @@ function cut(text: string, max: number): string {
  * rest kept. Prose that merely starts with the title's words is left alone.
  */
 export function teaserText(html: string, title: string, max = 180): string {
+  for (const { text } of textParagraphs(html, title)) return cut(text, max)
+  return ""
+}
+
+/** The body's paragraphs of running text, as `teaserText` above defines them. */
+function* textParagraphs(html: string, title: string): Generator<{ inner: string; text: string }> {
   const heading = comparable(title.trim())
   for (const match of html.matchAll(PARAGRAPH)) {
     const inner = match[1] ?? ""
@@ -169,9 +175,43 @@ export function teaserText(html: string, title: string, max = 180): string {
 
     const [firstLine = "", ...otherLines] = inner.split(/<br\s*\/?>/)
     const repeatsTitle = heading !== "" && comparable(plainText(firstLine)) === heading
-    const text = plainText(repeatsTitle ? otherLines.join(" ") : inner)
+    const kept = repeatsTitle ? otherLines.join(" ") : inner
+    const text = plainText(kept)
     if (text === "" || PHOTO_CREDIT.test(text)) continue
-    return cut(text, max)
+    yield { inner: kept, text }
   }
-  return ""
+}
+
+export type LeadOpening = {
+  /** Whole paragraphs, as sanitized HTML: links and emphasis stay. */
+  paragraphs: string[]
+  /** There is more in the article than these: text, a list, a table or more photos. */
+  more: boolean
+}
+
+/** About a screen's worth beside the programme: a short report shows in full. */
+const LEAD_BUDGET = 600
+
+/**
+ * What the home page shows under the lead's headline (docs/design.md, "Larmbandet"):
+ * the article's own opening, whole paragraphs up to the budget. A first paragraph
+ * over the budget stays whole too, up to twice it, then is cut at a word.
+ */
+export function leadOpening(html: string, title: string, budget = LEAD_BUDGET): LeadOpening {
+  const paragraphs: string[] = []
+  let used = 0
+  let more = false
+  for (const { inner, text } of textParagraphs(html, title)) {
+    if (paragraphs.length > 0 && used + text.length > budget) {
+      more = true
+      break
+    }
+    if (paragraphs.length === 0 && text.length > budget * 2) {
+      return { paragraphs: [cut(text, budget * 2)], more: true }
+    }
+    paragraphs.push(inner.trim())
+    used += text.length
+  }
+  const photos = html.match(/<img\b/g)?.length ?? 0
+  return { paragraphs, more: more || photos > 1 || /<(ul|ol|table|iframe)\b/.test(html) }
 }

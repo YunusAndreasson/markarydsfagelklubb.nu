@@ -1,0 +1,25 @@
+---
+import { ChevronDown } from "lucide-react"
+
+/**
+ * More larm behind one tap (docs/design.md, "Stora dagar"), with no script. Whatever
+ * is passed in stays in the page, so find-in-page and a reader without CSS get it too.
+ */
+
+interface Props {
+  count: number
+}
+
+const { count } = Astro.props
+---
+
+<details class="group flex flex-col">
+  <summary class="link flex min-h-11 w-fit cursor-pointer list-none items-center gap-1 font-medium md:ml-[7rem] [&::-webkit-details-marker]:hidden">
+    <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+    <span class="group-open:hidden">Visa {count} larm till</span>
+    <span class="hidden group-open:inline">Visa färre</span>
+  </summary>
+  <div class="pt-4">
+    <slot />
+  </div>
+</details>

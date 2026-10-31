@@ -21,6 +21,8 @@ export type FeedEvent = {
   ends_at: string | null
   all_day: boolean
   updated_at: string
+  contact_name?: string
+  contact_phone?: string
 }
 
 export type CalendarOptions = {
@@ -125,7 +127,9 @@ function eventLines(event: FeedEvent, options: CalendarOptions, host: string): s
   lines.push(line("SUMMARY", event.title))
   if (event.place) lines.push(line("LOCATION", event.place))
   // Some clients show DESCRIPTION and ignore URL, so the link goes in both.
-  lines.push(line("DESCRIPTION", event.summary ? `${event.summary}\n\n${url}` : url))
+  const contact = [event.contact_name, event.contact_phone].filter(Boolean).join(", ")
+  const description = [event.summary, contact && `Kontakt: ${contact}`, url].filter(Boolean)
+  lines.push(line("DESCRIPTION", description.join("\n\n")))
   lines.push(`URL:${url}`)
   lines.push("END:VEVENT")
   return lines

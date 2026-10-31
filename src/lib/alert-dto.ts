@@ -31,9 +31,9 @@ export type PublicAlert = {
   /** 0 (rarest) … 5 (commonest); an unlisted species is 5. */
   rarity: RarityLevel
   count: number | null
-  /** ISO 8601 — when the bird was seen. */
+  /** ISO 8601 — when the bird was seen. The feed's sort key. */
   observedAt: string
-  /** ISO 8601 — when the larm went out. The feed's sort key. */
+  /** ISO 8601 — when the larm went out. */
   sentAt: string
   /** A coarse label from `alert-place.ts`. Never a coordinate. */
   place: string

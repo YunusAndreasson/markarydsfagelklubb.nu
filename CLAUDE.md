@@ -195,9 +195,8 @@ Project skills live in `.claude/skills/`. Third-party ones are tracked in
 **Load `supabase-postgres-best-practices` before writing any migration, RLS
 policy or index. Load `shadcn` before writing UI. Load `frontend-design` for
 every design task** (anything visible: pages, layouts, components, on-screen
-copy), and follow its plan → review → build → critique process. The brand
-tokens (Markaryd green, Inter) are shared with the app and stay fixed; the
-design work is layout, type scale, copy and the site's character.
+copy), and follow its plan → review → build → critique process. Markaryd green and Inter are shared with the app; since 2026-10-31 the site adds
+Alegreya for headings and its own neutrals (`docs/design.md`, "Dagslistan").
 
 The global `cloudflare`, `wrangler`, `workers-best-practices` and `web-perf`
 skills apply too. Prefer retrieval over memory for Astro, Cloudflare and

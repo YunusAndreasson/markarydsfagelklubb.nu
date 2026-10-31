@@ -2,6 +2,7 @@
 export const prerender = false
 
 import SiteLayout from "@/layouts/site.astro"
+import { renderBody } from "@/lib/article-body"
 import { loadMembership } from "@/lib/membership"
 import { resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
@@ -12,15 +13,18 @@ import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-c
 // The text is the page's body in /admin, where each "## Rubrik" becomes the
 // word in the margin (`.content-register`); the fee line comes from
 // membership_settings, so it changes when the fee does.
+const DIPPER =
+  "https://zgnmajovyqibgxlcomvb.supabase.co/storage/v1/object/public/site-media/2025/10/93398403-259e-5fed-b5f8-6d82268fbbfa"
+
 const { db } = Astro.locals
-if (!db) return new Response(null, { status: 503 })
+if (!db) return new Response(null, { status: 500 })
 
 const [navigation, membership] = await Promise.all([loadNavigation(db), loadMembership(db)])
 const node = resolvePath(navigation.tree, ["om-foreningen"])
 if (!node) return new Response(null, { status: 404 })
 
 const page = await loadPageBody(db, node.id)
-if (page === "error") return new Response("Sidan kunde inte hämtas just nu.", { status: 503 })
+if (page === "error") return new Response(null, { status: 500 })
 if (!page) return new Response(null, { status: 404 })
 
 const children = node.children as (typeof node & Pick<PublicPageRow, "description">)[]
@@ -36,6 +40,24 @@ const hrefOf = (child: (typeof children)[number]) =>
       <h1 class="type-title">{page.title}</h1>
       {page.description && <p class="type-ingress text-muted-foreground max-w-[38rem]">{page.description}</p>}
     </header>
+
+    {/* The club's emblem bird, in its own water: who the club is, before a word
+        about fees. From the article "Strömstarens ankomst". */}
+    <figure class="-mx-4 flex flex-col gap-2 sm:mx-0">
+      <img
+        src={`${DIPPER}/960.webp`}
+        srcset={`${DIPPER}/480.webp 480w, ${DIPPER}/960.webp 960w, ${DIPPER}/1600.webp 1600w`}
+        sizes="(min-width: 64rem) 61rem, 100vw"
+        width="1657"
+        height="1105"
+        alt="En strömstare på en mossig sten vid forsande vatten."
+        fetchpriority="high"
+        class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-2/1"
+      />
+      <figcaption class="type-meta text-muted-foreground px-4 sm:px-0 md:pl-[7rem]">
+        Strömstaren, klubbens emblemfågel sedan 1986. Foto: Lars-Erik Andréasson.
+      </figcaption>
+    </figure>
 
     {
       membership && (
@@ -57,7 +79,7 @@ const hrefOf = (child: (typeof children)[number]) =>
       )
     }
 
-    {page.body_html && <div class="content content-register" set:html={page.body_html} />}
+    {page.body_html && <div class="content content-register" set:html={renderBody(page.body_html)} />}
 
     {
       children.length > 0 && (

@@ -26,8 +26,13 @@ interface Props {
 const { pins, still = false, class: className = "" } = Astro.props
 ---
 
-<div class:list={["bg-muted overflow-hidden rounded-[4px]", className]}>
+<div class:list={["bg-muted relative overflow-hidden rounded-[4px]", className]}>
   <LokalMap pins={pins} still={still} client:visible />
+  <noscript>
+    <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-6 text-center">
+      Kartan behöver JavaScript. Alla lokaler står i listan här under.
+    </p>
+  </noscript>
 </div>
 
 <style is:global>
@@ -47,6 +52,11 @@ const { pins, still = false, class: className = "" } = Astro.props
     --map-ink: oklch(0.36 0.012 155);
     --map-halo: oklch(0.99 0 0 / 0.92);
   }
+  .lokal-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   .lokal-pin__dot {
     display: block;
     height: 9px;
@@ -55,9 +65,10 @@ const { pins, still = false, class: className = "" } = Astro.props
     background: var(--map-ink);
     /* The halo keeps the dot legible over water, forest and road alike. */
     box-shadow: 0 0 0 2px var(--map-halo);
-    margin: 2px;
   }
   .lokal-pin__dot--active {
+    height: 13px;
+    width: 13px;
     background: var(--primary);
   }
   .leaflet-marker-icon {

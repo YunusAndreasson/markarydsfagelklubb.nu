@@ -25,24 +25,24 @@
   .content h2,
   .content h3,
   .content h4 {
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-variant-numeric: lining-nums;
+    font-weight: 700;
     text-wrap: balance;
   }
   .content h2 {
-    font-size: 1.5rem;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
+    font-size: 1.75rem;
+    line-height: 1.15;
     margin-top: 1.6em;
   }
   .content h3 {
-    font-size: 1.25rem;
-    line-height: 1.3;
-    letter-spacing: -0.01em;
+    font-size: 1.4375rem;
+    line-height: 1.2;
     margin-top: 1.4em;
   }
   .content h4 {
-    font-size: 1.0625rem;
-    line-height: 1.4;
+    font-size: 1.1875rem;
+    line-height: 1.3;
     margin-top: 1.3em;
   }
   .content h2 + *,
@@ -148,6 +148,34 @@
     text-wrap: pretty;
   }
 
+  /*
+   * Photos in a row become a contact sheet (lib/article-body.ts wraps them at
+   * render). Two across from 40rem, whatever their originals' widths, each whole
+   * rather than cropped, since members' photos of a bird in flight lose the
+   * bird. The editor never gets the wrapper, so writing stays one column.
+   */
+  .content-gallery {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+  }
+  @media (min-width: 40rem) {
+    .content-gallery {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .content-gallery figure,
+  .content-gallery > img {
+    width: 100%;
+    margin: 0;
+  }
+  .content-gallery img {
+    width: 100%;
+    margin: 0;
+  }
+
   /* Tables scroll inside themselves at 360 px; the page never does. */
   .content table {
     display: block;
@@ -194,6 +222,7 @@
     max-width: none;
   }
   .content-register > h2 {
+    font-family: inherit;
     font-size: 0.875rem;
     line-height: 1.4;
     font-weight: 500;

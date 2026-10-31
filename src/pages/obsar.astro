@@ -1,0 +1,86 @@
+---
+export const prerender = false
+
+import SiteLayout from "@/layouts/site.astro"
+import { renderBody } from "@/lib/article-body"
+import { groupObsar, obsarDescription } from "@/lib/obsar"
+import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
+
+/**
+ * Obsar (docs/design.md, "Obsar"), with a route of its own as Klubben has. The
+ * links stay in the page tree; this page orders them by what a member came to
+ * do, with reporting first, where the old menu's first entry had it.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+
+const navigation = await loadNavigation(db)
+const node = navigation.tree.roots.find((root) => root.slug === "obsar")
+if (!node) return new Response(null, { status: 404 })
+const page = await loadPageBody(db, node.id)
+if (page === "error") return new Response(null, { status: 500 })
+if (!page) return new Response(null, { status: 404 })
+
+type Child = typeof node & Pick<PublicPageRow, "description">
+const { report, kommun, regions } = groupObsar(node.children as Child[])
+const hrefOf = (child: Child) => (child.kind === "link" ? (child.link_url ?? "/") : child.path)
+---
+
+<SiteLayout title={page.title} description={page.description || "Rapportera fåglar och se vad som observerats i Markaryds kommun."} menu={navigation.menu}>
+  <article class="flex flex-col gap-10 md:pl-[7rem]">
+    <header class="flex max-w-[38rem] flex-col gap-4">
+      <h1 class="type-title">{page.title}</h1>
+      <p class="type-ingress text-muted-foreground">
+        {page.description || "Klubbens medlemmar rapporterar sina fynd på Artportalen. Länkarna här går dit."}
+      </p>
+    </header>
+
+    {page.body_html && <div class="content" set:html={renderBody(page.body_html)} />}
+
+    {
+      report.map((child) => (
+        <div class="surface-gran flex max-w-[38rem] flex-col gap-1 rounded-[4px] px-5 py-5">
+          <a href={hrefOf(child)} class="type-section text-reflex w-fit underline decoration-1 underline-offset-4 hover:decoration-2">
+            {child.title}
+          </a>
+          <p class="text-muted-foreground leading-relaxed">{obsarDescription(child)}</p>
+        </div>
+      ))
+    }
+
+    {
+      kommun.length > 0 && (
+        <section aria-labelledby="obsar-kommunen" class="flex max-w-[38rem] flex-col gap-5">
+          <h2 id="obsar-kommunen" class="type-section">Markaryds kommun</h2>
+          <ul class="flex flex-col gap-5">
+            {kommun.map((child) => (
+              <li class="flex flex-col gap-0.5">
+                <a href={hrefOf(child)} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
+                  {child.title}
+                </a>
+                {obsarDescription(child) && <p class="text-muted-foreground leading-relaxed">{obsarDescription(child)}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      regions.length > 0 && (
+        <section aria-labelledby="obsar-grannar" class="flex max-w-[38rem] flex-col gap-2">
+          <h2 id="obsar-grannar" class="type-section">Runt omkring</h2>
+          <p class="text-muted-foreground">Vad som rapporteras i landskapen i närheten.</p>
+          <ul class="flex flex-wrap gap-x-6">
+            {regions.map((child) => (
+              <li>
+                <a href={hrefOf(child)} class="link flex min-h-11 items-center font-medium">{child.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</SiteLayout>

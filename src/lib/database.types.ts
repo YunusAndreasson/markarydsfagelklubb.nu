@@ -91,6 +91,7 @@ export type Database = {
           excerpt: string
           id: number
           published_at: string | null
+          search: unknown
           slug: string
           status: string
           title: string
@@ -106,6 +107,7 @@ export type Database = {
           excerpt?: string
           id?: never
           published_at?: string | null
+          search?: unknown
           slug: string
           status?: string
           title: string
@@ -121,6 +123,7 @@ export type Database = {
           excerpt?: string
           id?: never
           published_at?: string | null
+          search?: unknown
           slug?: string
           status?: string
           title?: string
@@ -172,6 +175,8 @@ export type Database = {
         Row: {
           all_day: boolean
           body_html: string
+          contact_name: string
+          contact_phone: string
           created_at: string
           ends_at: string | null
           id: number
@@ -179,6 +184,7 @@ export type Database = {
           place: string
           published_at: string | null
           registration_url: string | null
+          signup_deadline: string | null
           slug: string
           starts_at: string
           status: string
@@ -189,6 +195,8 @@ export type Database = {
         Insert: {
           all_day?: boolean
           body_html?: string
+          contact_name?: string
+          contact_phone?: string
           created_at?: string
           ends_at?: string | null
           id?: never
@@ -196,6 +204,7 @@ export type Database = {
           place?: string
           published_at?: string | null
           registration_url?: string | null
+          signup_deadline?: string | null
           slug: string
           starts_at: string
           status?: string
@@ -206,6 +215,8 @@ export type Database = {
         Update: {
           all_day?: boolean
           body_html?: string
+          contact_name?: string
+          contact_phone?: string
           created_at?: string
           ends_at?: string | null
           id?: never
@@ -213,6 +224,7 @@ export type Database = {
           place?: string
           published_at?: string | null
           registration_url?: string | null
+          signup_deadline?: string | null
           slug?: string
           starts_at?: string
           status?: string
@@ -454,6 +466,7 @@ export type Database = {
           link_url: string | null
           parent_id: number | null
           published_at: string | null
+          search: unknown
           show_in_menu: boolean
           slug: string
           sort_order: number
@@ -471,6 +484,7 @@ export type Database = {
           link_url?: string | null
           parent_id?: number | null
           published_at?: string | null
+          search?: unknown
           show_in_menu?: boolean
           slug: string
           sort_order?: number
@@ -488,6 +502,7 @@ export type Database = {
           link_url?: string | null
           parent_id?: number | null
           published_at?: string | null
+          search?: unknown
           show_in_menu?: boolean
           slug?: string
           sort_order?: number

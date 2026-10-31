@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  dayHeading,
   dayLabel,
   formatDate,
+  groupByDay,
   parseStockholmInputValue,
   stockholmYear,
   toStockholmInputValue,
@@ -111,5 +113,30 @@ describe("dayLabel", () => {
     expect(dayLabel("2026-12-31T12:00:00Z", newYear)).toBe("i går")
     expect(dayLabel("2026-12-30T12:00:00Z", newYear)).toBe("30 dec. 2026")
     expect(dayLabel("2026-10-01T12:00:00Z", now)).toBe("1 okt.")
+  })
+})
+
+describe("dayHeading", () => {
+  const now = new Date("2026-10-31T17:00:00Z")
+  it("names the near days as a member would", () => {
+    expect(dayHeading("2026-10-31T06:00:00Z", now)).toBe("I dag")
+    expect(dayHeading("2026-10-30T06:00:00Z", now)).toBe("I går")
+  })
+  it("spells out the rest, with the year only when it differs", () => {
+    expect(dayHeading("2026-10-29T06:00:00Z", now)).toBe("Torsdag 29 oktober")
+    expect(dayHeading("2025-10-29T06:00:00Z", now)).toBe("Onsdag 29 oktober 2025")
+  })
+})
+
+describe("groupByDay", () => {
+  it("splits at Stockholm's midnight, keeping the order", () => {
+    const groups = groupByDay(
+      ["2026-10-30T23:30:00Z", "2026-10-30T22:30:00Z", "2026-10-30T10:00:00Z"],
+      (date) => date
+    )
+    expect(groups.map((group) => group.items.length)).toEqual([1, 2])
+  })
+  it("has no groups for no items", () => {
+    expect(groupByDay([], (date: string) => date)).toEqual([])
   })
 })

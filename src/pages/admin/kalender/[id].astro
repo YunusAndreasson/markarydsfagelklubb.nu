@@ -44,6 +44,9 @@ let values = {
   place: event?.place ?? "",
   kind: event?.kind ?? "ovrigt",
   registration_url: event?.registration_url ?? "",
+  contact_name: event?.contact_name ?? "",
+  contact_phone: event?.contact_phone ?? "",
+  signup_deadline: event?.signup_deadline ?? "",
   starts_at: event?.starts_at ? toStockholmInputValue(event.starts_at) : "",
   ends_at: event?.ends_at ? toStockholmInputValue(event.ends_at) : "",
   all_day: event?.all_day ?? false,
@@ -73,6 +76,9 @@ if (Astro.request.method === "POST") {
       place: field("place"),
       kind: field("kind"),
       registration_url: field("registration_url"),
+      contact_name: field("contact_name"),
+      contact_phone: field("contact_phone"),
+      signup_deadline: field("signup_deadline"),
       starts_at: field("starts_at"),
       ends_at: field("ends_at"),
       all_day: form.get("all_day") === "on",
@@ -92,6 +98,9 @@ if (Astro.request.method === "POST") {
         place: input.place,
         kind: input.kind,
         registration_url: input.registration_url,
+        contact_name: input.contact_name,
+        contact_phone: input.contact_phone,
+        signup_deadline: input.signup_deadline,
         starts_at: input.starts_at.toISOString(),
         ends_at: input.ends_at?.toISOString() ?? null,
         all_day: input.all_day,
@@ -381,6 +390,45 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
             />
             <FieldDescription>En länk eller mailto:-adress. Lämna tomt om anmälan inte behövs.</FieldDescription>
             <FieldError>{errors.registration_url}</FieldError>
+          </Field>
+          <Field data-invalid={errors.contact_name ? true : undefined}>
+            <FieldLabel htmlFor="contact_name">Kontaktperson</FieldLabel>
+            <Input
+              id="contact_name"
+              name="contact_name"
+              value={values.contact_name}
+              maxLength={LIMITS.contactName}
+              className="h-11"
+              aria-invalid={errors.contact_name ? true : undefined}
+            />
+            <FieldError>{errors.contact_name}</FieldError>
+          </Field>
+          <Field data-invalid={errors.contact_phone ? true : undefined}>
+            <FieldLabel htmlFor="contact_phone">Telefon</FieldLabel>
+            <Input
+              id="contact_phone"
+              name="contact_phone"
+              type="tel"
+              value={values.contact_phone}
+              maxLength={LIMITS.contactPhone}
+              className="h-11"
+              aria-invalid={errors.contact_phone ? true : undefined}
+            />
+            <FieldDescription>Visas öppet på webbplatsen och i kalenderflödet.</FieldDescription>
+            <FieldError>{errors.contact_phone}</FieldError>
+          </Field>
+          <Field data-invalid={errors.signup_deadline ? true : undefined}>
+            <FieldLabel htmlFor="signup_deadline">Sista anmälningsdag</FieldLabel>
+            <Input
+              id="signup_deadline"
+              name="signup_deadline"
+              type="date"
+              value={values.signup_deadline}
+              className="h-11"
+              aria-invalid={errors.signup_deadline ? true : undefined}
+            />
+            <FieldDescription>Lämna tomt om anmälan inte behövs.</FieldDescription>
+            <FieldError>{errors.signup_deadline}</FieldError>
           </Field>
         </FieldGroup>
 

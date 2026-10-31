@@ -4,6 +4,10 @@
 /* The optical-size axis gives large headings Inter's display cut automatically
    (docs/design.md). +25 KB over the plain variable file for the Latin subset. */
 @import "@fontsource-variable/inter/opsz.css";
+/* Headings and species names (docs/design.md, "Dagslistan"). Inter stays for
+   running text, dates and controls, which keeps the site beside the app. */
+@import "@fontsource-variable/alegreya/wght.css";
+@import "@fontsource-variable/alegreya/wght-italic.css";
 @import "./content.css";
 
 /* The site is light only (2026-10-24). Nothing sets `.dark`, so the `dark:`
@@ -14,6 +18,9 @@
 
 @theme inline {
     --font-heading: var(--font-sans);
+    --font-display: 'Alegreya Variable', Georgia, serif;
+    --color-gran: var(--gran);
+    --color-reflex: var(--reflex);
     --font-sans: 'Inter Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -57,31 +64,35 @@
 }
 
 
-/* Markaryd green on clean neutrals — the club's brand. The Expo app carries the
-   same palette as hex in ../mafk-mobie/src/constants/theme.ts; change both
-   together or the site and the app drift apart. One neutral differs on purpose
-   since 2026-10-24, set for legibility in the site's light-only theme:
-   --muted-foreground (docs/design.md, "Colour"). */
+/* Markaryd green is the club's brand, shared with the Expo app as hex in
+   ../mafk-mobie/src/constants/theme.ts; change both together. The neutrals are
+   the site's own since 2026-10-31, tinted towards the spruce and water of the
+   kommun; Gran and Reflex are the site's too (docs/design.md, "Dagslistan"). */
 :root {
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Bläck, 16.7:1 on white. */
+  --foreground: #17201d;
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: #17201d;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: #17201d;
   /* "Markaryd-grön" — taget från klubbens visuella identitet. */
   --primary: oklch(0.52 0.13 152);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: #eef3f1;
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  /* #585858: 7.1:1 on white (AAA), 6.5:1 on --muted; APCA Lc 85. The site sets
-     its ingresses, excerpts and 14 px meta lines (places, observers, dates) in
-     it, so it is reading text, not decoration. The app's #737373 is 4.7:1 and
-     fails AA on --muted. Still well clear of the ink, which carries the
-     hierarchy (docs/design.md, "Colour"). */
-  --muted-foreground: oklch(0.46 0 0);
-  --accent: oklch(0.97 0 0);
+  /* Is, the pale surface. Green on it is 4.6:1. */
+  --muted: #eef3f1;
+  /* Blyerts, 6.6:1 on white and 5.9:1 on Is. The site sets its ingresses,
+     excerpts and 14 px meta lines in it, so it is reading text, not decoration
+     (docs/design.md, "Colour"). */
+  --muted-foreground: #53605b;
+  /* The spruce band: the day list and the footer. White on it is 14.1:1. */
+  --gran: #14302a;
+  /* The yellow in the stream under the old site's dipper. Status on Gran only
+     (8.4:1); on white it fails, so it never sets text there. */
+  --reflex: #f2c230;
+  --accent: #eef3f1;
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   /* "Larmrött": the top of the app's rarity ramp (RarityScale 0 and 1 in
@@ -90,8 +101,8 @@
      text, so a page of common birds stays quiet. Distinct from --destructive,
      which means "this will break something". */
   --rarity: oklch(0.536 0.191 29);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: #dde5e1;
+  --input: #dde5e1;
   --ring: oklch(0.52 0.13 152);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -136,38 +147,44 @@
   }
 }
 
-/* The public site's type scale (docs/design.md, "Type"). Sizes from 32 px up
-   get Inter's display cut through the opsz axis on their own. */
+/* The public site's type scale (docs/design.md, "Type"). Headings and titles are
+   Alegreya, whose small x-height sets a step larger than Inter would. */
 @utility type-display {
-  font-size: clamp(2.5rem, 1.3rem + 5.2vw, 4.5rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+  font-size: clamp(2.5rem, 1.75rem + 3.2vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.012em;
   font-weight: 700;
   text-wrap: balance;
 }
 @utility type-title {
-  font-size: clamp(2rem, 1.5rem + 2.4vw, 3rem);
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+  font-size: clamp(2.25rem, 1.8rem + 1.8vw, 3rem);
   line-height: 1.08;
-  letter-spacing: -0.025em;
-  font-weight: 650;
+  letter-spacing: -0.008em;
+  font-weight: 700;
   text-wrap: balance;
 }
 /* A home-page or end-of-page section: the scale's H2. */
 @utility type-section {
-  font-size: 1.5rem;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 700;
   text-wrap: balance;
 }
 /* The title of an entry in a list: an article, a larm, an event, a lokal, a
    page. One size for every list, so a section heading always outranks the
    entries under it. */
 @utility type-item {
-  font-size: 1.125rem;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+  font-size: 1.3125rem;
+  line-height: 1.25;
+  font-weight: 700;
   text-wrap: pretty;
 }
 @utility type-ingress {
@@ -180,6 +197,43 @@
   line-height: 1.4;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+/* The tokens on a Gran band: green links and the green focus ring would vanish
+   there, so children keep using the semantic classes and read these instead. */
+@utility surface-gran {
+  background-color: var(--gran);
+  color: #fff;
+  --foreground: #fff;
+  --muted-foreground: #b7cbc3;
+  --primary: var(--reflex);
+  --ring: var(--reflex);
+  --border: rgb(255 255 255 / 0.2);
+  --muted: rgb(255 255 255 / 0.08);
+  --rarity: var(--reflex);
+}
+
+/* A small link, in a breadcrumb or beside a date, with a full-size target. The
+   negative margin keeps the target out of the layout, so the line keeps its rhythm. */
+@utility crumb {
+  display: inline-flex;
+  min-height: 2.75rem;
+  margin-block: -0.75rem;
+  align-items: center;
+  text-underline-offset: 4px;
+  &:hover {
+    color: var(--foreground);
+    text-decoration-line: underline;
+  }
+}
+
+/* A control whose own focus style is too faint: shadcn's ring is --ring at 30–50%,
+   about 2:1 on white. The same outline as a plain link. */
+@utility focus-strong {
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 /* A green link: an action or a destination standing on its own ("Alla larm",

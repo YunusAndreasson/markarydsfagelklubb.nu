@@ -1,4 +1,6 @@
 ---
+import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import SiteLayout from "@/layouts/site.astro"
 
 // Prerendered: it renders at build time without the database, so the menu
@@ -9,8 +11,12 @@ import SiteLayout from "@/layouts/site.astro"
   <div class="flex max-w-[38rem] flex-col gap-5 md:ml-[7rem]">
     <h1 class="type-title">Sidan hittades inte</h1>
     <p class="type-ingress text-muted-foreground">
-      Adressen kan vara felstavad, eller så har sidan flyttats eller tagits bort.
+      Adressen kan vara felstavad, eller så har sidan flyttats. Sök efter det du letar efter:
     </p>
+    <form action="/sok" method="get" role="search" class="flex max-w-md gap-2">
+      <Input type="search" name="q" aria-label="Sök på webbplatsen" placeholder="En art, en plats, ett år …" className="focus-strong h-11 min-w-0 flex-1 text-base" />
+      <button type="submit" class={buttonVariants({ className: "focus-strong h-11 px-5 text-base" })}>Sök</button>
+    </form>
     <p class="flex flex-wrap gap-x-8">
       <a href="/" class="link flex min-h-11 items-center font-medium">Till startsidan</a>
       <a href="/artiklar" class="link flex min-h-11 items-center font-medium">Alla artiklar</a>

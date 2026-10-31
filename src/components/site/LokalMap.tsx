@@ -17,9 +17,10 @@ import type { LokalPin } from "@/lib/lokal"
  *
  * The register below the map is the accessible equivalent: every lokal, in
  * order, as ordinary links. So the markers are not focusable and the container
- * is `aria-hidden`, which keeps 61 tab stops out of the way of a keyboard user
- * and keeps a focusable element from sitting inside a hidden subtree. Change
- * one of those and you have to change the other.
+ * is `aria-hidden`, which keeps 61 tab stops out of the way of a keyboard user.
+ * Leaflet's own zoom and attribution links get `tabindex="-1"` below, since a
+ * focusable element must not sit inside a hidden subtree. Change one of those
+ * and you have to change the other.
  *
  * **Leaflet is imported inside the effect, not at the top of the file.** It
  * reads `window` while its module body runs, and an `.astro` page importing
@@ -72,14 +73,16 @@ export default function LokalMap({ pins, still = false }: Props) {
        * A dot, not a teardrop. Leaflet's default pin is a recognisable piece
        * of someone else's design; this is a 9 px circle in the site's own
        * tokens, with a paper-coloured ring so it stays visible over water,
-       * forest and road alike.
+       * forest and road alike. A lokal with recent larm is larger as well as
+       * green, so the difference isn't colour alone. The icon is wider than
+       * the dot to give a finger something to hit.
        */
       const dot = (pin: LokalPin): DivIcon =>
         L.divIcon({
           className: "lokal-pin",
           html: `<span class="lokal-pin__dot${pin.active ? " lokal-pin__dot--active" : ""}"></span>`,
-          iconSize: [13, 13],
-          iconAnchor: [6.5, 6.5],
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
         })
 
       map = L.map(element, {
@@ -140,6 +143,8 @@ export default function LokalMap({ pins, still = false }: Props) {
       } else {
         map.fitBounds(outline.getBounds(), { padding: FIT_PADDING, animate: false })
       }
+
+      for (const link of element.querySelectorAll("a")) link.tabIndex = -1
     })()
 
     return () => {

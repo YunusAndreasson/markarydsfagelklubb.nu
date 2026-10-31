@@ -17,7 +17,7 @@ import { formatDate, startOfStockholmDay } from "@/lib/stockholm-time"
 const UPCOMING_LIMIT = 40
 
 const { db } = Astro.locals
-if (!db) return new Response(null, { status: 503 })
+if (!db) return new Response(null, { status: 500 })
 
 // From the start of today, so a morning excursion is still in the programme
 // while the members are out on it.
@@ -26,7 +26,7 @@ const [navigation, events] = await Promise.all([
   loadNavigation(db),
   listUpcomingEvents(db, { limit: UPCOMING_LIMIT, from: startOfStockholmDay(now) }),
 ])
-if (!events) return new Response("Programmet kunde inte hämtas just nu.", { status: 503 })
+if (!events) return new Response(null, { status: 500 })
 
 const months = groupByMonth(events)
 const previousMonth = monthKey(shiftMonth(monthOf(now), -1))

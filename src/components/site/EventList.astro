@@ -1,5 +1,6 @@
 ---
 import { publicEventKindLabel } from "@/lib/event-kind"
+import { deadlineInstant, eventStatus, eventStatusLabel, signupOpen } from "@/lib/event-status"
 import type { EventSummary } from "@/lib/public-content"
 import { formatDate, isoDateTime } from "@/lib/stockholm-time"
 
@@ -12,6 +13,9 @@ import { formatDate, isoDateTime } from "@/lib/stockholm-time"
  * programme ("Lördag 21 februari – Ugglespaning") and how a member decides
  * whether they can come. And no year is printed: the month heading above the
  * list already carries it, so repeating it in the margin would be noise.
+ *
+ * The date is what a member scans for here, so unlike every other list it is set
+ * in ink, with "I dag" or "Pågår" under it when that is the answer.
  */
 
 interface Props {
@@ -22,20 +26,24 @@ interface Props {
 
 const { events, headingLevel = 2 } = Astro.props
 const Heading = headingLevel === 2 ? "h2" : "h3"
+const now = new Date()
 ---
 
 <ol class="flex flex-col gap-7">
   {
     events.map((event) => {
       const kind = publicEventKindLabel(event.kind)
+      const status = eventStatusLabel(eventStatus(event, now))
+      const deadline = event.signup_deadline && signupOpen(event, now) ? event.signup_deadline : null
       return (
         <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
           <p class="type-meta text-muted-foreground flex flex-wrap gap-x-2 md:flex-col md:gap-x-0 md:pt-[0.25rem]">
             <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-2 md:flex-col">
               <span>{formatDate(event.starts_at, "weekdayName")}</span>
-              <span>{formatDate(event.starts_at, "short")}</span>
+              <span class="text-foreground font-semibold">{formatDate(event.starts_at, "short")}</span>
               {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
             </time>
+            {status && <span class="text-primary font-semibold">{status}</span>}
           </p>
           <div class="flex flex-col gap-1">
             <Heading class="type-item">
@@ -50,6 +58,11 @@ const Heading = headingLevel === 2 ? "h2" : "h3"
               </p>
             )}
             {event.summary && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{event.summary}</p>}
+            {deadline && (
+              <p class="text-foreground leading-relaxed font-medium">
+                Anmälan senast {formatDate(deadlineInstant(deadline), "dayMonth")}
+              </p>
+            )}
           </div>
         </li>
       )

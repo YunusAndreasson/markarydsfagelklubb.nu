@@ -4,25 +4,23 @@ import { registerLetter } from "@/lib/lokal"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
 
 /**
- * The club's lokaler as a register (docs/design.md, "Lokaler").
+ * The club's lokaler as a register (docs/design.md, "Lokaler"): the index at the
+ * back of the book, and also the map's accessible equivalent, carrying every
+ * lokal as an ordinary link. In columns of the container's width, since a place
+ * name is short; one column of 61 was the page's longest scroll for the least
+ * text.
  *
- * The article list prints the year in the margin when it changes, so a scroll
- * back through time reads like turning notebook pages. A register of places
- * has no years, so the letter takes the margin instead and the list reads like
- * the index at the back of the book — which is also what it is: the map's
- * accessible equivalent, carrying every lokal as an ordinary link.
- *
- * A lokal nobody has larmed from prints no tally at all, the way a common
- * bird prints no rarity: the silence is the information.
+ * A lokal nobody has larmed from prints no tally at all, the way a common bird
+ * prints no rarity: the silence is the information.
  */
 
 interface Props {
   lokaler: LokalSummary[]
-  headingLevel?: 2 | 3
+  /** Alphabetical groups under their letter. Off for a list in another order. */
+  letters?: boolean
 }
 
-const { lokaler, headingLevel = 2 } = Astro.props
-const Heading = headingLevel === 2 ? "h2" : "h3"
+const { lokaler, letters = true } = Astro.props
 const thisYear = stockholmYear(new Date())
 
 /** "12 sep." this year, "12 sep. 2025" when it isn't — the site's rule everywhere. */
@@ -32,44 +30,47 @@ const lastSeen = (at: string): string => {
   return year === thisYear ? date : `${date} ${year}`
 }
 
-const letterLabel = (index: number): string | null => {
-  const lokal = lokaler[index]
-  if (!lokal) return null
-  const letter = registerLetter(lokal.name)
-  const previous = lokaler[index - 1]
-  return previous && registerLetter(previous.name) === letter ? null : letter
+const groups: { letter: string | null; lokaler: LokalSummary[] }[] = []
+for (const lokal of lokaler) {
+  const letter = letters ? registerLetter(lokal.name) : null
+  const last = groups.at(-1)
+  // Without letters each lokal is its own group, so the columns can break anywhere.
+  if (last && letter && last.letter === letter) last.lokaler.push(lokal)
+  else groups.push({ letter, lokaler: [lokal] })
 }
 ---
 
-<ol class="flex flex-col gap-5">
+<div class="columns-1 gap-x-10 sm:columns-2 lg:columns-3">
   {
-    lokaler.map((lokal, index) => {
-      const letter = letterLabel(index)
-      return (
-        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
-          {/* The letter is an anchor for the eye running down the margin. With
-              no margin — on a phone — a lone "A" above "Agghult/Traryd" tells
-              a reader nothing they can't see in the name, so it goes away. */}
-          <p class="type-meta text-muted-foreground hidden md:block md:pt-[0.2rem]" aria-hidden="true">
-            {letter}
+    groups.map((group) => (
+      <div class:list={["break-inside-avoid", group.letter ? "mb-6" : "mb-3"]}>
+        {/* With one column on a phone, a lone "A" above "Agghult/Traryd" tells a
+            reader nothing they can't see in the name, so it goes away. */}
+        {group.letter && (
+          <p class="type-meta text-muted-foreground mb-2 hidden sm:block" aria-hidden="true">
+            {group.letter}
           </p>
-          <div class="flex flex-col gap-0.5">
-            <Heading class="type-item">
-              <a href={`/lokaler/${lokal.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+        )}
+        <ul class="flex flex-col gap-3">
+          {group.lokaler.map((lokal) => (
+            <li class="flex flex-col gap-0.5 break-inside-avoid">
+              <a href={`/lokaler/${lokal.slug}`} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
                 {lokal.name}
               </a>
-            </Heading>
-            {lokal.alertCount > 0 && lokal.lastAlertAt && (
-              <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
-                <span>{lokal.alertCount} larm</span>
-                <span>
-                  senast <time datetime={isoDateTime(lokal.lastAlertAt)}>{lastSeen(lokal.lastAlertAt)}</time>
-                </span>
-              </p>
-            )}
-          </div>
-        </li>
-      )
-    })
+              {lokal.alertCount > 0 && lokal.lastAlertAt && (
+                /* On a phone the register is for finding a place; the tallies that
+                   matter are in the list of recent ones above it. */
+                <p class:list={["type-meta text-muted-foreground flex-wrap gap-x-3", letters ? "hidden sm:flex" : "flex"]}>
+                  <span>{lokal.alertCount} larm</span>
+                  <span>
+                    senast <time datetime={isoDateTime(lokal.lastAlertAt)}>{lastSeen(lokal.lastAlertAt)}</time>
+                  </span>
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
   }
-</ol>
+</div>

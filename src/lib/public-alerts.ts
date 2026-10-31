@@ -155,7 +155,10 @@ export type AlertPage = {
   newer: AlertCursor | null
 }
 
-const cursorOf = (alert: PublicAlert): AlertCursor => ({ sentAt: alert.sentAt, id: alert.id })
+const cursorOf = (alert: PublicAlert): AlertCursor => ({
+  observedAt: alert.observedAt,
+  id: alert.id,
+})
 
 /**
  * A page of larm, newest first. `before` pages towards older larm, `after`
@@ -180,7 +183,7 @@ export async function listPublicAlerts(options: {
   else if (after) query = query.or(newerThan(after))
 
   const { data, error } = await query
-    .order("sent_at", { ascending })
+    .order("observed_at", { ascending })
     .order("id", { ascending })
     .limit(limit + 1)
     .overrideTypes<AlertRow[], { merge: false }>()
@@ -303,7 +306,7 @@ export async function openAlertPhoto(
  * within 300 m, you have to have looked at all of them. Supabase caps a
  * response at 1000 rows and the club sends roughly 500 larm a year, so a plain
  * `.limit(1000)` would quietly start undercounting in about eighteen months.
- * {@link sweepAlerts} walks the same `(sent_at, id)` keyset the feed uses
+ * {@link sweepAlerts} walks the same `(observed_at, id)` keyset the feed uses
  * instead, and says so loudly if it ever hits the ceiling below.
  */
 
@@ -312,9 +315,9 @@ const MAX_SWEEP_PAGES = 10
 const SWEEP_PAGE_SIZE = 1000
 
 /** The lean row the map's tally needs: no species, no observer, no photo. */
-const LARM_POINT_SELECT = "id, sent_at, latitude, longitude, location_id"
+const LARM_POINT_SELECT = "id, sent_at, observed_at, latitude, longitude, location_id"
 
-type SweptPoint = LarmPoint & { id: string }
+type SweptPoint = LarmPoint & { id: string; observed_at: string | null }
 
 /** A box to narrow on server-side before the real circular test runs. */
 type SweepBox = { minLat: number; maxLat: number; minLng: number; maxLng: number }
@@ -336,7 +339,7 @@ type SweepOptions = {
  * `select` decides how much of each row comes back, so the map's tally reads
  * five columns and a lokal page reads the full {@link ALERT_SELECT}.
  */
-async function sweepAlerts<T extends { id: string; sent_at: string }>(
+async function sweepAlerts<T extends { id: string; sent_at: string; observed_at: string | null }>(
   backend: AlertsBackend,
   select: string,
   hidden: readonly string[],
@@ -359,7 +362,7 @@ async function sweepAlerts<T extends { id: string; sent_at: string }>(
     if (cursor) query = query.or(olderThan(cursor))
 
     const { data, error } = await query
-      .order("sent_at", { ascending: false })
+      .order("observed_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(SWEEP_PAGE_SIZE)
       .overrideTypes<T[], { merge: false }>()
@@ -377,7 +380,7 @@ async function sweepAlerts<T extends { id: string; sent_at: string }>(
 
     const last = data.at(-1)
     if (!last) return { ok: true, value: await withNamed() }
-    cursor = { sentAt: last.sent_at, id: last.id }
+    cursor = { observedAt: last.observed_at ?? last.sent_at, id: last.id }
   }
 
   console.error(
@@ -396,7 +399,7 @@ async function sweepAlerts<T extends { id: string; sent_at: string }>(
     let named = backend.db.from("alerts").select(select).eq("location_id", options.locationId)
     if (hidden.length > 0) named = named.not("id", "in", notIn(hidden))
     const { data, error } = await named
-      .order("sent_at", { ascending: false })
+      .order("observed_at", { ascending: false })
       .limit(SWEEP_PAGE_SIZE)
       .overrideTypes<T[], { merge: false }>()
     if (error) {
@@ -463,12 +466,10 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
   const lokal = findLokal(slug, lokaler)
   if (!lokal) return { ok: true, value: null }
 
-  const rows = await sweepAlerts<AlertRow & { id: string; sent_at: string }>(
-    backend.value,
-    ALERT_SELECT,
-    context.value.hidden,
-    { box: nearBox(lokal), locationId: lokal.id }
-  )
+  const rows = await sweepAlerts<AlertRow>(backend.value, ALERT_SELECT, context.value.hidden, {
+    box: nearBox(lokal),
+    locationId: lokal.id,
+  })
   if (!rows.ok) return failed
 
   const at: PublicAlert[] = []
@@ -478,6 +479,6 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
     if (relation === "elsewhere") continue
     ;(relation === "at" ? at : near).push(publish(row, context.value))
   }
-  const newestFirst = (a: PublicAlert, b: PublicAlert) => (a.sentAt < b.sentAt ? 1 : -1)
+  const newestFirst = (a: PublicAlert, b: PublicAlert) => (a.observedAt < b.observedAt ? 1 : -1)
   return { ok: true, value: { lokal, at: at.sort(newestFirst), near: near.sort(newestFirst) } }
 }

@@ -1,0 +1,19 @@
+---
+import SiteLayout from "@/layouts/site.astro"
+
+// Prerendered, like the 404: when the database is what failed, this page can't
+// depend on it. Astro serves it for any route that answers 500.
+---
+
+<SiteLayout title="Något gick fel" menu={[]}>
+  <div class="flex max-w-[38rem] flex-col gap-5 md:ml-[7rem]">
+    <h1 class="type-title">Sidan kunde inte hämtas just nu</h1>
+    <p class="type-ingress text-muted-foreground">
+      Felet ligger hos oss. Ladda om sidan om en stund. Larmen finns också i klubbens app.
+    </p>
+    <p class="flex flex-wrap gap-x-8">
+      <a href="/" class="link flex min-h-11 items-center font-medium">Till startsidan</a>
+      <a href="mailto:webmaster@markarydsfagelklubb.nu" class="link flex min-h-11 items-center font-medium">Kontakta webbansvarig</a>
+    </p>
+  </div>
+</SiteLayout>

@@ -89,3 +89,16 @@ describe("wpRedirect", () => {
     expect(wpRedirect("/%E0%A4%A", none)).toBeNull()
   })
 })
+
+describe("WordPress date archives", () => {
+  const none = new URLSearchParams()
+  it("go to the year's archive", () => {
+    expect(wpRedirect("/2024/05/", none)).toBe("/artiklar/ar/2024")
+    expect(wpRedirect("/2024/", none)).toBe("/artiklar/ar/2024")
+    expect(wpRedirect("/2019/03/14", none)).toBe("/artiklar/ar/2019")
+  })
+  it("leave what only looks like one alone", () => {
+    expect(wpRedirect("/1234", none)).toBeNull()
+    expect(wpRedirect("/2024/maj", none)).toBeNull()
+  })
+})

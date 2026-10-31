@@ -20,7 +20,7 @@ const id = Astro.params.id ?? ""
 if (!db || !UUID.test(id)) return new Response(null, { status: 404 })
 
 const [navigation, alert] = await Promise.all([loadNavigation(db), loadPublicAlert(id)])
-if (!alert.ok) return new Response("Larmet kunde inte hämtas just nu.", { status: 503 })
+if (!alert.ok) return new Response(null, { status: 500 })
 if (!alert.value) return new Response(null, { status: 404 })
 
 const larm = alert.value
@@ -55,7 +55,7 @@ const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` :
     <article class="flex flex-col gap-8">
       <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
         <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
-          <a href="/larm" class="hover:text-foreground underline-offset-4 hover:underline">Larm</a>
+          <a href="/larm" class="crumb">Larm</a>
         </nav>
 
         {/* The scientific name belongs to the species, so it sits under it, as
@@ -117,9 +117,12 @@ const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` :
     {
       (prints.length > 0 || plain.length > 0) && (
         <section aria-labelledby="fler" class="flex max-w-[45rem] flex-col gap-6">
-          <SectionHeading id="fler" href="/larm" link="Alla larm">
-            Fler larm
-          </SectionHeading>
+          {/* Over a list its heading starts where the text does; over the prints, with them. */}
+          <div class:list={[prints.length === 0 && "md:pl-[7rem]"]}>
+            <SectionHeading id="fler" href="/larm" link="Alla larm">
+              Fler larm
+            </SectionHeading>
+          </div>
           {prints.length > 0 ? (
             <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 64vw" />
           ) : (

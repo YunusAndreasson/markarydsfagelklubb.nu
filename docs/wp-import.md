@@ -40,6 +40,12 @@ title. Eight images were dropped because their originals are gone (one 404 on
 WordPress, seven on hotlink hosts). Galleries (6 posts) become a plain run of
 images. The full report is `.wp-import/full-run.txt`.
 
+**Newest post added 2026-10-31** (WP 10340, "Smålandsrallyt 2026"): `--limit 1 --files`.
+It has no image of its own, so at the user's request it shows Programändring's photo
+(`SHARED_COVERS` in `index.ts`, which a re-run keeps). **The cache hides new posts:** set
+aside `.wp-import/cache/*posts_per_page*` before a run that should see them, and before
+`pnpm wp-import:redirects`.
+
 **The pilot ran first, the same day**: the migration is applied, the dummy articles
 and their categories are deleted (the dummy pages and events stay until real
 ones replace them, since they are the whole menu and the whole kalender), and

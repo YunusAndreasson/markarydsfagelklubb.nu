@@ -27,6 +27,8 @@ export const LIMITS = {
   author: 100,
   description: 300,
   place: 120,
+  contactName: 100,
+  contactPhone: 30,
 } as const
 
 export const MESSAGES = {
@@ -40,6 +42,9 @@ export const MESSAGES = {
   excerptTooLong: `Ingressen får vara högst ${LIMITS.excerpt} tecken.`,
   authorTooLong: `Namnet får vara högst ${LIMITS.author} tecken.`,
   descriptionTooLong: `Beskrivningen får vara högst ${LIMITS.description} tecken.`,
+  contactNameTooLong: `Namnet får vara högst ${LIMITS.contactName} tecken.`,
+  contactPhoneInvalid: "Skriv telefonnumret med siffror, till exempel 070-174 06 05.",
+  deadlineInvalid: "Ange ett datum, till exempel 2026-11-24.",
   publishAtInvalid: "Ange datum och tid, till exempel 2026-09-19 10:00.",
   placeTooLong: `Platsen får vara högst ${LIMITS.place} tecken.`,
   startMissing: "Ange när det börjar.",
@@ -170,6 +175,10 @@ export type EventForm = {
   place: string
   kind: EventKind
   registration_url: string | null
+  contact_name: string
+  contact_phone: string
+  /** "2026-11-24": a day, as the column stores it. */
+  signup_deadline: string | null
   starts_at: Date
   ends_at: Date | null
   all_day: boolean
@@ -212,6 +221,20 @@ export function parseEventForm(form: FormData): Parsed<EventForm> {
     errors.registration_url = MESSAGES.linkUrlInvalid
   }
 
+  const contactName = text(form, "contact_name")
+  checkLength(contactName, LIMITS.contactName, "contact_name", MESSAGES.contactNameTooLong, errors)
+  const contactPhone = text(form, "contact_phone")
+  if (
+    contactPhone &&
+    (contactPhone.length > LIMITS.contactPhone || !/^\+?[\d\s–-]{5,}$/.test(contactPhone))
+  ) {
+    errors.contact_phone = MESSAGES.contactPhoneInvalid
+  }
+  const deadline = text(form, "signup_deadline")
+  if (deadline && !parseStockholmInputValue(`${deadline}T12:00`)) {
+    errors.signup_deadline = MESSAGES.deadlineInvalid
+  }
+
   const allDay = form.get("all_day") === "on"
   // An all-day event keeps whatever hour was left in the form out of the
   // database: the day is the whole fact.
@@ -242,6 +265,9 @@ export function parseEventForm(form: FormData): Parsed<EventForm> {
     place,
     kind,
     registration_url: registrationUrl || null,
+    contact_name: contactName,
+    contact_phone: contactPhone,
+    signup_deadline: deadline || null,
     starts_at: atDay(start),
     ends_at: end ? atDay(end) : null,
     all_day: allDay,

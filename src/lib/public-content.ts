@@ -1,8 +1,16 @@
 import { type Cursor, newerThan, olderThan } from "./keyset"
 import type { MediaFormat, MediaImage } from "./media"
 import { buildMenu, buildPageTree, type MenuEntry, type PageRow, type PageTree } from "./page-tree"
+import { searchFilter } from "./search"
+import { startOfStockholmMonth, stockholmYear } from "./stockholm-time"
 import type { SupabasePublicClient } from "./supabase-public"
-import { pickTeaserImage, type TeaserImage, teaserText } from "./teaser"
+import {
+  type LeadOpening,
+  leadOpening,
+  pickTeaserImage,
+  type TeaserImage,
+  teaserText,
+} from "./teaser"
 
 /**
  * What public pages read, as an anonymous visitor would (`locals.db`). The
@@ -72,6 +80,8 @@ export type ArticleTeaser = ArticleSummary & {
   image: TeaserImage | null
   /** The hand-written excerpt, or the body's opening line. Plain text. */
   standfirst: string
+  /** The opening the home page's lead shows. */
+  opening: LeadOpening
 }
 
 /**
@@ -88,6 +98,7 @@ function toTeaser({ body_html, ...row }: SummaryRow & { body_html: string }): Ar
     ...summary,
     image: pickTeaserImage(summary.cover, body_html),
     standfirst: summary.excerpt || teaserText(body_html, summary.title),
+    opening: leadOpening(body_html, summary.title),
   }
 }
 
@@ -110,13 +121,28 @@ const cursorOf = (article: ArticleSummary): Cursor => ({
  */
 export async function listPublishedArticles(
   db: SupabasePublicClient,
-  options: { limit: number; categoryId?: number; before?: Cursor | null; after?: Cursor | null }
+  options: {
+    limit: number
+    categoryId?: number
+    /** Only this calendar year, in Stockholm time. */
+    year?: number
+    /** A normalised query (`lib/search.ts`). */
+    search?: string
+    before?: Cursor | null
+    after?: Cursor | null
+  }
 ): Promise<ArticlePage | null> {
-  const { limit, categoryId, before, after } = options
+  const { limit, categoryId, year, search, before, after } = options
   // Paging back towards newer articles reads ascending, then flips.
   const ascending = Boolean(after && !before)
   let query = db.from("articles").select(TEASER_COLUMNS)
   if (categoryId !== undefined) query = query.eq("category_id", categoryId)
+  if (year !== undefined) {
+    query = query
+      .gte("published_at", startOfStockholmMonth(year, 1).toISOString())
+      .lt("published_at", startOfStockholmMonth(year + 1, 1).toISOString())
+  }
+  if (search) query = query.or(searchFilter(search))
   if (before) query = query.or(olderThan(before))
   else if (after) query = query.or(newerThan(after))
 
@@ -140,6 +166,37 @@ export async function listPublishedArticles(
     older: (ascending ? Boolean(after) : hasMore) && last ? cursorOf(last) : null,
     newer: (ascending ? hasMore : Boolean(before)) && first ? cursorOf(first) : null,
   }
+}
+
+/** Every year with articles, newest first, for the archive. Empty on a failed read. */
+export async function listArticleYears(db: SupabasePublicClient, now: Date): Promise<number[]> {
+  const { data, error } = await db
+    .from("articles")
+    .select("published_at")
+    .order("published_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (error) console.error(`mafk-web: article years failed — ${error.message}`)
+  if (error || !data?.published_at) return []
+  const newest = stockholmYear(now)
+  const oldest = stockholmYear(data.published_at)
+  return Array.from({ length: newest - oldest + 1 }, (_, index) => newest - index)
+}
+
+/** Pages matching a normalised query (`lib/search.ts`), for /sok. Null on a failed read. */
+export async function searchPages(db: SupabasePublicClient, search: string, limit: number) {
+  const { data, error } = await db
+    .from("pages")
+    .select("id, title, description")
+    .eq("kind", "page")
+    .or(searchFilter(search))
+    .order("title")
+    .limit(limit)
+  if (error) {
+    console.error(`mafk-web: search pages failed — ${error.message}`)
+    return null
+  }
+  return data
 }
 
 export type FullArticle = ArticleSummary & { body_html: string; category_id: number | null }
@@ -176,9 +233,13 @@ export type EventSummary = {
   starts_at: string
   ends_at: string | null
   all_day: boolean
+  contact_name: string
+  contact_phone: string
+  signup_deadline: string | null
 }
 
-const EVENT_COLUMNS = "id, slug, title, summary, place, kind, starts_at, ends_at, all_day"
+const EVENT_COLUMNS =
+  "id, slug, title, summary, place, kind, starts_at, ends_at, all_day, contact_name, contact_phone, signup_deadline"
 
 /**
  * The programme, soonest first. "Upcoming" counts an event as upcoming until
@@ -192,7 +253,8 @@ export async function listUpcomingEvents(
   const { data, error } = await db
     .from("events")
     .select(EVENT_COLUMNS)
-    .gte("starts_at", options.from.toISOString())
+    // Or still on: the second day of a two-day rally belongs in the programme.
+    .or(`starts_at.gte."${options.from.toISOString()}",ends_at.gte."${options.from.toISOString()}"`)
     .order("starts_at")
     .order("id")
     .limit(options.limit)

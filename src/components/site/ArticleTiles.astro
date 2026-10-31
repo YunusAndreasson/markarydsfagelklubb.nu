@@ -47,13 +47,13 @@ const thisYear = stockholmYear(new Date())
             </a>
           )}
           <div class="flex flex-col gap-1.5">
-            <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
+            <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3 items-center">
               <time datetime={isoDateTime(article.published_at)}>
                 {formatDate(article.published_at, "short")}
                 {year !== thisYear && ` ${year}`}
               </time>
               {showCategory && article.category && (
-                <a href={`/artiklar/kategori/${article.category.slug}`} class="hover:text-foreground underline-offset-4 hover:underline">
+                <a href={`/artiklar/kategori/${article.category.slug}`} class="crumb">
                   {article.category.name}
                 </a>
               )}

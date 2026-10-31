@@ -52,5 +52,9 @@ export function wpRedirect(pathname: string, searchParams: URLSearchParams): str
     return id && /^\d+$/.test(id) ? settle(IDS[id]) : null
   }
   const path = normaliseOldPath(pathname)
-  return settle(PATHS[path] ?? MOVED_PAGES[path])
+  const mapped = settle(PATHS[path] ?? MOVED_PAGES[path])
+  if (mapped) return mapped
+  // WordPress's date archives weren't posts, so the map has no keys for them.
+  const archive = /^\/((?:19|20)\d{2})(?:\/\d{1,2}){0,2}$/.exec(path)
+  return archive ? `/artiklar/ar/${archive[1]}` : null
 }

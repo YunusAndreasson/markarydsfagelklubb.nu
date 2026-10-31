@@ -9,9 +9,10 @@
  * sized here, not at request time.
  */
 import logo from "@/assets/logo.webp"
+import AppLinks from "@/components/site/AppLinks.astro"
 import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import BaseLayout from "@/layouts/base.astro"
-import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/app-stores"
 import { FALLBACK_MENU, isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
 import { cn } from "@/lib/utils"
 
@@ -30,13 +31,7 @@ interface Props {
 }
 
 const SITE_NAME = "Markaryds Fågelklubb"
-/**
- * Two lines beside the emblem, broken where the phrase breaks. On one line it
- * made the left column 392 px, and the menu and "Bli medlem" (592 px) no
- * longer fit the 976 px row, so "Klubben" wrapped under the menu.
- */
-const TAGLINE_LINES = ["Fågelskådning och naturliv", "i Markaryds kommun"]
-const TAGLINE = TAGLINE_LINES.join(" ")
+const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
 /**
  * The header's one button (docs/design.md, "Klubben"): joining is what the
  * section is for, so it is the one place the public site spends a filled
@@ -68,8 +63,6 @@ const footerGroups = [
     title: "Appen",
     links: [
       { label: "Larm", href: "/larm" },
-      { label: "App Store", href: APP_STORE_URL },
-      { label: "Google Play", href: GOOGLE_PLAY_URL },
       {
         label: "Integritetspolicy",
         href: "/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen",
@@ -97,17 +90,12 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
       short page instead of halfway up it. */}
   <div class="flex min-h-svh flex-col">
     <header class="relative border-b">
-      <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-4 sm:px-6 md:items-end md:py-7">
-        <div class="flex items-center gap-3 lg:gap-4">
+      <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-3 sm:px-6">
+        <div class="flex items-center gap-3">
           <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
-            <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12 lg:size-16" />
+            <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12" />
           </a>
-          <div class="flex flex-col gap-1">
-            <a href="/" class="text-lg font-semibold tracking-tight md:text-xl">{SITE_NAME}</a>
-            <p class="text-muted-foreground hidden text-sm lg:block">
-              {TAGLINE_LINES.map((line) => <span class="block">{line}</span>)}
-            </p>
-          </div>
+          <a href="/" class="font-display text-xl leading-tight font-bold md:text-[1.375rem]">{SITE_NAME}</a>
         </div>
 
         <div class="flex items-center gap-3 lg:gap-8">
@@ -126,12 +114,21 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
                       </a>
                     </li>
                   ))}
+                  <li>
+                    <a
+                      href="/sok"
+                      aria-current={pathname === "/sok" ? "page" : undefined}
+                      class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+                    >
+                      Sök
+                    </a>
+                  </li>
                 </ul>
               </nav>
             )
           }
 
-          <a href={JOIN_PATH} class={cn(buttonVariants(), "hidden h-11 px-4 text-base md:inline-flex")}>Bli medlem</a>
+          <a href={JOIN_PATH} class={cn(buttonVariants(), "focus-strong hidden h-11 px-4 text-base md:inline-flex")}>Bli medlem</a>
 
           {
             menu.length > 0 && (
@@ -141,7 +138,11 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
                   <span class="hidden group-open:inline">Stäng</span>
                 </summary>
                 <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
-                  <a href={JOIN_PATH} class={cn(buttonVariants(), "mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
+                  <a href={JOIN_PATH} class={cn(buttonVariants(), "focus-strong mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
+                  <form action="/sok" method="get" role="search" class="mb-2 flex gap-2">
+                    <Input type="search" name="q" aria-label="Sök på webbplatsen" placeholder="En art, en plats, ett år …" className="focus-strong h-12 min-w-0 flex-1 text-base" />
+                    <button type="submit" class={buttonVariants({ variant: "outline", className: "focus-strong h-12 px-4 text-base" })}>Sök</button>
+                  </form>
                   <ul class="flex flex-col">
                     {menu.map((entry) => (
                       <li class="border-b last:border-b-0">
@@ -170,11 +171,15 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
       </div>
     </header>
 
-    <main id="innehall" class="mx-auto w-full max-w-[64rem] flex-1 px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
-      <slot />
+    <main id="innehall" class="flex flex-1 flex-col">
+      {/* Full width above the container: the home page's day list. */}
+      <slot name="band" />
+      <div class="mx-auto w-full max-w-[64rem] flex-1 px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
+        <slot />
+      </div>
     </main>
 
-    <footer class="bg-muted">
+    <footer class="surface-gran">
       <div class="mx-auto grid w-full max-w-[64rem] grid-cols-2 gap-x-6 gap-y-10 px-4 pt-12 pb-14 sm:gap-x-8 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-x-20 md:pt-14 md:pb-16">
         <div class="col-span-2 flex items-start gap-3 md:col-span-1">
           <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" class="size-10 shrink-0" />
@@ -186,6 +191,7 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
                 webmaster@markarydsfagelklubb.nu
               </a>
             </p>
+            <AppLinks sentence={false} class="mt-2" />
           </div>
         </div>
         {

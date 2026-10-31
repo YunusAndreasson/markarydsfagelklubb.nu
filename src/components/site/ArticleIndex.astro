@@ -11,9 +11,20 @@ interface Props {
   /** The category being shown, or null for all. */
   currentCategory: string | null
   page: ArticlePage
+  /** The archive at the foot: every year with articles. */
+  years?: number[]
+  currentYear?: number
 }
 
-const { heading, basePath, categories, currentCategory, page } = Astro.props
+const {
+  heading,
+  basePath,
+  categories,
+  currentCategory,
+  page,
+  years = [],
+  currentYear,
+} = Astro.props
 const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0]) =>
   `${basePath}?${new URLSearchParams({ [param]: encodeCursor(cursor) })}`
 const tab = (active: boolean) => (active ? "page" : undefined)
@@ -68,6 +79,27 @@ const tab = (active: boolean) => (active ? "page" : undefined)
             Äldre artiklar
           </a>
         )}
+      </nav>
+    )
+  }
+
+  {
+    years.length > 0 && (
+      <nav aria-labelledby="arkiv" class="flex flex-col gap-2 md:pl-[7rem]">
+        <h2 id="arkiv" class="type-section">Arkiv</h2>
+        <ul class="flex flex-wrap gap-x-5">
+          {years.map((year) => (
+            <li>
+              <a
+                href={`/artiklar/ar/${year}`}
+                aria-current={tab(currentYear === year)}
+                class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center tabular-nums underline-offset-[0.5em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+              >
+                {year}
+              </a>
+            </li>
+          ))}
+        </ul>
       </nav>
     )
   }

@@ -1,0 +1,50 @@
+---
+export const prerender = false
+
+import ArticleIndex from "@/components/site/ArticleIndex.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { decodeCursor } from "@/lib/keyset"
+import {
+  listArticleYears,
+  listPublicCategories,
+  listPublishedArticles,
+  loadNavigation,
+} from "@/lib/public-content"
+
+/** One year of the articles: what WordPress's date archives answered. */
+
+const PAGE_SIZE = 20
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+
+const year = Number(Astro.params.year)
+const now = new Date()
+const [navigation, categories, years] = await Promise.all([
+  loadNavigation(db),
+  listPublicCategories(db),
+  listArticleYears(db, now),
+])
+if (!years.includes(year)) return new Response(null, { status: 404 })
+
+const params = Astro.url.searchParams
+const page = await listPublishedArticles(db, {
+  limit: PAGE_SIZE,
+  year,
+  before: decodeCursor(params.get("fore")),
+  after: decodeCursor(params.get("efter")),
+})
+if (!page) return new Response(null, { status: 500 })
+---
+
+<SiteLayout title={`Artiklar ${year}`} description={`Markaryds Fågelklubbs artiklar från ${year}.`} menu={navigation.menu}>
+  <ArticleIndex
+    heading={`Artiklar ${year}`}
+    basePath={`/artiklar/ar/${year}`}
+    categories={categories}
+    currentCategory={null}
+    page={page}
+    years={years}
+    currentYear={year}
+  />
+</SiteLayout>

@@ -54,6 +54,13 @@ const { values } = parseArgs({
   },
 })
 
+/**
+ * Posts with no image of their own that the club chose to show under another post's
+ * photo, as WordPress post id to `media.id`. Here so a re-run before the cutover
+ * doesn't clear the choice. 10340, today's rally report, uses Programändring's.
+ */
+const SHARED_COVERS: Readonly<Record<number, number>> = { 10340: 10 }
+
 const WORK_DIR = ".wp-import"
 const dryRun = values["dry-run"] === true
 const OUT_DIR = join(WORK_DIR, dryRun ? "dry-run" : "run")
@@ -245,7 +252,7 @@ for (const post of posts) {
           body_html: html,
           category_id:
             category.kind === "category" ? (categoryIds.get(category.slug) ?? null) : null,
-          cover_media_id: coverMediaId,
+          cover_media_id: coverMediaId ?? SHARED_COVERS[post.id] ?? null,
           author_name: author,
           published_at: publishedAt.toISOString(),
         })

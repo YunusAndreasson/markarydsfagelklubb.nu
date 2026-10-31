@@ -183,6 +183,36 @@ export function dayLabel(value: Date | string, now: Date = new Date()): string {
   return year === stockholmYear(now) ? short : `${short} ${year}`
 }
 
+/**
+ * A day as a heading over a list: "I dag", "I går", else "Fredag 30 oktober",
+ * with the year when it isn't this one.
+ */
+export function dayHeading(value: Date | string, now: Date = new Date()): string {
+  const label = dayLabel(value, now)
+  if (label === "i dag" || label === "i går") return label === "i dag" ? "I dag" : "I går"
+  const weekday = formatDate(value, "weekday")
+  const heading = weekday.charAt(0).toUpperCase() + weekday.slice(1)
+  return stockholmYear(value) === stockholmYear(now)
+    ? heading
+    : `${heading} ${stockholmYear(value)}`
+}
+
+/** Runs of items on the same Stockholm day, in the order they came. */
+export function groupByDay<T>(
+  items: readonly T[],
+  dateOf: (item: T) => Date | string
+): { day: string; items: T[] }[] {
+  const groups: { key: number; day: string; items: T[] }[] = []
+  for (const item of items) {
+    const date = dateOf(item)
+    const key = startOfStockholmDay(date).getTime()
+    const last = groups.at(-1)
+    if (last?.key === key) last.items.push(item)
+    else groups.push({ key, day: new Date(date).toISOString(), items: [item] })
+  }
+  return groups.map(({ day, items: dayItems }) => ({ day, items: dayItems }))
+}
+
 /** The year in Stockholm: a post at 00:30 on New Year's Day belongs to the new year. */
 export function stockholmYear(value: Date | string): number {
   return stockholmParts(toDate(value)).year

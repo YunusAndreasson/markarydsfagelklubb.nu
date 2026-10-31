@@ -1,4 +1,5 @@
 ---
+import { renderBody } from "@/lib/article-body"
 import { mediaFallbackUrl, mediaSrcset } from "@/lib/media"
 import type { FullArticle } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
@@ -12,20 +13,20 @@ const { article } = Astro.props
 const published = article.published_at
 ---
 
-{/* One grid, so the date and byline sit in the margin beside whatever follows
-    the title (the excerpt, the cover or the text) instead of taking a row of
-    their own: as a header row of their own they opened a 120 px gap between
-    the title and the text on every article. The margin column is placed
-    explicitly; everything else flows down the reading column. */}
+{/* One grid, so the date and byline sit in the margin beside the text instead
+    of taking a row of their own: as a header row of their own they opened a
+    120 px gap between the title and the text on every article. A cover is the
+    one thing that takes the margin's width too, a print across the whole grid,
+    and the margin and the text start under it. */}
 <article class="grid gap-y-8 md:grid-cols-[7rem_minmax(0,38rem)]">
   <header class="flex flex-col gap-4 md:col-start-2">
     <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-      <a href="/artiklar" class="hover:text-foreground underline-offset-4 hover:underline">Artiklar</a>
+      <a href="/artiklar" class="crumb">Artiklar</a>
       {
         article.category && (
           <>
             <span aria-hidden="true"> / </span>
-            <a href={`/artiklar/kategori/${article.category.slug}`} class="hover:text-foreground underline-offset-4 hover:underline">
+            <a href={`/artiklar/kategori/${article.category.slug}`} class="crumb">
               {article.category.name}
             </a>
           </>
@@ -33,9 +34,25 @@ const published = article.published_at
       }
     </nav>
     <h1 class="type-title">{article.title}</h1>
+    {article.excerpt && <p class="type-ingress text-muted-foreground">{article.excerpt}</p>}
   </header>
 
-  <div class="type-meta text-muted-foreground -mt-4 flex flex-col md:col-start-1 md:row-[2/span_2] md:mt-0 md:pt-1">
+  {
+    article.cover && (
+      <img
+        src={mediaFallbackUrl(article.cover)}
+        srcset={mediaSrcset(article.cover)}
+        sizes="(min-width: 48rem) 45rem, 100vw"
+        width={article.cover.width}
+        height={article.cover.height}
+        alt={article.cover.alt}
+        fetchpriority="high"
+        class="h-auto w-full rounded-[4px] md:col-span-2"
+      />
+    )
+  }
+
+  <div class:list={["type-meta text-muted-foreground -mt-4 flex flex-col md:col-start-1 md:mt-0 md:pt-1", article.cover ? "md:row-start-3" : "md:row-start-2"]}>
     {
       published && (
         <time datetime={isoDateTime(published)} class="flex flex-wrap gap-x-1 md:flex-col">
@@ -48,22 +65,5 @@ const published = article.published_at
     {article.author_name && <span class="mt-1">Text: {article.author_name}</span>}
   </div>
 
-  {article.excerpt && <p class="type-ingress text-muted-foreground md:col-start-2">{article.excerpt}</p>}
-
-  {
-    article.cover && (
-      <img
-        src={mediaFallbackUrl(article.cover)}
-        srcset={mediaSrcset(article.cover)}
-        sizes="(min-width: 48rem) 38rem, 100vw"
-        width={article.cover.width}
-        height={article.cover.height}
-        alt={article.cover.alt}
-        fetchpriority="high"
-        class="h-auto w-full rounded-[4px] md:col-start-2"
-      />
-    )
-  }
-
-  <div class="content md:col-start-2" set:html={article.body_html} />
+  <div class:list={["content md:col-start-2", article.cover ? "md:row-start-3" : "md:row-start-2"]} set:html={renderBody(article.body_html)} />
 </article>

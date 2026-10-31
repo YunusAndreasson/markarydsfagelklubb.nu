@@ -1,51 +1,62 @@
 ---
 export const prerender = false
 
-import AlertList from "@/components/site/AlertList.astro"
 import AppLinks from "@/components/site/AppLinks.astro"
 import ArticleList from "@/components/site/ArticleList.astro"
 import ArticleTiles from "@/components/site/ArticleTiles.astro"
-import LarmRail from "@/components/site/LarmRail.astro"
+import LarmBand from "@/components/site/LarmBand.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { pickLead, splitFeatured, splitLarm } from "@/lib/front-page"
+import { linkPhones } from "@/lib/article-body"
+import { eventStatus, eventStatusLabel } from "@/lib/event-status"
+import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { listPublicAlerts } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
 import { formatDate, isoDateTime, startOfStockholmDay } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
 
-// The club's magazine (docs/design.md, "Tidskriften"): the newest article as
-// the lead, on a wide photo when it has one, with the programme beside it, then the newest larm photos as a rail,
-// then three more articles with their photos and the rest as a dated list.
-// front-page.ts decides what goes where; this file only lays it out.
+// The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften"): one
+// sentence and the newest larm photos on the spruce band, the page's one block of larm;
+// the newest article as the lead, on a wide photo when it has one, with the
+// programme beside it; then three more articles with their photos and the rest as a
+// dated list. front-page.ts decides what goes where; this file only lays it out.
+
+// One read serves the day list and the rail. Far above the
+// busiest day so far (43 larm), and it reaches back past a day of photo-less
+// reports for the rail.
+const LARM_WINDOW = 200
 const { db } = Astro.locals
-if (!db) return new Response(null, { status: 503 })
+if (!db) return new Response(null, { status: 500 })
 
 const now = new Date()
 const [navigation, page, larm, upcoming] = await Promise.all([
   loadNavigation(db),
   listPublishedArticles(db, { limit: 10 }),
-  listPublicAlerts({ limit: 12 }),
+  listPublicAlerts({ limit: LARM_WINDOW }),
   listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
 ])
 const { lead, rest } = pickLead(page?.articles ?? [])
 const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
-const { tiles, list } = splitFeatured(rest, 3)
+const { tiles, list } = splitFeatured(withoutPhoto(rest, leadImage?.src), 3)
 // A larm failure costs the section, never the home page.
-const { prints, plain } = splitLarm(larm.ok ? larm.value.alerts : [], 5)
+const alerts = larm.ok ? larm.value.alerts : []
+const dayList = buildDayList(alerts, now)
+const prints = latestPrints(alerts, 5, now)
 // The same for the programme: nothing at all when it is empty.
 const events = upcoming ?? []
 ---
 
 <SiteLayout menu={navigation.menu} image={leadImage?.src}>
+  <LarmBand slot="band" list={dayList} prints={prints} now={now} />
+
   <h1 class="sr-only">Markaryds Fågelklubb</h1>
 
   {/* The sponsors, twice, one shown at a time (docs/design.md, "Sponsorer"):
       from md up a credit line over the lead, as a magazine credits a sponsor
       beside its masthead; on a phone, where it would push the lead photo off
       the first screen, after the lead and the programme. */}
-  <Sponsors class="hidden md:-mt-8 md:mb-2 md:flex md:justify-end" />
+  <Sponsors class="hidden md:-mt-8 md:mb-4 md:flex md:justify-end" />
 
   {
     !lead && (
@@ -69,7 +80,7 @@ const events = upcoming ?? []
             height={leadImage.height}
             alt=""
             fetchpriority="high"
-            class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-2/1"
+            class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-3/1"
           />
         </a>
       )
@@ -78,13 +89,13 @@ const events = upcoming ?? []
     {
       lead && (
         <article class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,38rem)] lg:col-span-2">
-          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3 md:flex-col md:gap-y-1.5 md:pt-[0.9rem]">
+          <p class="type-meta text-muted-foreground flex flex-wrap items-center gap-x-3 md:flex-col md:items-start md:gap-y-1.5 md:pt-[0.9rem]">
             <time datetime={isoDateTime(lead.published_at)} class="flex flex-wrap gap-x-1 md:flex-col">
               <span>{formatDate(lead.published_at, "weekdayName")}</span>
               <span>{formatDate(lead.published_at, "dayMonth")}</span>
             </time>
             {lead.category && (
-              <a href={`/artiklar/kategori/${lead.category.slug}`} class="hover:text-foreground underline-offset-4 hover:underline">
+              <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
                 {lead.category.name}
               </a>
             )}
@@ -95,58 +106,56 @@ const events = upcoming ?? []
                 {lead.title}
               </a>
             </h2>
-            {lead.standfirst && <p class="type-ingress text-muted-foreground line-clamp-4 max-w-[38rem]">{lead.standfirst}</p>}
+            {lead.excerpt && <p class="type-ingress text-muted-foreground max-w-[38rem]">{lead.excerpt}</p>}
+            {lead.opening.paragraphs.length > 0 && (
+              <div class="content" set:html={linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join(""))} />
+            )}
+            {lead.opening.more && (
+              <a href={`/artiklar/${lead.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
+                Läs hela artikeln
+              </a>
+            )}
           </div>
         </article>
       )
     }
 
-    {
-      events.length > 0 && (
-        <section aria-labelledby="narmast" class="flex flex-col gap-3 md:pl-[7rem] lg:col-start-3 lg:pt-[0.9rem] lg:pl-10">
-          <h2 id="narmast" class="type-meta text-muted-foreground">Närmast i programmet</h2>
-          <ol class="flex flex-col gap-3">
-            {events.map((event) => (
-              <li class="flex flex-col">
-                <time datetime={isoDateTime(event.starts_at)} class="type-meta text-muted-foreground">
-                  {formatDate(event.starts_at, "weekday")}
-                  {!event.all_day && ` ${formatDate(event.starts_at, "clock")}`}
-                </time>
-                <a href={`/kalender/${event.slug}`} class="decoration-primary leading-snug font-medium text-pretty underline-offset-4 hover:underline">
-                  {event.title}
-                </a>
-              </li>
-            ))}
-          </ol>
-          <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
-            Hela programmet
-          </a>
-        </section>
-      )
-    }
+    {/* The rail beside the headline: what members use, quieter than what they read. */}
+    <div class="flex flex-col gap-8 md:pl-[7rem] lg:col-start-3 lg:pt-[0.9rem] lg:pl-10">
+      {
+        events.length > 0 && (
+          <section aria-labelledby="narmast" class="flex flex-col gap-3">
+            <h2 id="narmast" class="type-meta text-muted-foreground">Närmast i programmet</h2>
+            <ol class="flex flex-col gap-3">
+              {events.map((event) => {
+                const status = eventStatusLabel(eventStatus(event, now))
+                return (
+                  <li class="flex flex-col">
+                    <time datetime={isoDateTime(event.starts_at)} class:list={["type-meta", status ? "text-primary font-semibold" : "text-muted-foreground"]}>
+                      {status ?? formatDate(event.starts_at, "weekday")}
+                      {!status && !event.all_day && ` ${formatDate(event.starts_at, "clock")}`}
+                    </time>
+                    <a href={`/kalender/${event.slug}`} class="decoration-primary inline-block py-0.5 leading-snug font-medium text-pretty underline-offset-4 hover:underline">
+                      {event.title}
+                    </a>
+                  </li>
+                )
+              })}
+            </ol>
+            <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
+              Hela programmet
+            </a>
+          </section>
+        )
+      }
+      <section aria-labelledby="appen" class="flex flex-col gap-1">
+        <h2 id="appen" class="type-meta text-muted-foreground">Få larmen direkt i mobilen</h2>
+        <AppLinks sentence={false} />
+      </section>
+    </div>
   </div>
 
   <Sponsors class="mt-12 md:hidden" />
-
-  {
-    (prints.length > 0 || plain.length > 0) && (
-      <section aria-labelledby="larm" class="mt-16 flex flex-col gap-6 md:mt-24">
-        <SectionHeading id="larm" href="/larm" link="Alla larm">
-          Senaste larmen
-        </SectionHeading>
-        {prints.length > 0 && (
-          <LarmRail alerts={prints} layout="five" sizes="(min-width: 64rem) 11rem, (min-width: 48rem) 18rem, 64vw" />
-        )}
-        {plain.length > 0 && (
-          <div class="flex flex-col gap-5">
-            {prints.length > 0 && <p class="type-meta text-muted-foreground md:pl-[7rem]">Övriga larm</p>}
-            <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} compact />
-          </div>
-        )}
-        <AppLinks class="md:pl-[7rem]" />
-      </section>
-    )
-  }
 
   {
     (tiles.length > 0 || list.length > 0) && (

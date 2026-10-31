@@ -212,4 +212,5 @@ export const TITLE_FIXES: Readonly<Record<number, string>> = {
   10105: "Skrattmåskoloni",
   10190: "Lördagen 19 september – Sträckräkning, Skararps ängar",
   10240: "Programändring!",
+  10340: "Smålandsrallyt 2026",
 }

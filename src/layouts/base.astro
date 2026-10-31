@@ -3,6 +3,7 @@
 // nothing, so the prerendered 404 can use it at build time. The public header
 // and menu live in site.astro, the admin chrome in admin.astro.
 
+import alegreyaLatin from "@fontsource-variable/alegreya/files/alegreya-latin-wght-normal.woff2"
 import interLatin from "@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2"
 import appleTouchIcon from "@/assets/apple-touch-icon.png"
 import icon from "@/assets/icon-64.png"
@@ -34,6 +35,7 @@ const imageUrl = image ? new URL(image, Astro.url).href : null
         same hashed file global.css's @font-face points at, so it downloads
         once. Fonts are always fetched in CORS mode, hence `crossorigin`. */}
     <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={alegreyaLatin} as="font" type="font/woff2" crossorigin />
     {/* Light only (docs/design.md, "Colour"). `only` keeps browsers from
         darkening the page on their own; theme-color matches the browser's
         toolbar to the white header. */}

@@ -2,6 +2,7 @@
 export const prerender = false
 
 import SiteLayout from "@/layouts/site.astro"
+import { renderBody } from "@/lib/article-body"
 import { resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
 import { isValidSlug, RESERVED_TOP_LEVEL_SLUGS } from "@/lib/slug"
@@ -26,7 +27,7 @@ const node = resolvePath(navigation.tree, segments)
 if (!node) return new Response(null, { status: 404 })
 
 const page = await loadPageBody(db, node.id)
-if (page === "error") return new Response("Sidan kunde inte hämtas just nu.", { status: 503 })
+if (page === "error") return new Response(null, { status: 500 })
 if (!page) return new Response(null, { status: 404 })
 
 // A section page lists what's in it.
@@ -39,7 +40,7 @@ const children = node.children as (typeof node & Pick<PublicPageRow, "descriptio
       <h1 class="type-title">{page.title}</h1>
       {page.description && <p class="type-ingress text-muted-foreground max-w-[38rem]">{page.description}</p>}
     </header>
-    {page.body_html && <div class="content" set:html={page.body_html} />}
+    {page.body_html && <div class="content" set:html={renderBody(page.body_html)} />}
 
     {
       children.length > 0 && (

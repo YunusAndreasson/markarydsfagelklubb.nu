@@ -182,6 +182,9 @@ describe("parseEventForm", () => {
         place: "Ekebacken",
         kind: "exkursion",
         registration_url: null,
+        contact_name: "",
+        contact_phone: "",
+        signup_deadline: null,
         starts_at: new Date("2026-10-03T16:00:00Z"),
         ends_at: null,
         all_day: false,
@@ -235,6 +238,30 @@ describe("parseEventForm", () => {
   it("accepts an address that only looks like one", () => {
     const result = parseEventForm(form({ ...fields, slug: "2026-13" }))
     expect(result.ok && result.value.slug).toBe("2026-13")
+  })
+
+  it("reads who to call and by when", () => {
+    const result = parseEventForm(
+      form({
+        ...fields,
+        contact_name: "Anna Svensson",
+        contact_phone: "0705 – 12 34 56",
+        signup_deadline: "2026-09-30",
+      })
+    )
+    expect(result.ok && result.value.contact_phone).toBe("0705 – 12 34 56")
+    expect(result.ok && result.value.signup_deadline).toBe("2026-09-30")
+  })
+
+  it("refuses a phone number or a last day that isn't one", () => {
+    const result = parseEventForm(
+      form({ ...fields, contact_phone: "ring mig", signup_deadline: "2026-13-40" })
+    )
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors.contact_phone).toBe(MESSAGES.contactPhoneInvalid)
+      expect(result.errors.signup_deadline).toBe(MESSAGES.deadlineInvalid)
+    }
   })
 
   it("checks the registration link the same way as a menu link", () => {

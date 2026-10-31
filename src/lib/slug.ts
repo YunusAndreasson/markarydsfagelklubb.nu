@@ -20,6 +20,7 @@ export const RESERVED_TOP_LEVEL_SLUGS: ReadonlySet<string> = new Set([
   "kalender",
   "larm",
   "lokaler",
+  "sok",
 ])
 
 /** `/artiklar/kategori/<slug>` lists a category, so no article may be called that. */

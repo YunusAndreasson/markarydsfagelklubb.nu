@@ -2,6 +2,7 @@
 export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
+import LarmFold from "@/components/site/LarmFold.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { toPin } from "@/lib/lokal"
@@ -27,7 +28,7 @@ const { db } = Astro.locals
 if (!db || !slug || !isValidSlug(slug)) return new Response(null, { status: 404 })
 
 const [navigation, found] = await Promise.all([loadNavigation(db), loadPublicLokal(slug)])
-if (!found.ok) return new Response("Lokalen kunde inte hämtas just nu.", { status: 503 })
+if (!found.ok) return new Response(null, { status: 500 })
 if (!found.value) return new Response(null, { status: 404 })
 
 /**
@@ -43,6 +44,8 @@ const NEAR_LIMIT = 12
 
 const { lokal, at, near } = found.value
 const nearShown = near.slice(0, NEAR_LIMIT)
+/** The newest in full; the whole history stays here, a tap away. */
+const AT_SHOWN = 6
 const description = lokal.description?.trim() || null
 
 // The dot means the same here as on the map: a larm from this lokal inside the
@@ -62,7 +65,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
   <article class="flex flex-col gap-10">
     <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
       <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
-        <a href="/lokaler" class="hover:text-foreground underline-offset-4 hover:underline">Fågellokaler</a>
+        <a href="/lokaler" class="crumb">Fågellokaler</a>
         <span aria-hidden="true"> / </span>
         <span>{lokal.name}</span>
       </nav>
@@ -89,7 +92,12 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
       at.length > 0 && (
         <section aria-labelledby="pa-lokalen" class="flex flex-col gap-5">
           <h2 id="pa-lokalen" class="type-section md:pl-[7rem]">På lokalen</h2>
-          <AlertList alerts={at} headingLevel={3} years="other-years" photos={false} place={false} />
+          <AlertList alerts={at.slice(0, AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} />
+          {at.length > AT_SHOWN && (
+            <LarmFold count={at.length - AT_SHOWN}>
+              <AlertList alerts={at.slice(AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} compact />
+            </LarmFold>
+          )}
         </section>
       )
     }
@@ -107,7 +115,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
               } Platserna är ungefärliga.
             </p>
           </div>
-          <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} />
+          <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} compact />
         </section>
       )
     }

@@ -6,7 +6,7 @@ import ArticleTiles from "@/components/site/ArticleTiles.astro"
 import ArticleView from "@/components/site/ArticleView.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { splitFeatured } from "@/lib/front-page"
+import { splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { listPublishedArticles, loadNavigation, loadPublishedArticle } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
 import { pickTeaserImage, teaserText } from "@/lib/teaser"
@@ -19,7 +19,7 @@ const [navigation, article] = await Promise.all([
   loadNavigation(db),
   loadPublishedArticle(db, slug),
 ])
-if (article === "error") return new Response("Artikeln kunde inte hämtas just nu.", { status: 503 })
+if (article === "error") return new Response(null, { status: 500 })
 if (!article) return new Response(null, { status: 404 })
 
 // "Mer i <kategori>": the newest three others in the same category that have
@@ -29,7 +29,8 @@ const related =
     ? null
     : await listPublishedArticles(db, { limit: 7, categoryId: article.category_id })
 const others = (related?.articles ?? []).filter((other) => other.id !== article.id)
-const { tiles } = splitFeatured(others, 3)
+const ownPhoto = pickTeaserImage(article.cover, article.body_html)?.src
+const { tiles } = splitFeatured(withoutPhoto(others, ownPhoto), 3)
 const more = tiles.length > 0 ? [] : others.slice(0, 3)
 ---
 

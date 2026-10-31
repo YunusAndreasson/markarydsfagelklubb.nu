@@ -1,5 +1,9 @@
 # Design: the public site
 
+**Read [Dagslistan](#dagslistan-2026-10-31) first, with its "Larmbandet" correction.**
+It is the newest pass and overrides what it names below: the typeface, the tinted
+neutrals and the header.
+
 The design plan for mafk-web's public pages, written in step 3 with the
 `frontend-design` process: plan, review against the brief, build, critique.
 The admin area uses shadcn defaults and isn't covered here.
@@ -29,6 +33,146 @@ A birder's field notebook works the same way: each entry is dated in the
 margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
+
+## Dagslistan (2026-10-31)
+
+The third pass, asked for as "significantly improve this website", with free
+hands, validated against the WordPress site. Two things were wrong: the site
+could have belonged to any association (white, Inter, grey small print, where the
+old site at least had the dipper by the stream), and it answered "what is
+happening now?" badly. On the Saturday of Smålandsrallyt a 13-day-old article led
+and the larm rail had vanished.
+
+**The one memorable thing:** the home page opens with the day's species as a run
+of text on a spruce band, the way a birder writes up a day. Each name links to its
+larm and the notable ones are yellow (`Dagslistan.astro`, `buildDayList` in
+`front-page.ts`). Everything else stays quiet. A big "40 arter" with a small label
+was considered and rejected: the names are the content. The sentence says
+"larmat" because the count doesn't include Artportalen. The newest article still
+leads under it (the 2026-10-28 decision stands).
+
+- **Type:** Alegreya (variable, self-hosted, Latin subset 43 KB) for headings,
+  titles and species, with its italic for scientific names; bookish and alive, and
+  its numerals are set lining. **Inter stays** for running text, dates and
+  controls, which keeps the site beside the app. Alegreya's small x-height is why
+  `type-item` is 21 px against Inter's 18.
+- **Colour:** Markaryd green is unchanged and shared with the app. New: **Gran**
+  `#14302A` (the band, the footer), **Reflex** `#F2C230` (the yellow in the stream
+  under the old site's dipper; status on Gran only, 8.4:1, never text on white),
+  **Is** `#EEF3F1` (replaces neutral grey), **Bläck** `#17201D`, **Blyerts**
+  `#53605B` (6.6:1 on white, 5.9:1 on Is). `surface-gran` remaps the tokens on a
+  dark band, so children keep their semantic classes.
+- **Header:** 72 px instead of 128; the tagline moved to the footer, and "Sök" joined
+  the menu. The band sits inside `main`, so the skip link lands on it.
+
+**What else changed, each for a reason seen on the page:**
+
+- **Larm sort on `observed_at`**, the time they print. On `sent_at` the log read
+  14:33, 08:30, 13:30. `/larm` groups by day under "I dag", "I går", "Fredag 30
+  oktober", with only the clock in the margin.
+- **The rail reaches back past photo-less larm** (the home page reads 200, not 12),
+  so it no longer vanishes on the busiest days. An article repeating the lead's photo
+  loses it (`withoutPhoto`).
+- **Program:** the date is in ink, the one list where it is what you scan for, with
+  "I dag" or "Pågår" under it (`event-status.ts`). `contact_name`, `contact_phone`
+  and `signup_deadline` carry what the club's sign-ups always were, a person, a number and
+  a last day. A closed sign-up drops "Anmäl dig". A multi-day event stays in the
+  programme through its last day.
+- **Sök** (`/sok`, plain GET form, no script): a generated `tsvector` on `articles`
+  and `pages`, or the query anywhere in the title, since the Swedish stemmer can't
+  find "uggla" in "sparvuggla" (`lib/search.ts`). Lokaler match by name in memory.
+  Lokaler and pages first, because they are few and someone typing them wants that
+  page.
+- **Arkiv** (`/artiklar/ar/<år>`), the year strip at the foot of `/artiklar`; old
+  `/2024/05/` URLs 301 there.
+- **Obsar** has its own route: **Rapportera** first as the page's one band, then the
+  kommun's links with a line each, then the neighbouring landskap as plain links
+  (`lib/obsar.ts`).
+- **Lokaler:** "Larmat senaste två veckorna" first, then the register in columns, about
+  a thousand pixels shorter. An active pin is larger as well as green, the icon's hit
+  area is 24 px, and Leaflet's links are out of the tab order inside the `aria-hidden` map.
+- **Articles:** a cover takes the margin's width too. Two or more photos in a row become
+  a two-column sheet at render (`withGalleries`), whole rather than cropped; the
+  stored body and the editor are untouched.
+- **Klubben** opens with the dipper, Lars-Erik Andréasson's photo from the article
+  "Strömstarens ankomst", credited under it.
+- **Errors:** a failed read answers 500, which Astro serves as the prerendered
+  `500.astro` with the site's header, instead of a line of plain text. The 404 has a
+  search box. Reading "503" in old notes: public pages don't send it any more.
+
+**Larmbandet, the correction (same evening).** Running every species name at display
+size was the wrong call, and the user caught it twice: "alldeles för många larm", "nu
+har vi det dubbelt". Forty names are noise, they filled the first screen, the programme
+appeared twice, and six yellow links competed. The band is now one sentence ("40 arter
+larmade i dag, bland dem mandarinand."), one "Alla larm" and five photos with species
+and time (`LarmBand.astro`). It is the page's **only** block of larm. Every species
+stays on `/larm`, and today's event is marked in "Närmast i programmet", not repeated.
+The lead photo went to 3:1 so its headline reaches the first screen at 1280×900.
+
+**The lead shows the article's own opening** (the user: the first page looked empty when
+there was more to show). Whole paragraphs up to about 600 characters, links kept
+(`leadOpening`), so a short report reads in full on the home page. "Läs hela artikeln"
+appears only when there is more: this reverses "no Läs mer" for that one case, because a
+headline alone doesn't say the text stopped.
+
+**It has to hold on a quiet day too** (the user's note: some days there will be one larm
+or very few). Up to three species the sentence names them all ("I dag har medlemmarna
+larmat kungsfiskare."), because "1 art" says less than the bird's name. With nothing
+today it says when the last one was ("Senast larmat i går: …", "Senast larmat 3 juli:
+…") and never claims there were none, since "Övrigt (ej fågel)" isn't counted. Photos
+older than a month stay off the band (`latestPrints`): a dated bird from months back
+makes the page look abandoned. One or two prints stand beside the sentence; none, and the
+band is the sentence alone, 108 px. With no larm at all there is no band.
+ Where
+this section's opening paragraphs describe the run of names, this replaces them.
+
+**Hämta appen** (same evening, the user's call, reversing "not the stores' badges"
+under Larm): the stores' official Swedish badges, 40 px tall and unaltered
+(`AppLinks.astro`). In the footer of every page, in the rail beside the home page's
+lead, and under the intro on `/larm`. Not in the band, which is about the birds.
+
+**The hierarchy, reviewed page by page (same evening).** Each page has one reading order:
+
+1. **Peak:** the band on the home page, then the lead. The lead's display size came down
+   from 76 to 60 px and the page title from 54 to 48, because two things can't both be
+   the loudest.
+2. **Section:** `type-section`, 28 px. **Its heading starts where its content starts:** at
+   the container's edge over full-width tiles or prints, at the 7rem column over text.
+3. **Entry:** `type-item`, 21 px Alegreya. **Fact:** 16 px Inter. **Meta:** 14 px Inter.
+4. **Utility beside the lead:** the programme and the store badges share the rail, in
+   body-size type under meta labels. They used to float alone in the page's own flow,
+   where black badges outweighed the article above them.
+
+Also: a `crumb`'s 44 px target no longer pushes its line apart; "I dag" and "Pågår" look
+the same wherever they appear; prices are Inter, since tabular figures turned Alegreya's
+old-style; neighbours in a list don't repeat a photo; every search field is the same field.
+
+**Last pass, on the phone pages (same evening).** A lokal shows its newest six larm and
+folds the rest (`LarmFold.astro`, shared with `/larm`), since Reningsdammarna ran to 5,700
+px; "På lokalen" is still whole, one tap away. "I närheten" is one line per larm. The full
+register drops its tallies on a phone. Phone numbers in stored bodies become `tel:` links
+at render (`linkPhones`), because the club's sign-ups run on them. Tiles never repeat a
+photo, or show the article's own. Filled buttons and search fields get the same 2 px focus
+outline as links (`focus-strong`).
+
+**Stora dagar** (same day, the user's note: "alldeles för många larm"). On a rally day
+the log ran to four pages and the band pushed the lead down. A busy day now
+discloses in steps, with no script, and an ordinary day looks as before:
+
+1. **Home:** Larmbandet above, whose size doesn't change with the day. The rail reaches
+   back past photo-less larm (`latestPrints`), and the sentence names the notable birds
+   so a photo-less rarity isn't hidden.
+2. **`/larm`, a day:** up to eight larm show in full. Above that, six stay: notable
+   birds, then photos, then the newest, in the log's order, under a line such as "48
+   larm om 40 arter". The rest fold into one-line rows, each marked "Foto" if it has one
+   (`digestDay`).
+3. **`/larm`, paging** is by whole days, at most four (`pageOfDays`), so a summary
+   never covers half a day.
+
+**Rejected on review:** cream and terracotta (the common default; the site keeps
+white and the cool tones of water), and any motion on load. A dark band with one
+bright accent is close to another default, so Gran is plainly green and the yellow
+only ever means status.
 
 ## Direction: *fältdagboken*
 

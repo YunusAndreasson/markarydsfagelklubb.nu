@@ -55,6 +55,13 @@ Klubben redesign, applied 2026-10-24):
 |---|---|---|
 | `public.membership_settings` | the admin, at `/admin/medlemskap` | **one row** (primary key `id boolean`, only `true`): the year, fees, Swish, bankgiro and the contact for new members. read: anon and authenticated, since all of it is printed on public pages · update: `private.is_admin()` · no insert or delete grant at all. The contact person's details went in by `update`, not in the migration file, to keep a private individual's phone and email out of git |
 
+Added on 2026-10-31 (`20261031182238_event_contact.sql`,
+`20261031182239_content_search.sql`), to this repo's own tables, after checking
+that the app reads none of them: `events.contact_name`, `contact_phone`,
+`signup_deadline`, and a generated `search` tsvector with a GIN index on
+`articles` and `pages`. **The contact's phone number is public by design**, as it
+was in the old site's programme.
+
 `hidden_alerts` has **no foreign keys**, on purpose. `alert_id → public.alerts`
 would put a constraint on the app's own table and change what happens when a row
 there is deleted; `hidden_by → auth.users` would block deleting the account of

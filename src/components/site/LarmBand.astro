@@ -1,0 +1,66 @@
+---
+import LarmRail from "@/components/site/LarmRail.astro"
+import type { PublicAlert } from "@/lib/alert-dto"
+import { type DayList, namedSpecies } from "@/lib/front-page"
+import { dayLabel } from "@/lib/stockholm-time"
+
+/**
+ * The home page's one block of larm (docs/design.md, "Larmbandet"): one sentence
+ * saying how things stand, the link to all of it, and the newest photos. It has to
+ * read as well with one larm as with fifty, and on a quiet winter week:
+ *
+ *   40 arter larmade i dag, bland dem mandarinand.
+ *   I dag har medlemmarna larmat kungsfiskare.
+ *   Senast larmat i går: 5 arter, bland dem kungsfiskare.
+ *   Senast larmat 3 juli: skata och blåmes.
+ *
+ * It never says "no larm today": it only knows what the app has sent, and "Övrigt
+ * (ej fågel)" may have come in. Only photos from the past month show, so the row may
+ * be short or gone. One or two prints stand beside the sentence, since alone on a row
+ * of five they leave most of the band empty.
+ */
+
+interface Props {
+  list: DayList | null
+  prints: PublicAlert[]
+  now: Date
+}
+
+const { list, prints, now } = Astro.props
+const species = list?.species ?? []
+const named = namedSpecies(species)
+const allNamed = named.length === species.length
+const arter = `${species.length} arter`
+const when = list ? dayLabel(list.day, now) : ""
+const few = prints.length <= 2
+---
+
+{
+  list && (
+    <section aria-labelledby="larmbandet" class="surface-gran">
+      <div class:list={["mx-auto flex w-full max-w-[64rem] flex-col gap-5 px-4 py-6 sm:px-6 md:py-8", few && "md:flex-row md:items-start md:justify-between md:gap-10"]}>
+        <div class:list={["flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1", few && prints.length > 0 && "md:flex-col md:justify-start"]}>
+          <h2 id="larmbandet" class="type-section text-pretty">
+            {list.isToday && allNamed && "I dag har medlemmarna larmat "}
+            {list.isToday && !allNamed && `${arter} larmade i dag`}
+            {!list.isToday && `Senast larmat ${when}: `}
+            {!list.isToday && !allNamed && arter}
+            {!allNamed && named.length > 0 && ", bland dem "}
+            {named.map((one, index) => (
+              <>
+                {index > 0 && (index === named.length - 1 ? " och " : ", ")}
+                <a href={`/larm/${one.alertId}`} class:list={["underline-offset-4 hover:underline", one.notable && "text-reflex"]}>
+                  {one.name.toLocaleLowerCase("sv")}
+                </a>
+              </>
+            ))}.
+          </h2>
+          <a href="/larm" class="link flex min-h-11 items-center font-medium">Alla larm</a>
+        </div>
+        {prints.length > 0 && (
+          <LarmRail alerts={prints} layout={few ? "few" : "five"} brief sizes="(min-width: 64rem) 11rem, (min-width: 48rem) 11rem, 64vw" />
+        )}
+      </div>
+    </section>
+  )
+}

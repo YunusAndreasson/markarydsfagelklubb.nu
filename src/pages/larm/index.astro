@@ -3,23 +3,26 @@ export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
 import AppLinks from "@/components/site/AppLinks.astro"
+import LarmFold from "@/components/site/LarmFold.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { decodeAlertCursor, encodeAlertCursor } from "@/lib/alert-keyset"
+import { digestDay, pageOfDays, speciesCount } from "@/lib/larm-digest"
 import { listPublicAlerts } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
+import { dayHeading } from "@/lib/stockholm-time"
 
 /**
- * Twelve rather than the articles' twenty: most larm carry a photo, member
- * photos are about half a megabyte each and there is no transform service, so
- * a longer page would be a heavy one. `loading="lazy"` means a visitor who
- * doesn't scroll pays for two or three.
+ * A page is whole days (`pageOfDays`), so it reads more rows than it may show.
+ * Photos only load for what is on screen: a busy day's folded rows carry none.
  */
-const PAGE_SIZE = 12
+const PAGE_SIZE = 80
+const MAX_DAYS = 4
 
 const { db } = Astro.locals
-if (!db) return new Response(null, { status: 503 })
+if (!db) return new Response(null, { status: 500 })
 
 const params = Astro.url.searchParams
+const pagingNewer = params.has("efter") && !params.has("fore")
 const [navigation, page] = await Promise.all([
   loadNavigation(db),
   listPublicAlerts({
@@ -28,9 +31,11 @@ const [navigation, page] = await Promise.all([
     after: decodeAlertCursor(params.get("efter")),
   }),
 ])
-if (!page.ok) return new Response("Larmen kunde inte hämtas just nu.", { status: 503 })
+if (!page.ok) return new Response(null, { status: 500 })
 
-const { alerts, older, newer } = page.value
+const { alerts } = page.value
+const { days, older, newer } = pageOfDays(page.value, pagingNewer ? "newer" : "older", MAX_DAYS)
+const now = new Date()
 const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCursor>[0]) =>
   `/larm?${new URLSearchParams({ [param]: encodeAlertCursor(cursor) })}`
 ---
@@ -44,10 +49,9 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
     <header class="flex flex-col gap-3 md:pl-[7rem]">
       <h1 class="type-title">Larm</h1>
       <p class="type-ingress text-muted-foreground max-w-prose">
-        Fynd som medlemmarna larmat om i klubbens app. Platsen anges ungefärligt, med närmaste
-        fågellokal.
+        Fynd som medlemmarna larmat om i klubbens app. Platsen är ungefärlig.
       </p>
-      <AppLinks />
+      <AppLinks sentence={false} />
     </header>
 
     {
@@ -56,7 +60,28 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
           Inga larm ännu. Larmen skickas från klubbens app och syns sedan här.
         </p>
       ) : (
-        <AlertList alerts={alerts} headingLevel={2} years="changes" />
+        days.map((day, index) => {
+          const { highlights, rest } = digestDay(day.items)
+          const count = speciesCount(day.items)
+          return (
+            <section aria-labelledby={`dag-${index}`} class="flex flex-col gap-6">
+              <div class="flex flex-wrap items-baseline gap-x-3 md:pl-[7rem]">
+                <h2 id={`dag-${index}`} class="type-section">{dayHeading(day.day, now)}</h2>
+                {rest.length > 0 && (
+                  <p class="type-meta text-muted-foreground">
+                    {day.items.length} larm om {count} {count === 1 ? "art" : "arter"}
+                  </p>
+                )}
+              </div>
+              <AlertList alerts={highlights} headingLevel={3} clockOnly />
+              {rest.length > 0 && (
+                <LarmFold count={rest.length}>
+                  <AlertList alerts={rest} headingLevel={3} clockOnly compact photos={false} />
+                </LarmFold>
+              )}
+            </section>
+          )
+        })
       )
     }
 

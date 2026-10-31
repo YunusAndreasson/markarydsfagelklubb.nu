@@ -1,25 +1,32 @@
 ---
-/**
- * Where to get the club's app, beside the larm (docs/design.md, "Larm"). The
- * larm are sent from the app, so this is where a visitor who wants them on
- * their own phone is reading. Two plain links in the site's link style rather
- * than the stores' badges, which would be the loudest thing in the section.
- */
+import appStoreBadge from "@/assets/app-store-badge.svg"
+import googlePlayBadge from "@/assets/google-play-badge.png"
 import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/app-stores"
+
+/**
+ * Where to get the app: the stores' own badges, in Swedish, unaltered, as both
+ * stores require. Apple's is its SVG, Google's its PNG with the transparent margin
+ * cut off, so both are 40 px tall (Apple's minimum) and the gap gives their clear
+ * space. Both always show, because the pages are cached alike for every visitor.
+ */
 
 interface Props {
   class?: string
+  /** The sentence above; the footer's heading already says what these are. */
+  sentence?: boolean
 }
 
-const { class: className } = Astro.props
+const { class: className, sentence = true } = Astro.props
 ---
 
-<div class:list={["flex flex-wrap items-center gap-x-8", className]}>
-  <p class="text-muted-foreground w-full text-pretty">Ladda ner klubbens app, så kan du själv larma och få larmen direkt i mobilen.</p>
-  <a href={APP_STORE_URL} class="link flex min-h-11 items-center font-medium">
-    App Store
-  </a>
-  <a href={GOOGLE_PLAY_URL} class="link flex min-h-11 items-center font-medium">
-    Google Play
-  </a>
+<div class:list={["flex flex-col gap-1", className]}>
+  {sentence && <p class="text-muted-foreground text-pretty">Ladda ner klubbens app, så kan du själv larma och få larmen direkt i mobilen.</p>}
+  <div class="flex flex-wrap items-center gap-x-3">
+    <a href={APP_STORE_URL} class="flex min-h-11 items-center">
+      <img src={appStoreBadge.src} width="120" height="40" alt="Hämta i App Store" loading="lazy" class="h-10 w-auto" />
+    </a>
+    <a href={GOOGLE_PLAY_URL} class="flex min-h-11 items-center">
+      <img src={googlePlayBadge.src} width="135" height="40" alt="Ladda ned på Google Play" loading="lazy" class="h-10 w-auto" />
+    </a>
+  </div>
 </div>

@@ -20,9 +20,10 @@ component.
   you edit it sparingly. `cn()` comes from the `cn` package (shadcn's
   clsx + tailwind-merge replacement), re-exported by `@/lib/utils`.
 - **Semantic tokens only** (`bg-primary`, `text-muted-foreground`), never raw
-  palette colours and no `dark:` classes: the site is light only. The brand is
-  Markaryd green, defined in `src/styles/global.css`, and it must stay in step
-  with `../mafk-mobie/src/constants/theme.ts`.
+  palette colours and no `dark:` classes: the site is light only. Markaryd green,
+  defined in `src/styles/global.css`, must stay in step with
+  `../mafk-mobie/src/constants/theme.ts`. The site's neutrals, Gran and Reflex are
+  its own (docs/design.md, "Dagslistan"); on a Gran band use `surface-gran`.
 - `className` is for layout, not for recolouring components. Use `gap-*`, not
   `space-x/y-*`; `size-*`, not `w-* h-*`; `cn()` for conditionals.
 - Forms use `FieldGroup` + `Field`, with `data-invalid` on the field and

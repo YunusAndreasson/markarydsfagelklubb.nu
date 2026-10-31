@@ -3,8 +3,16 @@ export const prerender = false
 
 import EventList from "@/components/site/EventList.astro"
 import SiteLayout from "@/layouts/site.astro"
+import { renderBody } from "@/lib/article-body"
 import { publicEventKindLabel } from "@/lib/event-kind"
 import { monthKey, monthRange, parseMonthKey, shiftMonth } from "@/lib/event-month"
+import {
+  deadlineInstant,
+  eventStatus,
+  eventStatusLabel,
+  signupOpen,
+  telHref,
+} from "@/lib/event-status"
 import type { MenuEntry } from "@/lib/page-tree"
 import {
   type EventSummary,
@@ -44,7 +52,7 @@ if (month) {
     loadNavigation(db),
     listEventsInMonth(db, monthRange(month)),
   ])
-  if (!found) return new Response("Programmet kunde inte hämtas just nu.", { status: 503 })
+  if (!found) return new Response(null, { status: 500 })
   events = found
   previous = monthKey(shiftMonth(month, -1))
   next = monthKey(shiftMonth(month, 1))
@@ -52,7 +60,7 @@ if (month) {
 } else {
   const [navigation, found] = await Promise.all([loadNavigation(db), loadPublishedEvent(db, slug)])
   if (found === "error") {
-    return new Response("Evenemanget kunde inte hämtas just nu.", { status: 503 })
+    return new Response(null, { status: 500 })
   }
   if (!found) return new Response(null, { status: 404 })
   event = found
@@ -81,6 +89,17 @@ const untilLabel =
       ? formatDate(event.ends_at, "dayMonth")
       : `${formatDate(event.ends_at, "dayMonth")} ${endClock}`
 
+const now = new Date()
+const statusLabel = event ? eventStatusLabel(eventStatus(event, now)) : null
+const open = event ? signupOpen(event, now) : false
+const deadlineLabel = event?.signup_deadline
+  ? formatDate(deadlineInstant(event.signup_deadline), "dayMonth")
+  : null
+const phoneHref = event?.contact_phone ? telHref(event.contact_phone) : null
+const hasContact = Boolean(event?.contact_name || event?.contact_phone)
+// Who the name is to the reader: while a sign-up is open, who takes it.
+const contactLead = deadlineLabel && open ? `Anmälan senast ${deadlineLabel} till` : "Kontakt:"
+
 const title = month ? `${monthTitle} · Program` : `${event?.title} · Program`
 const description = month
   ? `Markaryds Fågelklubbs program i ${monthTitle.toLowerCase()}.`
@@ -93,7 +112,7 @@ const description = month
       <div class="flex flex-col gap-10">
         <header class="flex flex-col gap-5 md:pl-[7rem]">
           <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-            <a href="/kalender" class="hover:text-foreground underline-offset-4 hover:underline">Program</a>
+            <a href="/kalender" class="crumb">Program</a>
           </nav>
           <h1 class="type-title">{monthTitle}</h1>
         </header>
@@ -128,9 +147,9 @@ const description = month
       <article class="grid gap-y-8 md:grid-cols-[7rem_minmax(0,38rem)]">
         <header class="flex flex-col gap-4 md:col-start-2">
           <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-            <a href="/kalender" class="hover:text-foreground underline-offset-4 hover:underline">Program</a>
+            <a href="/kalender" class="crumb">Program</a>
             <span aria-hidden="true"> / </span>
-            <a href={`/kalender/${eventMonth}`} class="hover:text-foreground underline-offset-4 hover:underline">
+            <a href={`/kalender/${eventMonth}`} class="crumb">
               {monthLabel(eventMonth)}
             </a>
           </nav>
@@ -146,21 +165,32 @@ const description = month
             {clockLabel && <span>{clockLabel}</span>}
           </time>
           {untilLabel && <span class="mt-1">till {untilLabel}</span>}
+          {statusLabel && <span class="text-primary mt-1 font-semibold">{statusLabel}</span>}
           {kind && <span class="mt-1">{kind}</span>}
         </div>
 
         {/* When and where, together: the place, the fact a member acts on (as
             on a larm), sits level with the date. On a phone it follows the
             date closely rather than at the grid's gap. */}
-        {(event.place || event.body_html) && (
+        {(event.place || event.body_html || hasContact) && (
           <div class:list={["flex flex-col gap-6 md:col-start-2 md:row-start-2", event.place && "-mt-7 md:mt-0"]}>
             {event.place && <p class="text-lg font-medium">{event.place}</p>}
-            {event.body_html && <div class="content" set:html={event.body_html} />}
+            {hasContact && (
+              <p class="leading-relaxed">
+                {contactLead} {event.contact_name}
+                {event.contact_name && event.contact_phone && ", "}
+                {phoneHref ? <a href={phoneHref} class="link font-medium">{event.contact_phone}</a> : event.contact_phone}
+              </p>
+            )}
+            {deadlineLabel && !open && eventStatus(event, now) !== "past" && (
+              <p class="text-muted-foreground">Sista anmälningsdag var {deadlineLabel}.</p>
+            )}
+            {event.body_html && <div class="content" set:html={renderBody(event.body_html)} />}
           </div>
         )}
 
         <nav aria-label="Mer i programmet" class="flex flex-wrap gap-x-8 md:col-start-2">
-          {event.registration_url && (
+          {event.registration_url && open && (
             <a href={event.registration_url} class="link flex min-h-11 w-fit items-center font-medium">
               Anmäl dig
             </a>

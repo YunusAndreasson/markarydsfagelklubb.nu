@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { type MediaImage, SITE_MEDIA_PUBLIC_PREFIX } from "./media"
-import { bodyImages, isHeroWorthy, pickTeaserImage, teaserText } from "./teaser"
+import { bodyImages, isHeroWorthy, leadOpening, pickTeaserImage, teaserText } from "./teaser"
 
 const url = (name: string, width: number) =>
   `${SITE_MEDIA_PUBLIC_PREFIX}2026/05/${name}/${width}.webp`
@@ -168,5 +168,41 @@ describe("teaserText", () => {
   it("gives an empty string when there is nothing to say", () => {
     expect(teaserText("", "Titel")).toBe("")
     expect(teaserText(imported("a", 1000, 700), "Titel")).toBe("")
+  })
+})
+
+describe("leadOpening", () => {
+  const long = "ord ".repeat(100).trim()
+
+  it("shows a short article whole, links kept, with nothing more to read", () => {
+    const html = '<p>48 arter.</p><p>Se i <a href="/x">listan</a>.</p><p>Lycka till!</p>'
+    expect(leadOpening(html, "Rallyt")).toEqual({
+      paragraphs: ["48 arter.", 'Se i <a href="/x">listan</a>.', "Lycka till!"],
+      more: false,
+    })
+  })
+
+  it("stops at a whole paragraph when the budget runs out", () => {
+    const { paragraphs, more } = leadOpening(`<p>${long}</p><p>${long}</p>`, "T", 500)
+    expect(paragraphs).toHaveLength(1)
+    expect(more).toBe(true)
+  })
+
+  it("cuts only a very long first paragraph", () => {
+    const { paragraphs, more } = leadOpening(`<p>${long}${long}${long}</p>`, "T", 100)
+    expect(paragraphs[0]?.length).toBeLessThan(210)
+    expect(more).toBe(true)
+  })
+
+  it("says there's more when photos or a list follow", () => {
+    const img = '<figure><img src="a.webp" width="1" height="1"></figure>'
+    expect(leadOpening(`<p>Text.</p>${img}`, "T").more).toBe(false)
+    expect(leadOpening(`<p>Text.</p>${img}${img}`, "T").more).toBe(true)
+    expect(leadOpening("<p>Text.</p><ul><li>a</li></ul>", "T").more).toBe(true)
+  })
+
+  it("skips what the teaser skips", () => {
+    const html = "<p>Rallyt<br>Första stycket.</p><p>Foto: Anna A.</p>"
+    expect(leadOpening(html, "Rallyt").paragraphs).toEqual(["Första stycket."])
   })
 })

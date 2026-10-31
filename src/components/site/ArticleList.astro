@@ -38,6 +38,8 @@ const yearLabel = (index: number): number | null => {
   {
     articles.map((article, index) => {
       const year = yearLabel(index)
+      // Neighbours sharing a photo read as a mistake, so only the first shows it.
+      const image = article.image?.src === articles[index - 1]?.image?.src ? null : article.image
       return (
         <li class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)_minmax(12rem,1fr)] md:gap-x-0">
           <p class="type-meta text-muted-foreground flex gap-1.5 md:flex-col md:gap-0 md:pt-[0.2rem]">
@@ -52,7 +54,7 @@ const yearLabel = (index: number): number | null => {
             </Heading>
             {article.standfirst && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{article.standfirst}</p>}
           </div>
-          {article.image && (
+          {image && (
             <a
               href={`/artiklar/${article.slug}`}
               tabindex="-1"
@@ -60,11 +62,11 @@ const yearLabel = (index: number): number | null => {
               class="col-start-2 row-span-2 row-start-1 md:col-start-3 md:row-span-1 md:w-48 md:justify-self-end md:pl-6"
             >
               <img
-                src={article.image.src}
-                srcset={article.image.srcset || undefined}
+                src={image.src}
+                srcset={image.srcset || undefined}
                 sizes="(min-width: 48rem) 10.5rem, 7rem"
-                width={article.image.width || undefined}
-                height={article.image.height || undefined}
+                width={image.width || undefined}
+                height={image.height || undefined}
                 alt=""
                 loading="lazy"
                 decoding="async"

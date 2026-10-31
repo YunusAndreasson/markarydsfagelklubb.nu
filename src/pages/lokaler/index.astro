@@ -18,12 +18,16 @@ import { loadNavigation } from "@/lib/public-content"
  */
 
 const { db } = Astro.locals
-if (!db) return new Response(null, { status: 503 })
+if (!db) return new Response(null, { status: 500 })
 
 const [navigation, lokaler] = await Promise.all([loadNavigation(db), listPublicLokaler()])
-if (!lokaler.ok) return new Response("Lokalerna kunde inte hämtas just nu.", { status: 503 })
+if (!lokaler.ok) return new Response(null, { status: 500 })
 
 const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
+// Where it has happened lately, newest first: usually what a visitor came for.
+const active = lokaler.value
+  .filter((lokal) => lokal.active && lokal.lastAlertAt)
+  .sort((a, b) => ((a.lastAlertAt ?? "") < (b.lastAlertAt ?? "") ? 1 : -1))
 ---
 
 <SiteLayout
@@ -35,8 +39,8 @@ const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
     <header class="flex flex-col gap-3 md:pl-[7rem]">
       <h1 class="type-title">Fågellokaler</h1>
       <p class="type-ingress text-muted-foreground max-w-prose">
-        Platserna där klubben skådar i Markaryds kommun. En grön prick på kartan betyder att någon
-        har larmat därifrån de senaste två veckorna.
+        Platserna där klubben skådar i Markaryds kommun. En större grön prick på kartan betyder att
+        någon har larmat därifrån de senaste två veckorna.
       </p>
     </header>
 
@@ -54,7 +58,18 @@ const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
           Inga fågellokaler är upplagda ännu. De läggs till i appen och syns sedan här.
         </p>
       ) : (
-        <LokalList lokaler={lokaler.value} headingLevel={2} />
+        <>
+          {active.length > 0 && (
+            <section aria-labelledby="lokaler-aktiva" class="flex flex-col gap-5">
+              <h2 id="lokaler-aktiva" class="type-section">Larmat senaste två veckorna</h2>
+              <LokalList lokaler={active} letters={false} />
+            </section>
+          )}
+          <section aria-labelledby="lokaler-alla" class="flex flex-col gap-5">
+            <h2 id="lokaler-alla" class="type-section">Alla lokaler</h2>
+            <LokalList lokaler={lokaler.value} />
+          </section>
+        </>
       )
     }
   </div>

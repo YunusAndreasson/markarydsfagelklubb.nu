@@ -1,0 +1,157 @@
+---
+export const prerender = false
+
+import ArticleList from "@/components/site/ArticleList.astro"
+import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import SiteLayout from "@/layouts/site.astro"
+import { decodeCursor, encodeCursor } from "@/lib/keyset"
+import { listPublicLokaler } from "@/lib/public-alerts"
+import { listPublishedArticles, loadNavigation, searchPages } from "@/lib/public-content"
+import { matchesName, normaliseSearchQuery } from "@/lib/search"
+
+/**
+ * Search (docs/design.md, "Sök"): articles, pages and lokaler, from a plain GET
+ * form with no script. Lokaler and pages come first and are few, since someone
+ * typing a place or "medlemskap" wants that one page; articles follow, newest
+ * first, as every list on the site runs.
+ */
+
+const ARTICLE_PAGE = 20
+const OTHER_LIMIT = 8
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+
+const params = Astro.url.searchParams
+const query = normaliseSearchQuery(params.get("q"))
+const before = decodeCursor(params.get("fore"))
+const after = decodeCursor(params.get("efter"))
+// Later pages of articles don't repeat the short lists above them.
+const firstPage = !before && !after
+
+const [navigation, articles, pageRows, lokaler] = await Promise.all([
+  loadNavigation(db),
+  query ? listPublishedArticles(db, { limit: ARTICLE_PAGE, search: query, before, after }) : null,
+  query && firstPage ? searchPages(db, query, OTHER_LIMIT) : [],
+  query && firstPage ? listPublicLokaler() : ({ ok: true, value: [] } as const),
+])
+// A firewall in front of the database refuses text that looks like an attack, and
+// a visitor's odd query shouldn't cost them the page. The read has logged it.
+const failed = Boolean(query) && (!articles || !pageRows || !lokaler.ok)
+
+const pages = (pageRows ?? []).flatMap((row) => {
+  const node = navigation.tree.byId.get(row.id)
+  return node ? [{ ...row, path: node.path }] : []
+})
+const foundLokaler = lokaler.ok
+  ? lokaler.value.filter((lokal) => matchesName(lokal.name, query)).slice(0, OTHER_LIMIT)
+  : []
+const found = articles?.articles ?? []
+const nothing =
+  !failed &&
+  query !== "" &&
+  found.length === 0 &&
+  pages.length === 0 &&
+  foundLokaler.length === 0 &&
+  firstPage
+
+const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0]) =>
+  `/sok?${new URLSearchParams({ q: query, [param]: encodeCursor(cursor) })}`
+---
+
+<SiteLayout title={query ? `Sök: ${query}` : "Sök"} description="Sök bland Markaryds Fågelklubbs artiklar, sidor och fågellokaler." menu={navigation.menu}>
+  <div class="flex flex-col gap-10">
+    <header class="flex flex-col gap-5 md:pl-[7rem]">
+      <h1 class="type-title">Sök</h1>
+      <form action="/sok" method="get" role="search" class="flex max-w-[38rem] gap-2">
+        <Input
+          type="search"
+          name="q"
+          value={query}
+          aria-label="Sök bland artiklar, sidor och fågellokaler"
+          placeholder="En art, en plats, ett år …"
+          className="focus-strong h-11 min-w-0 flex-1 text-base"
+        />
+        <button type="submit" class={buttonVariants({ className: "focus-strong h-11 px-5 text-base" })}>Sök</button>
+      </form>
+    </header>
+
+    {
+      failed && (
+        <p class="text-muted-foreground max-w-[38rem] md:ml-[7rem]">
+          Sökningen gick inte att genomföra. Prova med andra ord, eller ladda om sidan om en stund.
+        </p>
+      )
+    }
+
+    {
+      nothing && (
+        <div class="text-muted-foreground flex max-w-[38rem] flex-col gap-2 md:ml-[7rem]">
+          <p>Ingen träff på ”{query}”.</p>
+          <p>
+            Prova ett annat ord eller färre ord. Fynd finns under <a href="/larm" class="link">Larm</a>
+            och i <a href="/artiklar" class="link">artikelarkivet</a>.
+          </p>
+        </div>
+      )
+    }
+
+    {
+      foundLokaler.length > 0 && (
+        <section aria-labelledby="traff-lokaler" class="flex flex-col gap-4 md:pl-[7rem]">
+          <h2 id="traff-lokaler" class="type-section">Fågellokaler</h2>
+          <ul class="flex flex-col gap-3">
+            {foundLokaler.map((lokal) => (
+              <li>
+                <a href={`/lokaler/${lokal.slug}`} class="type-item decoration-primary underline-offset-4 hover:underline">
+                  {lokal.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      pages.length > 0 && (
+        <section aria-labelledby="traff-sidor" class="flex flex-col gap-4 md:pl-[7rem]">
+          <h2 id="traff-sidor" class="type-section">Sidor</h2>
+          <ul class="flex max-w-[38rem] flex-col gap-4">
+            {pages.map((page) => (
+              <li class="flex flex-col gap-0.5">
+                <a href={page.path} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
+                  {page.title}
+                </a>
+                {page.description && <p class="text-muted-foreground leading-relaxed">{page.description}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      found.length > 0 && (
+        <section aria-labelledby="traff-artiklar" class="flex flex-col gap-6">
+          <h2 id="traff-artiklar" class="type-section md:pl-[7rem]">Artiklar</h2>
+          <ArticleList articles={found} headingLevel={3} years="changes" />
+        </section>
+      )
+    }
+
+    {
+      (articles?.older || articles?.newer) && (
+        <nav aria-label="Fler träffar" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+          {articles.newer && (
+            <a href={link("efter", articles.newer)} class="link flex min-h-11 items-center font-medium">Nyare träffar</a>
+          )}
+          {articles.older && (
+            <a href={link("fore", articles.older)} class="link flex min-h-11 items-center font-medium">Äldre träffar</a>
+          )}
+        </nav>
+      )
+    }
+  </div>
+</SiteLayout>
