@@ -3,9 +3,9 @@ export const prerender = false
 
 import EventList from "@/components/site/EventList.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { groupByMonth, monthKey, monthOf, shiftMonth } from "@/lib/event-month"
-import { listUpcomingEvents, loadNavigation } from "@/lib/public-content"
-import { formatDate, startOfStockholmDay } from "@/lib/stockholm-time"
+import { groupByMonth } from "@/lib/event-month"
+import { latestEventStartBefore, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
+import { formatDate, startOfStockholmDay, stockholmMonthKey } from "@/lib/stockholm-time"
 
 /**
  * The programme. Upcoming events, grouped under the month they fall in, with
@@ -21,15 +21,18 @@ if (!db) return new Response(null, { status: 500 })
 
 // From the start of today, so a morning excursion is still in the programme
 // while the members are out on it.
-const now = new Date()
-const [navigation, events] = await Promise.all([
+const today = startOfStockholmDay(new Date())
+const [navigation, events, latestPast] = await Promise.all([
   loadNavigation(db),
-  listUpcomingEvents(db, { limit: UPCOMING_LIMIT, from: startOfStockholmDay(now) }),
+  listUpcomingEvents(db, { limit: UPCOMING_LIMIT, from: today }),
+  latestEventStartBefore(db, today),
 ])
 if (!events) return new Response(null, { status: 500 })
 
 const months = groupByMonth(events)
-const previousMonth = monthKey(shiftMonth(monthOf(now), -1))
+// The month of the newest past event, which may well be this one: an earlier event
+// this month has left the list above, and last month's page wouldn't show it.
+const earlierMonth = latestPast ? stockholmMonthKey(latestPast) : null
 const heading = (key: string) => {
   const label = formatDate(`${key}-01T12:00:00Z`, "month")
   return label.charAt(0).toUpperCase() + label.slice(1)
@@ -77,10 +80,14 @@ const heading = (key: string) => {
 
     {/* The link says what it does, not just where it goes: a bare month name
         at the foot of the page reads as a stray heading. */}
-    <nav aria-label="Tidigare i programmet" class="md:pl-[7rem]">
-      <a href={`/kalender/${previousMonth}`} class="link flex min-h-11 w-fit items-center font-medium">
-        Tidigare i programmet
-      </a>
-    </nav>
+    {
+      earlierMonth && (
+        <nav aria-label="Tidigare i programmet" class="md:pl-[7rem]">
+          <a href={`/kalender/${earlierMonth}`} class="link flex min-h-11 w-fit items-center font-medium">
+            Tidigare i programmet
+          </a>
+        </nav>
+      )
+    }
   </div>
 </SiteLayout>

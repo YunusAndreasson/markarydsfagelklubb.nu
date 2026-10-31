@@ -64,9 +64,10 @@ export function pageOfDays<T extends Larm>(
 
   if (paging === "newer") {
     if (newer && days.length > 1) days = days.slice(1)
-    if (days.length > maxDays) days = days.slice(-maxDays)
+    const wasLong = days.length > maxDays
+    if (wasLong) days = days.slice(-maxDays)
     const first = days[0]?.items[0]
-    if (newer || days.length === maxDays) newer = first ? cursorOf(first) : null
+    if (newer || wasLong) newer = first ? cursorOf(first) : null
   } else {
     if (older && days.length > 1) days = days.slice(0, -1)
     const wasLong = days.length > maxDays

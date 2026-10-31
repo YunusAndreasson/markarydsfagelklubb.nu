@@ -11,7 +11,7 @@ import { startOfStockholmMonth, stockholmMonthKey } from "./stockholm-time"
 
 export type Month = { year: number; month: number }
 
-/** The window a month page reads: `start <= starts_at < end`. */
+/** The window a month page reads: what is on from `start` up to, not including, `end`. */
 export type MonthRange = { start: Date; end: Date }
 
 export const MONTH_KEY_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])$/

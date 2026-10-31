@@ -33,6 +33,13 @@ describe("searchFilter", () => {
 
   it("keeps ilike's wildcard out of the title match", () => {
     expect(searchFilter("a*b")).toContain('title.ilike."*ab*"')
+    expect(searchFilter("a%b_c")).toContain('title.ilike."*abc*"')
+  })
+
+  it("leaves out the title match when only wildcards were typed", () => {
+    for (const query of ["*", "%", "_", "\\"]) {
+      expect(searchFilter(query)).not.toContain("ilike")
+    }
   })
 })
 

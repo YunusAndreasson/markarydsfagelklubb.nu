@@ -26,6 +26,8 @@ export const MOVED_PAGES: Readonly<Record<string, string>> = {
   "/om-foreningen/allmant": "/om-foreningen",
   // Tånnerydsdammen is no lokal of its own; its places are listed on this one.
   "/fagellokaler/tanneryd-damm": "/lokaler/jacobssons-udde",
+  // WordPress answered the old address with the post's new slug; article 4929 links to it.
+  "/tisdagar-april-maj-motesplats-ekebacken": "/artiklar/tisdagar-april-maj-motesplats-ekebacken-2",
 }
 
 const settle = (target: string | undefined): string | null =>

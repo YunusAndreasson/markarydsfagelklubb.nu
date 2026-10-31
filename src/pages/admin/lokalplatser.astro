@@ -26,6 +26,11 @@ const back = (extra: string) => `/admin/lokalplatser?lokal=${lokalId}&${extra}`
 let errors: FieldErrors = {}
 let errorFor: number | "new" | null = null
 let formError: string | null = null
+// What was typed into the form that failed, so the corrections start from it.
+let submitted: Record<
+  "name" | "note" | "kind" | "latitude" | "longitude" | "sort_order",
+  string
+> | null = null
 
 if (Astro.request.method === "POST" && lokalId !== null) {
   const form = await Astro.request.formData()
@@ -35,6 +40,15 @@ if (Astro.request.method === "POST" && lokalId !== null) {
     if (result.ok) return Astro.redirect(back("borttagen=1"), 303)
     formError = WRITE_MESSAGES.failed
   } else {
+    const field = (name: string) => String(form.get(name) ?? "")
+    submitted = {
+      name: field("name"),
+      note: field("note"),
+      kind: field("kind"),
+      latitude: field("latitude"),
+      longitude: field("longitude"),
+      sort_order: field("sort_order"),
+    }
     const parsed = parseLokalPointForm(form)
     if (parsed.ok) {
       const result = await saveLokalPoint(supabase, id, lokalId, parsed.value)
@@ -116,39 +130,40 @@ const failed = lokaler.error || points.error
         [...here, null].map((row) => {
           const key = row?.id ?? "new"
           const shown = errorFor === key ? errors : {}
+          const typed = errorFor === key ? submitted : null
           return (
             <form method="POST" class="flex flex-col gap-3 rounded-2xl border p-4">
               {!row && <h2 class="text-sm font-semibold">Ny plats</h2>}
               {row && <input type="hidden" name="id" value={row.id} />}
               <Field data-invalid={shown.name ? true : undefined}>
                 <FieldLabel htmlFor={`name-${key}`}>Namn</FieldLabel>
-                <Input id={`name-${key}`} name="name" value={row?.name ?? ""} required className="h-11" aria-invalid={shown.name ? true : undefined} />
+                <Input id={`name-${key}`} name="name" value={typed?.name ?? row?.name ?? ""} required className="h-11" aria-invalid={shown.name ? true : undefined} />
                 <FieldError>{shown.name}</FieldError>
               </Field>
               <Field>
                 <FieldLabel htmlFor={`note-${key}`}>Text</FieldLabel>
-                <Textarea id={`note-${key}`} name="note" rows={2} defaultValue={row?.note ?? ""} />
+                <Textarea id={`note-${key}`} name="note" rows={2} defaultValue={typed?.note ?? row?.note ?? ""} />
               </Field>
               <div class="grid gap-3 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor={`kind-${key}`}>Typ</FieldLabel>
-                  <NativeSelect id={`kind-${key}`} name="kind" className="w-full" defaultValue={row?.kind ?? "place"}>
+                  <NativeSelect id={`kind-${key}`} name="kind" className="w-full" defaultValue={typed?.kind ?? row?.kind ?? "place"}>
                     <NativeSelectOption value="place">Plats</NativeSelectOption>
                     <NativeSelectOption value="practical">Bra att veta</NativeSelectOption>
                   </NativeSelect>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor={`order-${key}`}>Ordning</FieldLabel>
-                  <Input id={`order-${key}`} name="sort_order" type="number" value={row?.sort_order ?? nextOrder} className="h-11" />
+                  <Input id={`order-${key}`} name="sort_order" type="number" value={typed?.sort_order ?? row?.sort_order ?? nextOrder} className="h-11" />
                 </Field>
                 <Field data-invalid={shown.latitude ? true : undefined}>
                   <FieldLabel htmlFor={`lat-${key}`}>Latitud</FieldLabel>
-                  <Input id={`lat-${key}`} name="latitude" inputMode="decimal" value={row?.latitude ?? ""} className="h-11" aria-invalid={shown.latitude ? true : undefined} />
+                  <Input id={`lat-${key}`} name="latitude" inputMode="decimal" value={typed?.latitude ?? row?.latitude ?? ""} className="h-11" aria-invalid={shown.latitude ? true : undefined} />
                   <FieldError>{shown.latitude}</FieldError>
                 </Field>
                 <Field data-invalid={shown.longitude ? true : undefined}>
                   <FieldLabel htmlFor={`lng-${key}`}>Longitud</FieldLabel>
-                  <Input id={`lng-${key}`} name="longitude" inputMode="decimal" value={row?.longitude ?? ""} className="h-11" aria-invalid={shown.longitude ? true : undefined} />
+                  <Input id={`lng-${key}`} name="longitude" inputMode="decimal" value={typed?.longitude ?? row?.longitude ?? ""} className="h-11" aria-invalid={shown.longitude ? true : undefined} />
                   <FieldError>{shown.longitude}</FieldError>
                 </Field>
               </div>

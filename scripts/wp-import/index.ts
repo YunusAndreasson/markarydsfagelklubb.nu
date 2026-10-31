@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { parseArgs } from "node:util"
 import { sanitizeContent } from "../../src/lib/sanitize"
+import { applyBodyFixes } from "./body-fixes"
 import { pickCategory, SITE_CATEGORIES } from "./categories"
 import { fetchPosts, readExport, WordPressClient, type WpCategory } from "./sources"
 import { tidyLineBreaks } from "./tidy"
@@ -177,7 +178,9 @@ for (const post of posts) {
     }
   }
   // Line breaks from WordPress's classic editor sorted out (tidy.ts).
-  let html = sanitizeContent(tidyLineBreaks(bodyHtml))
+  const fixed = applyBodyFixes(post.id, sanitizeContent(tidyLineBreaks(bodyHtml)))
+  let html = fixed.html
+  for (const from of fixed.unmatched) problems.push(`body fix no longer matches: ${from}`)
 
   // The two checks the spec asks a human to make, made here first.
   const keptImages = (html.match(/<img\s/g) ?? []).length

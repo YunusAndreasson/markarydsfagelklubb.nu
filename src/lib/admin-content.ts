@@ -40,8 +40,11 @@ export const WRITE_MESSAGES = {
 
 // Articles
 
-/** The admin list, newest first. Enough until the import (step 8) brings 353. */
-export const ADMIN_LIST_LIMIT = 200
+/**
+ * The admin lists, newest first. Supabase's cap per response; the site holds 354
+ * articles and 406 images, and a row beyond the limit can't be opened from a list.
+ */
+export const ADMIN_LIST_LIMIT = 1000
 
 export async function listArticles(supabase: SupabaseServerClient) {
   return supabase

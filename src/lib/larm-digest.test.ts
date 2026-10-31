@@ -101,4 +101,18 @@ describe("pageOfDays", () => {
     expect(page.days.map((d) => ids(d.items))).toEqual([["b"]])
     expect(page.newer).toEqual(cursor(b))
   })
+
+  it("offers nothing newer once paging back has reached today", () => {
+    const rows = [on("a", 31), on("b", 30)]
+    const page = pageOfDays({ alerts: rows, older: cursor(on("b", 30)), newer: null }, "newer", 2)
+    expect(page.days).toHaveLength(2)
+    expect(page.newer).toBeNull()
+  })
+
+  it("can carry on towards today when the day limit cut the page", () => {
+    const rows = [on("a", 31), on("b", 30), on("c", 29)]
+    const page = pageOfDays({ alerts: rows, older: cursor(on("c", 29)), newer: null }, "newer", 2)
+    expect(page.days.map((d) => ids(d.items))).toEqual([["b"], ["c"]])
+    expect(page.newer?.id).toBe("b")
+  })
 })

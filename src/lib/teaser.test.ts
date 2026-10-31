@@ -6,6 +6,19 @@ import { bodyImages, isHeroWorthy, leadOpening, pickTeaserImage, teaserText } fr
 const url = (name: string, width: number) =>
   `${SITE_MEDIA_PUBLIC_PREFIX}2026/05/${name}/${width}.webp`
 
+describe("leadOpening's limits", () => {
+  it("keeps escaped text escaped when it has to cut a long paragraph", () => {
+    const long = "ord ".repeat(400)
+    const { paragraphs } = leadOpening(`<p>&lt;script&gt;x &amp; y ${long}</p>`, "Rubrik")
+    expect(paragraphs[0]).toMatch(/^&lt;script&gt;x &amp; y /)
+  })
+
+  it("says there is more when the article goes on under a heading", () => {
+    const { more } = leadOpening("<p>Kort text.</p><h3>Resultat</h3>", "Rubrik")
+    expect(more).toBe(true)
+  })
+})
+
 /** As the WordPress import writes it: src, srcset, sizes, width, height, alt, loading. */
 function imported(name: string, width: number, height: number, alt = ""): string {
   return `<img src="${url(name, 960)}" srcset="${url(name, 480)} 480w, ${url(name, 960)} 960w" sizes="(min-width: 40rem) 38rem, 100vw" width="${width}" height="${height}" alt="${alt}" loading="lazy" />`

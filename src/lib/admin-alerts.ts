@@ -24,7 +24,8 @@ import type { SupabaseServerClient } from "./supabase-server"
  * and no coordinate reaches the admin page either.
  */
 
-export const ADMIN_ALERT_LIMIT = 100
+/** Supabase's cap per response. Any larm may need hiding, however old: a member can ask. */
+export const ADMIN_ALERT_LIMIT = 1000
 
 export type AdminAlert = PublicAlert & { hidden: boolean; reason: string }
 

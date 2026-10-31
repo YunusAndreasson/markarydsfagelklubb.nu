@@ -53,6 +53,9 @@ function decodeEntities(value: string): string {
     .replaceAll("&amp;", "&")
 }
 
+const escapeHtml = (value: string) =>
+  value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+
 function attributesOf(tag: string): Map<string, string> {
   const found = new Map<string, string>()
   for (const [, name, value] of tag.matchAll(ATTRIBUTE)) {
@@ -185,7 +188,7 @@ function* textParagraphs(html: string, title: string): Generator<{ inner: string
 export type LeadOpening = {
   /** Whole paragraphs, as sanitized HTML: links and emphasis stay. */
   paragraphs: string[]
-  /** There is more in the article than these: text, a list, a table or more photos. */
+  /** There is more in the article than these: text, a heading, a list, a table or more photos. */
   more: boolean
 }
 
@@ -207,11 +210,15 @@ export function leadOpening(html: string, title: string, budget = LEAD_BUDGET): 
       break
     }
     if (paragraphs.length === 0 && text.length > budget * 2) {
-      return { paragraphs: [cut(text, budget * 2)], more: true }
+      // `text` has its entities decoded and the page prints paragraphs as HTML.
+      return { paragraphs: [escapeHtml(cut(text, budget * 2))], more: true }
     }
     paragraphs.push(inner.trim())
     used += text.length
   }
   const photos = html.match(/<img\b/g)?.length ?? 0
-  return { paragraphs, more: more || photos > 1 || /<(ul|ol|table|iframe)\b/.test(html) }
+  return {
+    paragraphs,
+    more: more || photos > 1 || /<(ul|ol|table|iframe|h[2-4]|blockquote)\b/.test(html),
+  }
 }

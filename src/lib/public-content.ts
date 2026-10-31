@@ -287,15 +287,35 @@ export async function listUpcomingEvents(
   return data
 }
 
-/** One month of the programme, for /kalender/2026-10. */
+/** When the newest event before `before` began, for "Tidigare i programmet". Null if none. */
+export async function latestEventStartBefore(
+  db: SupabasePublicClient,
+  before: Date
+): Promise<string | null> {
+  const { data, error } = await db
+    .from("events")
+    .select("starts_at")
+    .lt("starts_at", before.toISOString())
+    .order("starts_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) console.error(`mafk-web: latest past event failed — ${error.message}`)
+  return data?.starts_at ?? null
+}
+
+/**
+ * One month of the programme, for /kalender/2026-10: what starts in it, and what
+ * started earlier and runs on into it, like a rally over the turn of the month.
+ */
 export async function listEventsInMonth(
   db: SupabasePublicClient,
   range: { start: Date; end: Date }
 ): Promise<EventSummary[] | null> {
+  const start = range.start.toISOString()
   const { data, error } = await db
     .from("events")
     .select(EVENT_COLUMNS)
-    .gte("starts_at", range.start.toISOString())
+    .or(`starts_at.gte."${start}",ends_at.gte."${start}"`)
     .lt("starts_at", range.end.toISOString())
     .order("starts_at")
     .order("id")

@@ -56,9 +56,15 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
 
     {
       alerts.length === 0 ? (
-        <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
-          Inga larm ännu. Larmen skickas från klubbens app och syns sedan här.
-        </p>
+        params.has("fore") || params.has("efter") ? (
+          <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+            Det finns inga fler larm åt det hållet. <a href="/larm" class="link">Till de senaste larmen</a>
+          </p>
+        ) : (
+          <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+            Inga larm ännu. Larmen skickas från klubbens app och syns sedan här.
+          </p>
+        )
       ) : (
         days.map((day, index) => {
           const { highlights, rest } = digestDay(day.items)
