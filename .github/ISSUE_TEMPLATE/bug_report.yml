@@ -1,0 +1,40 @@
+name: Bug report
+description: Something on the website doesn't work the way it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what the site did instead.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Page
+      description: The address of the page where it happened.
+      placeholder: https://mafk-web.jonas-268.workers.dev/kalender
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce it
+      placeholder: |
+        1. Open …
+        2. Click …
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: Firefox 146 on Windows 11, or Safari on an iPhone 15
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: >
+        If it helps. Larm pages show members' names, so crop out anything that
+        isn't part of the problem.
