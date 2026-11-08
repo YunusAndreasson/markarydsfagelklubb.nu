@@ -7,6 +7,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # astro check doesn't support TypeScript 7 (the native compiler) yet; it
+      # asks for TypeScript 6. Lift this once it does.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     groups:
       astro:
         patterns: ["astro", "@astrojs/*"]
