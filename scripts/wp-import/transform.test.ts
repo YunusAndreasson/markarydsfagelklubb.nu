@@ -140,10 +140,10 @@ describe("transformBody", () => {
 
   it("repairs an email address linked without mailto:", () => {
     const { html } = stored(
-      '<p><a href="sveneric.helmersson@telia.com">sveneric</a> <a href="mailto:a@b.se">a</a></p>'
+      '<p><a href="per.persson@example.se">per</a> <a href="mailto:a@b.se">a</a></p>'
     )
     expect(html).toBe(
-      '<p><a href="mailto:sveneric.helmersson@telia.com">sveneric</a> <a href="mailto:a@b.se">a</a></p>'
+      '<p><a href="mailto:per.persson@example.se">per</a> <a href="mailto:a@b.se">a</a></p>'
     )
   })
 

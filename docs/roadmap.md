@@ -268,9 +268,8 @@ goes public:
 **Decided 2026-09-19, shipped in step 2:** exactly **one administrator** signs
 in on the web, with **email and password**. There's no member login.
 
-- The administrator is Jonas's existing app account
-  (`yunus@edenmind.com`) with `profiles.is_admin = true`, granted by
-  SQL. That flag is shared with the app, where it also allows creating lokaler
+- The administrator is Jonas's existing app account, with
+  `profiles.is_admin = true` granted by SQL. That flag is shared with the app, where it also allows creating lokaler
   (the `locations` insert policy). No second admin concept.
 - Why password and not Google: the Google provider has no OAuth secret (it only
   serves the app's native ID tokens), so web Google sign-in would need a change
@@ -886,7 +885,7 @@ time.
 | # | Decision | Answer | Date |
 |---|---|---|---|
 | D1 | What the public sees of the app's data | **Public**, since only the admin signs in (follows from D2). Observer names **shown**, resolved live from `profiles`; **all** larm published, with a per-larm hide in `/admin`; place coarsened to the nearest lokal within 3 km, never a coordinate; the policy update moved to the launch checklist. *Open:* the protected-species list | 2026-09-19, completed 2026-09-20 |
-| D2 | Web sign-in | **One administrator** (yunus@edenmind.com), **email + password**; no member login | 2026-09-19 |
+| D2 | Web sign-in | **One administrator**, **email + password**; no member login | 2026-09-19 |
 | D3 | Site media storage | **Public Supabase bucket `site-media`** (Pro plan; the library is ~0.45 GB, so no R2), **three pre-generated widths** served with `srcset`. **PDFs public**, answered 2026-09-20 | 2026-09-19, completed 2026-09-20 |
 | D4 | Rendering and routing | **All public HTML through the Worker** (`["/*", "!/_astro/*", …]`), DB content server-rendered with a short cache; the 404 and legal pages stay prerendered | 2026-09-19 |
 | D5 | Editor | **Tiptap storing HTML**, sanitized on save; **drafts + scheduled publishing, no revisions**; embed allowlist starts with Artportalen and Google Maps | 2026-09-19 |

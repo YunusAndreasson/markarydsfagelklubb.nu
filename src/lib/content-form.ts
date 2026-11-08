@@ -43,7 +43,7 @@ export const MESSAGES = {
   authorTooLong: `Namnet får vara högst ${LIMITS.author} tecken.`,
   descriptionTooLong: `Beskrivningen får vara högst ${LIMITS.description} tecken.`,
   contactNameTooLong: `Namnet får vara högst ${LIMITS.contactName} tecken.`,
-  contactPhoneInvalid: "Skriv telefonnumret med siffror, till exempel 070-174 06 05.",
+  contactPhoneInvalid: "Skriv telefonnumret med siffror, till exempel 070-174 06 50.",
   deadlineInvalid: "Ange ett datum, till exempel 2026-11-24.",
   publishAtInvalid: "Ange datum och tid, till exempel 2026-09-19 10:00.",
   placeTooLong: `Platsen får vara högst ${LIMITS.place} tecken.`,

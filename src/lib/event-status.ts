@@ -37,7 +37,7 @@ export function signupOpen(event: Timed & { signup_deadline: string | null }, no
   return dayOf(now) <= dayOf(deadlineInstant(event.signup_deadline))
 }
 
-/** "070-174 06 05" as a `tel:` link, or null when there are no digits to dial. */
+/** "070-174 06 50" as a `tel:` link, or null when there are no digits to dial. */
 export function telHref(phone: string): string | null {
   const digits = phone.replace(/[^\d+]/g, "")
   return digits ? `tel:${digits}` : null

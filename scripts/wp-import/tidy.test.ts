@@ -1,18 +1,19 @@
 import { describe, expect, it } from "vitest"
 import { captionStoredPhotos, tidyLineBreaks } from "./tidy"
 
-// Lines from the club's own posts (articles 35, 40 and 550 on the old site).
+// Lines from the club's own posts (articles 35, 40 and 550 on the old site),
+// with made-up names and numbers in place of the members' own.
 
 describe("tidyLineBreaks", () => {
   it("makes each prose line a paragraph and keeps a run of short lines together", () => {
     expect(
       tidyLineBreaks(
-        "<p>Samling kl. 08.00 vid Röda ladan. Vi avslutar räkningen normalt vid lunchtid. <br />Förhoppningsvis kan det också rasta något spännande på ängarna.<br />Medtag gärna fika!<br />Ledare: Anna Andersson, 070-174 06 05.<br />Välkomna!</p>"
+        "<p>Samling kl. 08.00 vid Röda ladan. Vi avslutar räkningen normalt vid lunchtid. <br />Förhoppningsvis kan det också rasta något spännande på ängarna.<br />Medtag gärna fika!<br />Ledare: Anna Andersson, 070-174 06 50.<br />Välkomna!</p>"
       )
     ).toBe(
       "<p>Samling kl. 08.00 vid Röda ladan. Vi avslutar räkningen normalt vid lunchtid.</p>" +
         "<p>Förhoppningsvis kan det också rasta något spännande på ängarna.</p>" +
-        "<p>Medtag gärna fika!<br />Ledare: Anna Andersson, 070-174 06 05.<br />Välkomna!</p>"
+        "<p>Medtag gärna fika!<br />Ledare: Anna Andersson, 070-174 06 50.<br />Välkomna!</p>"
     )
   })
 
@@ -49,7 +50,7 @@ describe("tidyLineBreaks", () => {
   })
 
   it("keeps an e-mail address on its own line", () => {
-    const contact = "<p>Per Persson, 070-174 06 08<br />per.persson@example.se</p>"
+    const contact = "<p>Per Persson, 070-174 06 51<br />per.persson@example.se</p>"
     expect(tidyLineBreaks(contact)).toBe(contact)
   })
 

@@ -89,7 +89,7 @@ What else is true today:
   `send-bird-alert`, the function writes `alerts` and pushes through Expo. None
   of it passes through this site's Worker, so deploying the site cannot break it.
   *Changing these tables or that function can.*
-- **One admin:** Jonas (`yunus@edenmind.com`), the site's only web
+- **One admin:** Jonas, the site's only web
   administrator, granted 2026-09-19 with `supabase db query --linked`. The flag
   is shared with the app, where it also allows creating lokaler. Grant or revoke
   it only with SQL, and only when the user asks for that specific change.

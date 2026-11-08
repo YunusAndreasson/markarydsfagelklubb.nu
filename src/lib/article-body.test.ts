@@ -27,11 +27,11 @@ describe("withGalleries", () => {
 describe("linkPhones", () => {
   it("links the styles the club writes numbers in", () => {
     for (const [text, digits] of [
-      ["070-174 06 05", "070-174 06 05"],
-      ["070-174 06 05", "070-174 06 05"],
-      ["070-174 06 06", "070-174 06 06"],
-      ["070-174 06 07", "070-174 06 07"],
-      ["070-174 06 05", "070-174 06 05"],
+      ["0701-74 06 05", "0701740605"],
+      ["0701 – 740605", "0701740605"],
+      ["070-1740606", "0701740606"],
+      ["0701 -740607", "0701740607"],
+      ["0701740605", "0701740605"],
     ] as const) {
       expect(linkPhones(`<p>Ring ${text}.</p>`), text).toBe(
         `<p>Ring <a href="tel:${digits}">${text}</a>.</p>`
@@ -53,21 +53,21 @@ describe("linkPhones", () => {
   })
 
   it("never touches an attribute or a link's own text", () => {
-    const html = '<img alt="070-174 06 05" src="x"><a href="/a">070-174 06 05</a>'
+    const html = '<img alt="0701-740605" src="x"><a href="/a">0701-740605</a>'
     expect(linkPhones(html)).toBe(html)
   })
 
   it("picks up again after a link", () => {
-    expect(linkPhones('<a href="/a">x</a> 070-174 06 05')).toBe(
-      '<a href="/a">x</a> <a href="tel:070-174 06 05">070-174 06 05</a>'
+    expect(linkPhones('<a href="/a">x</a> 0701-740605')).toBe(
+      '<a href="/a">x</a> <a href="tel:0701740605">0701-740605</a>'
     )
   })
 })
 
 describe("renderBody", () => {
   it("does both", () => {
-    const out = renderBody(`${figure(1)}${figure(2)}<p>070-174 06 05</p>`)
+    const out = renderBody(`${figure(1)}${figure(2)}<p>0701-740605</p>`)
     expect(out).toContain("content-gallery")
-    expect(out).toContain("tel:070-174 06 05")
+    expect(out).toContain("tel:0701740605")
   })
 })

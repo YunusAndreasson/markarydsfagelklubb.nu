@@ -11,7 +11,7 @@ export function withGalleries(html: string): string {
 }
 
 // An area code of three or four digits, then the rest in any of the club's styles:
-// 070-174 06 05, 070-174 06 05, 070-174 06 06. Bankgiro and Swish numbers don't start
+// 0701-74 06 05, 0701 – 740605, 070-1740606. Bankgiro and Swish numbers don't start
 // with 0, and the digit count below rules out the rest.
 const PHONE = /(?<![\d-])0\d{2,3}[\s\u00a0]*[-–—]?[\s\u00a0]*\d[\d\s\u00a0-]{3,10}\d(?!\d)/g
 

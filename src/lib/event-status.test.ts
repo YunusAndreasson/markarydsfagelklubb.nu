@@ -56,8 +56,8 @@ describe("signupOpen", () => {
 
 describe("telHref", () => {
   it("dials the digits as the club writes them", () => {
-    expect(telHref("070-174 06 05")).toBe("tel:070-174 06 05")
-    expect(telHref("+46 70 174 06 05")).toBe("tel:+46 70 174 06 05")
+    expect(telHref("0701 – 740605")).toBe("tel:0701740605")
+    expect(telHref("+46 701 74 06 05")).toBe("tel:+46701740605")
     expect(telHref("ring")).toBeNull()
   })
 })
