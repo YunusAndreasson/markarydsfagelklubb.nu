@@ -130,4 +130,4 @@ same database.
 
 The code is [MIT](LICENSE). The club's name, emblem and texts belong to
 Markaryds Fågelklubb, the photos to the members and others who took them, and
-the sponsors' logos to the sponsors; [LICENSE](LICENSE) lists the paths.
+the sponsors' logos to the sponsors; [NOTICE.md](NOTICE.md) lists the paths.
