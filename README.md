@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/YunusAndreasson/markarydsfagelklubb-web/actions/workflows/ci.yml"><img src="https://github.com/YunusAndreasson/markarydsfagelklubb-web/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/YunusAndreasson/markarydsfagelklubb.nu/actions/workflows/ci.yml"><img src="https://github.com/YunusAndreasson/markarydsfagelklubb.nu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
 

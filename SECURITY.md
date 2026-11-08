@@ -8,7 +8,7 @@ the club's pages. Please report one privately.
 ## Reporting a vulnerability
 
 Use GitHub's private reporting:
-[report a vulnerability](https://github.com/YunusAndreasson/markarydsfagelklubb-web/security/advisories/new).
+[report a vulnerability](https://github.com/YunusAndreasson/markarydsfagelklubb.nu/security/advisories/new).
 Please don't open a public issue.
 
 Include the URL, what you did, what happened, and what an attacker would gain.

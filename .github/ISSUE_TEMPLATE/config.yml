@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/YunusAndreasson/markarydsfagelklubb-web/security/advisories/new
+    url: https://github.com/YunusAndreasson/markarydsfagelklubb.nu/security/advisories/new
     about: Privately, please, never in a public issue (SECURITY.md).
   - name: Something in the app
     url: https://github.com/YunusAndreasson/markarydsfagelklubb/issues/new/choose
