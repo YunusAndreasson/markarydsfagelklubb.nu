@@ -1,4 +1,4 @@
-# Verify every push and PR with `pnpm verify` — the same command as locally, so
+# Verify every push and PR with `pnpm verify`, the same command as locally, so
 # "it passed on my machine" and "CI is green" mean the same thing.
 #
 # Deliberately NOT here:
@@ -7,6 +7,9 @@
 # - Database migrations. The Supabase project is shared with the live mobile
 #   app (bird alerts included); `supabase db push` is a human act — see
 #   docs/shared-database.md.
+#
+# No secrets either: the build reads only the public values in wrangler.jsonc,
+# so forks and pull requests from forks run the same job.
 name: CI
 
 on:
@@ -18,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -26,17 +29,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-
-      # pnpm BEFORE setup-node: `cache: pnpm` shells out to pnpm to find the
-      # store. The version comes from package.json `packageManager`.
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 24
-          cache: pnpm
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.13.0'
+
+      # The exact pnpm in package.json `packageManager`.
+      - name: Install pinned package manager
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
 
       - run: pnpm install --frozen-lockfile
 
       # Biome, `wrangler types` + `astro check`, Vitest, `astro build`.
       - run: pnpm verify
+        env:
+          WRANGLER_SEND_METRICS: 'false'
