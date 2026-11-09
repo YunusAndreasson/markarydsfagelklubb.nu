@@ -173,6 +173,25 @@ the admin's image uploader.
 Until launch, every page carries `noindex` and `public/robots.txt` disallows
 all. Both come out together at the domain cutover.
 
+## Open source
+
+The repository is public. MIT covers the code; [NOTICE.md](NOTICE.md) lists the
+club's name, emblem and texts, the members' photos and the sponsors' logos,
+which it doesn't.
+
+- No key in a commit, a doc or a fixture: the Worker's secrets go through
+  `wrangler secret put`, local ones in `.dev.vars`.
+- Anything brought in from elsewhere (an image, font or data) needs a licence
+  that lets it be redistributed here, and a line in NOTICE.md.
+- Dependabot opens grouped pull requests weekly. `.github/dependabot.yml` holds
+  TypeScript back until `astro check` supports its native compiler. A merge
+  deploys nothing; `pnpm ship` does.
+- If `astro check` says "The `@astrojs/check` and `typescript` packages are
+  required" while both are installed, look at the `@emnapi/*` overrides in
+  `pnpm-workspace.yaml` before anything else: a beta emnapi from rolldown's wasm
+  binding causes it.
+- Biome skips Markdown, SVG and YAML (`biome.jsonc`); those stay hand-written.
+
 ## Definition of done
 
 1. `pnpm verify` passes.
