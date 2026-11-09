@@ -134,8 +134,8 @@ describe("the editor and the sanitizer", () => {
       "<figure><img ",
       "<figcaption>",
       "<table>",
-      "<th ",
-      "<td ",
+      "<th>",
+      "<td>",
       "<iframe ",
     ]) {
       expect(html, tag).toContain(tag)
