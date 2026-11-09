@@ -126,6 +126,18 @@ describe("isHeroWorthy", () => {
   })
 })
 
+describe("teaserText tag stripping", () => {
+  it("leaves no complete tag in the text, however the markup is nested", () => {
+    for (const html of [
+      "<p>Hej <<b>script>alert(1)<</b>/script></p>",
+      "<p>Hej <scr<b></b>ipt>x</p>",
+      "<p>Hej <<script>script>x</p>",
+    ]) {
+      expect(teaserText(html, "Rubrik")).not.toMatch(/<[^>]*>/)
+    }
+  })
+})
+
 describe("teaserText", () => {
   it("takes the first paragraph as plain text", () => {
     const html =
