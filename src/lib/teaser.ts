@@ -137,8 +137,18 @@ const ENDS_WITH_IMAGE = /<img\s[^>]*\/>\s*(?:<\/p>)?\s*$/
 const PHOTO_CREDIT = /\bfoto\s*:/i
 const TRAILING_PUNCTUATION = /[\s.,;:!?–-]+$/
 
+/** Removes tags until none are left, so `<<b>script>` cannot rebuild one. */
+function stripTags(fragment: string): string {
+  let text = fragment
+  for (let previous = ""; previous !== text; ) {
+    previous = text
+    text = text.replace(/<[^>]*>/g, "")
+  }
+  return text
+}
+
 function plainText(fragment: string): string {
-  const text = fragment.replace(/<br\s*\/?>/g, " ").replace(/<[^>]*>/g, "")
+  const text = stripTags(fragment.replace(/<br\s*\/?>/g, " "))
   // `\s` covers U+00A0, which the import leaves in text as a literal.
   return decodeEntities(text).replace(/\s+/g, " ").trim()
 }
