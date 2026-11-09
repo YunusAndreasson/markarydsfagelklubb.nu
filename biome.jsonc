@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.5/schema.json",
   // .jsonc, not .json: Biome parses `biome.json` as strict JSON, and a comment
   // in it fails silently — the config is discarded and every default applies,
   // which shows up as thousands of diagnostics from dist/.
@@ -15,7 +15,12 @@
       // Tailwind v4 puts `@theme` / `@custom-variant` in CSS, which Biome's CSS
       // parser rejects. Tailwind owns this file.
       "!**/*.css",
-      "!worker-configuration.d.ts"
+      "!worker-configuration.d.ts",
+      // Biome 2.6 began formatting and linting these; they stay hand-written.
+      "!**/*.md",
+      "!**/*.svg",
+      "!**/*.yaml",
+      "!**/*.yml"
     ]
   },
   "formatter": {
