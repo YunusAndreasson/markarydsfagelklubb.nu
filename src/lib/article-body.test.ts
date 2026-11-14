@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest"
 
-import { linkPhones, linkPhotos, renderBody, withGalleries } from "./article-body"
+import { linkPhones, linkPhotos, photoRatio, renderBody, withGalleries } from "./article-body"
 import { SITE_MEDIA_PUBLIC_PREFIX } from "./media"
 
 const figure = (n: number) => `<figure><img src="${n}.webp"><figcaption>${n}</figcaption></figure>`
 
+const cell = (photo: string, ratio = 1.5) =>
+  `<div class="gallery-cell" style="--ratio: ${ratio}">${photo}</div>`
+const row = (...cells: string[]) => `<div class="gallery-row">${cells.join("")}</div>`
+const gallery = (...rows: string[]) => `<div class="content-gallery">${rows.join("")}</div>`
+
 describe("withGalleries", () => {
-  it("wraps a run of photos", () => {
-    expect(withGalleries(`<p>a</p>${figure(1)}\n${figure(2)}<p>b</p>`)).toBe(
-      `<p>a</p><div class="content-gallery">${figure(1)}\n${figure(2)}</div><p>b</p>`
+  it("lays a run of photos out two to a row", () => {
+    expect(withGalleries(`<p>a</p>${figure(1)}\n${figure(2)}\n${figure(3)}<p>b</p>`)).toBe(
+      `<p>a</p>${gallery(row(cell(figure(1)), cell(figure(2))), row(cell(figure(3))))}<p>b</p>`
     )
   })
 
@@ -20,8 +25,21 @@ describe("withGalleries", () => {
   it("counts plain images too, and keeps separate runs apart", () => {
     const img = '<img src="x.webp">'
     expect(withGalleries(`${img}${figure(1)}<p>a</p>${img}${img}`)).toBe(
-      `<div class="content-gallery">${img}${figure(1)}</div><p>a</p><div class="content-gallery">${img}${img}</div>`
+      `${gallery(row(cell(img), cell(figure(1))))}<p>a</p>${gallery(row(cell(img), cell(img)))}`
     )
+  })
+})
+
+describe("photoRatio", () => {
+  it("reads the image's own size", () => {
+    expect(photoRatio('<figure><img src="a" width="1200" height="800"></figure>')).toBe(1.5)
+    expect(photoRatio('<img width="683" height="1024">')).toBe(0.667)
+  })
+
+  it("holds a panorama or a tall crop to 5:2 and 1:2, and says 3:2 when it can't tell", () => {
+    expect(photoRatio('<img width="3000" height="600">')).toBe(2.5)
+    expect(photoRatio('<img width="300" height="1200">')).toBe(0.5)
+    expect(photoRatio('<img src="a">')).toBe(1.5)
   })
 })
 
@@ -100,7 +118,7 @@ describe("linkPhotos", () => {
 
   it("still makes a contact sheet of linked photos", () => {
     expect(renderBody(`${img}${img}`)).toMatch(
-      /^<div class="content-gallery"><a class="photo"[\s\S]*<\/a><\/div>$/
+      /^<div class="content-gallery"><div class="gallery-row"><div class="gallery-cell" style="--ratio: [\d.]+"><a class="photo"[\s\S]*<\/a><\/div><\/div><\/div>$/
     )
   })
 })

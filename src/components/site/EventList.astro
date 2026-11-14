@@ -46,9 +46,11 @@ const now = new Date()
               <span class="font-display text-foreground text-[2.25rem] leading-[1.05] font-bold tabular-nums lining-nums">
                 {formatDate(event.starts_at, "day")}
               </span>
-              <span>
-                {formatDate(event.starts_at, "monthShort")}
-                {!event.all_day && ` ${formatDate(event.starts_at, "clock")}`}
+              {/* Month and time on one line where the margin is 7rem; stacked in the
+                  phone's 4.25rem, where "nov 18:30" wrapped but "jan 08:00" didn't. */}
+              <span class="flex md:gap-x-[0.3em] max-md:flex-col">
+                <span>{formatDate(event.starts_at, "monthShort")}</span>{" "}
+                {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
               </span>
             </time>
             {status && <span class="text-primary mt-0.5 font-semibold">{status}</span>}

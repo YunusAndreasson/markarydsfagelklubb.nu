@@ -54,7 +54,15 @@ const heading = (key: string) => {
         <h1 class="type-title">Program</h1>
         <p class="type-ingress text-muted-foreground">Klubbens exkursioner, möten och resor.</p>
       </div>
-      <Aside label="Följ programmet" sticky={false} first={false} class="lg:pt-3">
+      {/* From lg the notes hang beside the months rather than set the header's
+          height: the title is short, and a header as tall as the notes left a
+          gap above the first month. The months never use the aside track. */}
+      <Aside
+        label="Följ programmet"
+        sticky={false}
+        first={false}
+        class={months.length > 0 ? "lg:h-0 lg:pt-3" : "lg:pt-3"}
+      >
         <AsideNote label="I din kalender">
           <p class="text-muted-foreground leading-relaxed">
             <a href="/kalender.ics" class="link font-medium">Prenumerera på programmet</a>

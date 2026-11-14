@@ -292,11 +292,15 @@
 }
 
 /* A control whose own focus style is too faint: shadcn's ring is --ring at 30–50%,
-   about 2:1 on white. The same outline as a plain link. */
+   about 2:1 on white. The same outline as a plain link, in place of that ring: both
+   together drew three green lines round the search field. `!important` because the
+   ring is a `focus-visible:ring-*` utility on the same element, and utilities
+   don't promise an order between themselves. */
 @utility focus-strong {
   &:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+    box-shadow: none !important;
   }
 }
 

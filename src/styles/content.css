@@ -133,9 +133,6 @@
     border-radius: 4px;
     cursor: zoom-in;
   }
-  .content-gallery > a.photo {
-    width: 100%;
-  }
 
   /*
    * A photo and its caption. The caption belongs to the photo, not to the
@@ -167,27 +164,37 @@
 
   /*
    * Photos in a row become a contact sheet (lib/article-body.ts wraps them at
-   * render). Two across from 40rem, whatever their originals' widths, each whole
+   * render, docs/design.md "Kontaktark"). Two to a row from 40rem, each whole
    * rather than cropped, since members' photos of a bird in flight lose the
-   * bird. The editor never gets the wrapper, so writing stays one column.
+   * bird. Each cell grows by its photo's width over height (`--ratio`), so a
+   * row's photos come out the same height and their captions start level. A
+   * last photo alone keeps half the column. The editor never gets the wrapper,
+   * so writing stays one column.
    */
-  .content-gallery {
+  .content-gallery,
+  .gallery-row {
     display: grid;
     gap: 1.25rem;
-    align-items: start;
+  }
+  .content-gallery {
     margin-top: 1.5em;
     margin-bottom: 1.5em;
   }
   @media (min-width: 40rem) {
-    .content-gallery {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .gallery-row {
+      display: flex;
+      align-items: flex-start;
+    }
+    .gallery-cell {
+      flex: var(--ratio, 1.5) 1 0%;
+      min-width: 0;
+    }
+    .gallery-cell:only-child {
+      flex: 0 1 calc(50% - 0.625rem);
     }
   }
   .content-gallery figure,
-  .content-gallery > img {
-    width: 100%;
-    margin: 0;
-  }
+  .content-gallery a.photo,
   .content-gallery img {
     width: 100%;
     margin: 0;

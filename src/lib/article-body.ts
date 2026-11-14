@@ -7,11 +7,44 @@ import { attributesOf, widestCandidate } from "./teaser"
  * the editor keep their plain column of figures. A figure never nests, so the
  * lazy match can't run past its own end.
  */
-const PHOTO_RUN =
-  /(?:(?:<figure\b[^>]*>[\s\S]*?<\/figure>|<a class="photo"[^>]*>\s*<img\b[^>]*>\s*<\/a>|<img\b[^>]*>)\s*){2,}/g
+const PHOTO = String.raw`<figure\b[^>]*>[\s\S]*?<\/figure>|<a class="photo"[^>]*>\s*<img\b[^>]*>\s*<\/a>|<img\b[^>]*>`
+const PHOTO_RUN = new RegExp(String.raw`(?:(?:${PHOTO})\s*){2,}`, "g")
 
+/**
+ * A photo's width over its height, from its `<img>`'s own attributes, held to
+ * 1:2…5:2 so a panorama beside a portrait can't squeeze it to a sliver. 3:2,
+ * the members' usual camera, when the image doesn't say.
+ */
+export function photoRatio(photo: string): number {
+  const img = photo.match(/<img\b[^>]*>/i)?.[0] ?? ""
+  const attributes = attributesOf(img)
+  const width = Number(attributes.get("width"))
+  const height = Number(attributes.get("height"))
+  const ratio = width > 0 && height > 0 ? width / height : 1.5
+  return Math.round(Math.min(2.5, Math.max(0.5, ratio)) * 1000) / 1000
+}
+
+/**
+ * The run laid out two to a row (docs/design.md, "Kontaktark"). Each cell
+ * carries its photo's ratio, and the row shares its width out by it, so the two
+ * photos stand the same height and their captions start on one line, with
+ * neither photo cropped.
+ */
 export function withGalleries(html: string): string {
-  return html.replace(PHOTO_RUN, (run) => `<div class="content-gallery">${run}</div>`)
+  return html.replace(PHOTO_RUN, (run) => {
+    const photos = run.match(new RegExp(PHOTO, "g")) ?? []
+    const rows: string[] = []
+    for (let i = 0; i < photos.length; i += 2) {
+      const cells = photos
+        .slice(i, i + 2)
+        .map(
+          (photo) =>
+            `<div class="gallery-cell" style="--ratio: ${photoRatio(photo)}">${photo}</div>`
+        )
+      rows.push(`<div class="gallery-row">${cells.join("")}</div>`)
+    }
+    return `<div class="content-gallery">${rows.join("")}</div>`
+  })
 }
 
 // An area code of three or four digits, then the rest in any of the club's styles:

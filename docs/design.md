@@ -1,6 +1,6 @@
 # Design: the public site
 
-**Read [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14) first, then
+**Read [Kontaktark](#kontaktark-2026-11-14), [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14) first, then
 [Dagslistan](#dagslistan-2026-10-31) with its "Larmbandet" correction.** Lupen is the newest
 pass (photos and motion between pages); Uppslaget sets the grid every page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
 and the header.
@@ -34,6 +34,34 @@ A birder's field notebook works the same way: each entry is dated in the
 margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
+
+## Kontaktark (2026-11-14)
+
+A small pass on rows that didn't line up.
+
+- **A contact sheet lays out two to a row, with each photo's width set by its
+  shape.** `withGalleries` (lib/article-body.ts) pairs the photos into
+  `.gallery-row`s and gives each `.gallery-cell` its `--ratio` (width over height,
+  from the `<img>`'s own attributes, held to 1:2…5:2). From 40rem a row is a flex
+  row, and each cell grows by its ratio. Both photos in a row then come out the
+  same height, and their captions start on one line. Nothing is cropped, which
+  the earlier two-column grid already promised. The grid put a portrait beside a
+  landscape at the same width, so one stood twice as tall as its neighbour and
+  the captions sat at different heights. A last photo alone keeps half the
+  column. On a phone it's one column, as before. `:only-child` rather than
+  `:has()`, which Firefox only has from 121, above the browser floor.
+- **The programme's notes hang beside the months** (`/kalender`, from lg). The
+  aside sat in the header and made it as tall as the notes, which left a gap of
+  about 150 px between the ingress and the first month. It now has zero height
+  there and overflows into the aside track, which the months never use. This
+  applies only when there are months to hang beside.
+- **On a phone, a programme date's month and time are stacked**, always: in
+  the 4.25rem margin "nov 18:30" wrapped but "jan 08:00" didn't, so two
+  entries read differently. From md they share a line again.
+- **`focus-strong` replaces shadcn's ring rather than adding to it.** The search
+  field showed its green border, the 30% halo and the 2 px outline: three
+  lines. The utility now clears the box-shadow, and the outline stands in for
+  the halo.
 
 ## Lupen (2026-11-14)
 
