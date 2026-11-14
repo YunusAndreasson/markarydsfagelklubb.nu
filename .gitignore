@@ -12,6 +12,7 @@
 !.claude/skills/artportalen-markaryd/
 .agents/
 .claude/settings.local.json
+.claude/settings.local.json.tmp.*
 .claude/projects/
 
 # Per-dev agent/editor config — not committed
