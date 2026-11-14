@@ -10,9 +10,11 @@ import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import StatTable from "@/components/site/obsar/StatTable.astro"
+import TableTwin from "@/components/site/obsar/TableTwin.astro"
 import SiteLayout from "@/layouts/site.astro"
+import { PEOPLE_PANELS } from "@/lib/charts/options"
 import { linesSvg } from "@/lib/charts/svg"
-import { ink, sequence } from "@/lib/charts/theme"
+import { ink } from "@/lib/charts/theme"
 import { obsarStore, store } from "@/lib/obsar-data"
 import {
   arter,
@@ -81,16 +83,26 @@ const seasonsSentence =
     ? `Både på 2000-talets första tio år och de senaste tio har ${monthName(latePeak)} varit månaden med flest rapporter.`
     : `${SEASONS_FROM}–${SEASONS_FROM + 9} kom flest rapporter i ${monthName(earlyPeak)}, de senaste tio åren i ${monthName(latePeak)}.`
 
+/**
+ * Species and observers are two measures, so they get two panels on one year
+ * axis rather than one scale. The first paint lays the same two panels out
+ * where the chart's grids will be (`PEOPLE_PANELS`), each with its name.
+ */
+const peoplePanels = [
+  { name: "Arter", values: since.map((one) => one.species || null) },
+  { name: "Rapportörer", values: since.map((one) => one.observers || null) },
+]
 const peopleSvg =
   since.length > 1 &&
-  linesSvg({
-    width: 600,
-    height: 240,
-    lines: [
-      { values: since.map((one) => one.species || null), color: ink.gran, width: 2.5 },
-      { values: since.map((one) => one.observers || null), color: sequence[2] },
-    ],
-  })
+  PEOPLE_PANELS.map((panel, index) => {
+    const one = peoplePanels[index]
+    const svg = linesSvg({
+      width: 600,
+      height: 120,
+      lines: [{ values: one.values, color: ink.gran, width: 2 }],
+    })
+    return `<div style="position:absolute;left:40px;right:16px;top:${panel.top * 100}%;height:${panel.height * 100}%"><span style="position:absolute;bottom:100%;left:0;padding-bottom:6px;font-size:12px;font-weight:600;color:${ink.black}">${one.name}</span>${svg}</div>`
+  }).join("")
 ---
 
 <SiteLayout
@@ -122,13 +134,23 @@ const peopleSvg =
               <ChartFigure
                 chart={{ kind: "people", data: { years: since.map(({ year, reports, species, observers }) => ({ year, reports, species, observers })), marks: [] } }}
                 fallback={peopleSvg}
-                box="aspect-[4/3] sm:aspect-[16/7]"
-                inset="16px 96px 28px 36px"
+                box="aspect-[1/1] sm:aspect-[16/9]"
               >
-                Hur många arter som rapporterades varje år, och av hur många.
+                Hur många arter som rapporterades varje år, och av hur många, på samma tidslinje.
                 {mostSpecies && ` Flest arter kom ${mostSpecies.year}, ${mostSpecies.value} stycken`}
                 {mostObservers && `, och flest rapportörer ${mostObservers.year}, ${mostObservers.value} personer`}.
               </ChartFigure>
+              <TableTwin label="Visa alla år som tabell">
+                <StatTable
+                  columns={[
+                    { label: "År", rowHeader: true },
+                    { label: "Rapporter", numeric: true },
+                    { label: "Arter", numeric: true, strong: true },
+                    { label: "Rapportörer", numeric: true },
+                  ]}
+                  rows={since.toReversed().map((one) => [String(one.year), one.reports, one.species, one.observers])}
+                />
+              </TableTwin>
             </ObsarSection>
           )}
 
@@ -146,10 +168,10 @@ const peopleSvg =
           <ObsarSection id="arstider" title="Årstiderna">
             <ChartFigure
               chart={{ kind: "seasons", data: { years: seasonRows.map((one) => one.year), shares } }}
-              height={`${seasonRows.length * 18 + 32}px`}
+              height={`${seasonRows.length * 18 + 64}px`}
             >
               Varje rad är ett år från {SEASONS_FROM}, när Artportalen kom, till {lastComplete}, och varje ruta en månad,
-              mörkare ju större del av årets rapporter som kom då. {seasonsSentence}
+              mörkare ju större del av årets rapporter som kom då. Skalan under rutorna går från 0 till en fjärdedel av året. {seasonsSentence}
             </ChartFigure>
           </ObsarSection>
 

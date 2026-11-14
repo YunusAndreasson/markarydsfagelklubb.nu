@@ -1320,6 +1320,30 @@ names the other two. The heatmap's scale tops out at the 90th percentile, becaus
 record week left every other cell pale. A bare "2025" beside the year disclosure read
 as a stray link, so neighbours read "Ligan 2025".
 
+**Chart forms reviewed (2026-11-14, second pass).** Each figure checked against the
+question its caption asks:
+
+- **Artkurva:** the ten earlier years are a **band** (fewest to most, week by week)
+  under a solid mean line, last year and this year. "Is this year unusual?" is then
+  whether the dark line leaves the band, which a mean alone could not say.
+- **Årets rytm:** each row is scaled to **its own busiest week**, so a species' season
+  shows whatever its numbers; on one scale the tits' hundreds left the cuckoo pale.
+  This replaces the 90th-percentile cap. The tooltip keeps the real count.
+- **Arter och rapportörer:** two measures, so **two panels on one year axis** with a
+  linked pointer, never two lines on one scale. Each panel is named on its axis.
+- **Årstiderna** shows its scale (0–25 %), so a dark cell has a size.
+- **Grid lines are solid hairlines.** Dashes mean a threshold: only the founding year's
+  mark keeps them.
+- **A figure with several lines has a key above it,** server-rendered (`ChartFigure`
+  `legend`), so it reads before the script and without it.
+- **Table twins:** the artkurva (by month) and the years behind the people panels sit in
+  a "Visa …" disclosure under their figure (`TableTwin`), so every value can be read
+  without a pointer. The heatmaps' twins are the registers beside them.
+- The race honours `prefers-reduced-motion`: it still steps week by week, but bars jump
+  instead of sliding.
+- Kept as they were: the list's step line, the jubilee bars (ECharts 6's broken axis
+  doesn't apply: there is no empty value range to cut) and the race.
+
 ## Notes for later passes
 
 - ~~Larm (step 4) brings the first colour beyond green: rarity.~~ Done: a

@@ -12,6 +12,8 @@ export type ArtkurvaData = {
   current: (number | null)[]
   previous: number[] | null
   average: number[] | null
+  low: number[] | null
+  high: number[] | null
   averageYears: number
 }
 
@@ -41,7 +43,11 @@ export type ChartData =
 
 const axisLabel = { color: ink.pencil, fontFamily: fontSans, fontSize: 12 }
 const axisLine = { lineStyle: { color: ink.line } }
-const splitLine = { lineStyle: { color: ink.line, type: "dashed" as const } }
+/** Solid hairlines: a dashed grid reads as a projection or a threshold. */
+const splitLine = { lineStyle: { color: ink.line, width: 1 } }
+
+/** A normal year's range on the artkurva: sequence[1] lightened, under every line. */
+export const bandColor = "rgba(201,218,211,0.6)"
 
 const tooltipBase = {
   backgroundColor: ink.white,
@@ -95,15 +101,39 @@ export function weekLabel(week: number): string {
   return to.endsWith(` ${fromMonth}`) ? `${fromDay}–${to}` : `${fromDay} ${fromMonth}–${to}`
 }
 
+/** The normal-range band: its two stacked series, named so the tooltip can skip them. */
+const BAND_BASE = "band-base"
+const BAND = "band"
+
 function artkurva(data: ArtkurvaData, motion: boolean, narrow: boolean): EChartsCoreOption {
   const series: object[] = []
+  const { low, high } = data
+  if (low && high) {
+    // The confidence-band pattern: an invisible line at the bottom, and the
+    // range stacked on it with a fill.
+    const band = {
+      type: "line",
+      stack: "normal",
+      showSymbol: false,
+      silent: true,
+      lineStyle: { opacity: 0 },
+      emphasis: { disabled: true },
+    }
+    series.push({ ...band, name: BAND_BASE, data: low })
+    series.push({
+      ...band,
+      name: BAND,
+      data: high.map((value, week) => value - (low[week] ?? 0)),
+      areaStyle: { color: bandColor, opacity: 1 },
+    })
+  }
   if (data.average) {
     series.push({
       name: `Snitt ${data.averageYears} år`,
       type: "line",
       data: data.average,
       showSymbol: false,
-      lineStyle: { color: ink.pencil, width: 1.5, type: "dashed" },
+      lineStyle: { color: ink.pencil, width: 1.5 },
       itemStyle: { color: ink.pencil },
     })
   }
@@ -124,7 +154,6 @@ function artkurva(data: ArtkurvaData, motion: boolean, narrow: boolean): ECharts
     showSymbol: false,
     lineStyle: { color: ink.gran, width: 3 },
     itemStyle: { color: ink.gran },
-    areaStyle: { color: ink.ice, opacity: 0.8 },
     endLabel: {
       show: true,
       formatter: narrow ? "{c}" : `${data.year}: {c} arter`,
@@ -147,13 +176,20 @@ function artkurva(data: ArtkurvaData, motion: boolean, narrow: boolean): ECharts
       formatter: (
         items: { seriesName: string; value: number | null; dataIndex: number; color: string }[]
       ) => {
+        const week = items[0]?.dataIndex ?? 0
         const rows = items
+          .filter((item) => item.seriesName !== BAND_BASE && item.seriesName !== BAND)
           .filter((item) => item.value !== null && item.value !== undefined)
+          .reverse()
           .map(
             (item) =>
               `<div>${item.seriesName}: <b>${formatNumber(Math.round(item.value ?? 0))}</b> arter</div>`
           )
-        return `<div style="margin-bottom:4px;color:${ink.pencil}">t.o.m. ${dayLabel(Math.min(365, (items[0]?.dataIndex ?? 0) * 7 + 6))}</div>${rows.join("")}`
+        const range =
+          low && high
+            ? `<div style="color:${ink.pencil}">Vanligt år: ${low[week]}–${high[week]} arter</div>`
+            : ""
+        return `<div style="margin-bottom:4px;color:${ink.pencil}">t.o.m. ${dayLabel(Math.min(365, week * 7 + 6))}</div>${rows.join("")}${range}`
       },
     },
     series,
@@ -162,16 +198,7 @@ function artkurva(data: ArtkurvaData, motion: boolean, narrow: boolean): ECharts
 
 function phenology(data: PhenologyData, motion: boolean, narrow: boolean): EChartsCoreOption {
   const names = data.species.map((one) => one.name)
-  const cells: [number, number, number][] = []
-  data.species.forEach((one, row) => {
-    one.weeks.forEach((count, week) => {
-      if (count > 0) cells.push([week, row, count])
-    })
-  })
-  // The scale tops out at the 90th percentile, so a few record weeks don't
-  // leave every other cell pale.
-  const counts = cells.map((cell) => cell[2]).sort((a, b) => a - b)
-  const top = Math.max(2, counts[Math.floor(counts.length * 0.9)] ?? 2)
+  const cells = phenologyCells(data)
   return {
     animation: motion,
     grid: { left: narrow ? 104 : 132, right: 8, top: 28, bottom: 12 },
@@ -192,14 +219,15 @@ function phenology(data: PhenologyData, motion: boolean, narrow: boolean): EChar
     },
     visualMap: {
       show: false,
-      min: 1,
-      max: top,
+      dimension: 2,
+      min: 0,
+      max: 1,
       inRange: { color: sequence.slice(1) },
     },
     tooltip: {
       ...tooltipBase,
-      formatter: (item: { value: [number, number, number] }) => {
-        const [week, row, count] = item.value
+      formatter: (item: { value: [number, number, number, number] }) => {
+        const [week, row, , count] = item.value
         return `<b>${names[row]}</b><div style="color:${ink.pencil}">${weekLabel(week)}</div>${formatNumber(count)} ${count === 1 ? "rapport" : "rapporter"}`
       },
     },
@@ -212,6 +240,22 @@ function phenology(data: PhenologyData, motion: boolean, narrow: boolean): EChar
       },
     ],
   }
+}
+
+/**
+ * Heatmap cells `[week, row, share, count]`, where share is the week's reports
+ * against the species' own busiest week. Each row then shows its season's shape:
+ * on one scale for all, a tit's hundreds of reports would leave a cuckoo's dozen pale.
+ */
+export function phenologyCells(data: PhenologyData): [number, number, number, number][] {
+  const cells: [number, number, number, number][] = []
+  data.species.forEach((one, row) => {
+    const top = Math.max(1, ...one.weeks)
+    one.weeks.forEach((count, week) => {
+      if (count > 0) cells.push([week, row, Math.round((count / top) * 100) / 100, count])
+    })
+  })
+  return cells
 }
 
 function accumulation(data: AccumulationData, motion: boolean, narrow: boolean): EChartsCoreOption {
@@ -336,23 +380,56 @@ function history(data: HistoryData, motion: boolean, narrow: boolean): EChartsCo
   }
 }
 
+/**
+ * Where the two panels of the people figure sit, as shares of the box, so the
+ * server's SVG can be laid out the same way under the canvas.
+ */
+export const PEOPLE_PANELS = [
+  { top: 0.1, height: 0.32 },
+  { top: 0.58, height: 0.32 },
+] as const
+
+/** Species and observers as two panels on one year axis: two measures, two scales. */
 function people(data: HistoryData, motion: boolean, narrow: boolean): EChartsCoreOption {
   const years = data.years.map((one) => one.year)
+  const panels = [
+    { name: "Arter", values: data.years.map((one) => one.species || null) },
+    { name: "Rapportörer", values: data.years.map((one) => one.observers || null) },
+  ]
+  const percent = (share: number) => `${Math.round(share * 1000) / 10}%`
   return {
     animation: motion,
-    grid: { left: 36, right: narrow ? 84 : 96, top: 16, bottom: 28 },
-    xAxis: {
+    grid: PEOPLE_PANELS.map((panel) => ({
+      left: 40,
+      right: 16,
+      top: percent(panel.top),
+      height: percent(panel.height),
+    })),
+    axisPointer: { link: [{ xAxisIndex: "all" }] },
+    xAxis: panels.map((_, index) => ({
       type: "category",
+      gridIndex: index,
       data: years,
       boundaryGap: false,
       axisLine,
       axisTick: { show: false },
       axisLabel: {
         ...axisLabel,
+        show: index === panels.length - 1,
         interval: (_: number, value: string) => Number(value) % (narrow ? 20 : 10) === 0,
       },
-    },
-    yAxis: { type: "value", axisLabel, splitLine },
+    })),
+    yAxis: panels.map((panel, index) => ({
+      type: "value",
+      gridIndex: index,
+      name: panel.name,
+      nameLocation: "end",
+      nameGap: 10,
+      nameTextStyle: { ...axisLabel, color: ink.black, fontWeight: 600, align: "left" },
+      splitNumber: 3,
+      axisLabel,
+      splitLine,
+    })),
     tooltip: {
       ...tooltipBase,
       trigger: "axis",
@@ -364,27 +441,17 @@ function people(data: HistoryData, motion: boolean, narrow: boolean): EChartsCor
           : ""
       },
     },
-    series: [
-      {
-        name: "Arter",
-        type: "line",
-        data: data.years.map((one) => one.species || null),
-        showSymbol: false,
-        connectNulls: false,
-        lineStyle: { color: ink.gran, width: 2.5 },
-        itemStyle: { color: ink.gran },
-        endLabel: { show: true, formatter: "arter", ...axisLabel, color: ink.black },
-      },
-      {
-        name: "Rapportörer",
-        type: "line",
-        data: data.years.map((one) => one.observers || null),
-        showSymbol: false,
-        lineStyle: { color: sequence[2], width: 2 },
-        itemStyle: { color: sequence[2] },
-        endLabel: { show: true, formatter: "rapportörer", ...axisLabel },
-      },
-    ],
+    series: panels.map((panel, index) => ({
+      name: panel.name,
+      type: "line",
+      xAxisIndex: index,
+      yAxisIndex: index,
+      data: panel.values,
+      showSymbol: false,
+      connectNulls: false,
+      lineStyle: { color: ink.gran, width: 2 },
+      itemStyle: { color: ink.gran },
+    })),
   }
 }
 
@@ -397,7 +464,7 @@ function seasons(data: SeasonsData, motion: boolean): EChartsCoreOption {
   })
   return {
     animation: motion,
-    grid: { left: 44, right: 8, top: 24, bottom: 8 },
+    grid: { left: 44, right: 8, top: 24, bottom: 40 },
     xAxis: {
       type: "category",
       position: "top",
@@ -414,7 +481,22 @@ function seasons(data: SeasonsData, motion: boolean): EChartsCoreOption {
       axisTick: { show: false },
       axisLabel: { ...axisLabel, interval: (_: number, value: string) => Number(value) % 5 === 0 },
     },
-    visualMap: { show: false, min: 0, max: 25, inRange: { color: [...sequence] } },
+    // The scale is shown, so a dark cell has a size: a quarter of the year's reports.
+    visualMap: {
+      min: 0,
+      max: 25,
+      orient: "horizontal",
+      left: 44,
+      bottom: 0,
+      itemWidth: 12,
+      itemHeight: 120,
+      text: ["25 %", "0 %"],
+      textGap: 8,
+      textStyle: axisLabel,
+      calculable: false,
+      hoverLink: false,
+      inRange: { color: [...sequence] },
+    },
     tooltip: {
       ...tooltipBase,
       formatter: (item: { value: [number, number, number] }) => {

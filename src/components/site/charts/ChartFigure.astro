@@ -19,13 +19,39 @@ interface Props {
   box?: string
   height?: string
   inset?: string
+  /**
+   * The series' key, above the box. Plain HTML, so it reads with no script and
+   * names each line where end labels would collide.
+   */
+  legend?: LegendItem[]
   class?: string
 }
 
-const { chart, fallback, box, height, inset = "0", class: className } = Astro.props
+type LegendItem = { label: string; color: string; kind?: "line" | "band"; weight?: number }
+
+const { chart, fallback, box, height, inset = "0", legend, class: className } = Astro.props
 ---
 
 <figure class:list={["chart-figure flex flex-col gap-3", className]}>
+  {
+    legend && legend.length > 0 && (
+      <ul class="type-meta text-muted-foreground flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
+        {legend.map((item) => (
+          <li class="flex items-center gap-2">
+            {item.kind === "band" ? (
+              <span class="inline-block size-3 rounded-[2px]" style={{ background: item.color }} />
+            ) : (
+              <span
+                class="inline-block w-5 rounded-full"
+                style={{ background: item.color, height: `${item.weight ?? 2}px` }}
+              />
+            )}
+            {item.label}
+          </li>
+        ))}
+      </ul>
+    )
+  }
   <div
     data-chart
     class:list={["relative w-full", box]}

@@ -12,7 +12,10 @@ import RankList from "@/components/site/obsar/RankList.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import StatTable from "@/components/site/obsar/StatTable.astro"
+import TableTwin from "@/components/site/obsar/TableTwin.astro"
 import SiteLayout from "@/layouts/site.astro"
+import { bandColor } from "@/lib/charts/options"
 import { linesSvg } from "@/lib/charts/svg"
 import { ink, sequence } from "@/lib/charts/theme"
 import { groupObsar, obsarDescription } from "@/lib/obsar"
@@ -20,6 +23,7 @@ import { obsarStore, store } from "@/lib/obsar-data"
 import {
   arter,
   bestSince,
+  monthName,
   paceAgainstAverage,
   speciesCurves,
   yearHeadline,
@@ -72,18 +76,49 @@ const curveSvg =
       Math.max(
         ...[
           ...(curves.previous ?? []),
-          ...(curves.average ?? []),
+          ...(curves.high ?? []),
           ...curves.current.map((v) => v ?? 0),
         ]
       ) * 1.05,
+    band:
+      curves.low && curves.high
+        ? { low: curves.low, high: curves.high, color: bandColor }
+        : undefined,
     lines: [
-      ...(curves.average
-        ? [{ values: curves.average, color: ink.pencil, width: 1.5, dashed: true }]
-        : []),
+      ...(curves.average ? [{ values: curves.average, color: ink.pencil, width: 1.5 }] : []),
       ...(curves.previous ? [{ values: curves.previous, color: sequence[2] }] : []),
       { values: curves.current, color: ink.gran, width: 3 },
     ],
   })
+
+/** The artkurva's key: the same marks as the chart, in the same order as they stack. */
+const curveLegend = curves
+  ? [
+      { label: String(year), color: ink.gran, weight: 3 },
+      ...(curves.previous ? [{ label: String(year - 1), color: sequence[2] }] : []),
+      ...(curves.average
+        ? [{ label: `Snitt ${curves.averageYears} år`, color: ink.pencil, weight: 1.5 }]
+        : []),
+      ...(curves.low
+        ? [{ label: "Vanligt år, fåtal till flest", color: bandColor, kind: "band" as const }]
+        : []),
+    ]
+  : []
+
+/** The artkurva at each month's end, for its table: week bins that close the months. */
+const MONTH_END_DAYS = [30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364]
+const curveRows = curves
+  ? MONTH_END_DAYS.map((day, month) => {
+      const week = Math.min(52, Math.floor(day / 7))
+      const now = curves.current[week]
+      return [
+        monthName(month, true),
+        now === null || now === undefined ? "" : now,
+        ...(curves.previous ? [curves.previous[week]] : []),
+        ...(curves.low && curves.high ? [`${curves.low[week]}–${curves.high[week]}`] : []),
+      ]
+    })
+  : []
 
 const reportSentence = stats
   ? `${stats.reports.toLocaleString("sv-SE")} rapporter från ${stats.observerCount} rapportörer${since === null && (history?.years.length ?? 0) > 1 ? ", fler än något år tidigare" : since !== null && since <= year - 2 ? `, flest sedan ${since}` : ""}.`
@@ -137,13 +172,27 @@ const paceSentence =
               <ChartFigure
                 chart={{ kind: "artkurva", data: curves }}
                 fallback={curveSvg}
+                legend={curveLegend}
                 box="aspect-[4/3] sm:aspect-[16/7]"
                 inset="16px 96px 28px 32px"
               >
-                Artkurvan: hur många arter som setts i kommunen vecka för vecka. Den mörka linjen är i år, den ljusa {year - 1}
-                och den streckade ett genomsnitt av de {curves.averageYears} åren före. Den stiger brant i april och maj, när
-                flyttfåglarna kommer.
+                Artkurvan: hur många arter som setts i kommunen vecka för vecka. Det ljusa fältet är spannet mellan det sämsta
+                och bästa av de {curves.averageYears} åren före; håller sig årets linje inom det, är det ett vanligt år. Kurvan
+                stiger brant i april och maj, när flyttfåglarna kommer.
               </ChartFigure>
+            )}
+            {curves && (
+              <TableTwin label="Visa artkurvan som tabell">
+                <StatTable
+                  columns={[
+                    { label: "Vid slutet av", rowHeader: true },
+                    { label: String(year), numeric: true, strong: true },
+                    ...(curves.previous ? [{ label: String(year - 1), numeric: true }] : []),
+                    ...(curves.low ? [{ label: "Vanligt år", numeric: true, muted: true }] : []),
+                  ]}
+                  rows={curveRows}
+                />
+              </TableTwin>
             )}
           </ObsarSection>
 

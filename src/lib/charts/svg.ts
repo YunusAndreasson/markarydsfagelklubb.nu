@@ -68,6 +68,8 @@ export type LinesOptions = {
   guideColor?: string
   /** Draw as steps, for a running count. */
   step?: boolean
+  /** A filled range under the lines, e.g. a normal year's fewest to most. */
+  band?: { low: readonly number[]; high: readonly number[]; color: string }
 }
 
 export function linesSvg({
@@ -78,17 +80,30 @@ export function linesSvg({
   guides = [],
   guideColor,
   step,
+  band,
 }: LinesOptions): string {
   const top =
     max ??
-    Math.max(1, ...lines.flatMap((line) => line.values.filter((v): v is number => v !== null)))
-  const length = Math.max(2, ...lines.map((line) => line.values.length))
+    Math.max(
+      1,
+      ...(band?.high ?? []),
+      ...lines.flatMap((line) => line.values.filter((v): v is number => v !== null))
+    )
+  const length = Math.max(2, band?.high.length ?? 0, ...lines.map((line) => line.values.length))
   const x = (index: number) => round((index / (length - 1)) * width)
   const y = (value: number) => round(height - (value / top) * height)
   const parts = guides.map(
     (guide) =>
       `<path stroke="${guideColor ?? "currentColor"}" stroke-width="1" vector-effect="non-scaling-stroke" d="M0 ${y(guide)}H${width}"/>`
   )
+  if (band && band.high.length > 1) {
+    const upper = band.high.map((value, index) => `${index ? "L" : "M"}${x(index)} ${y(value)}`)
+    const lower = band.low
+      .map((value, index) => `L${x(index)} ${y(value)}`)
+      .reverse()
+      .join("")
+    parts.push(`<path fill="${band.color}" stroke="none" d="${upper.join("")}${lower}Z"/>`)
+  }
   for (const line of lines) {
     let d = ""
     let previous: number | null = null

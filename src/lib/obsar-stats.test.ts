@@ -66,6 +66,16 @@ describe("speciesCurves", () => {
     expect(curves && paceAgainstAverage(curves)).toBe(0)
   })
 
+  it("spans the earlier years' fewest and most, week by week", () => {
+    const before = summarise(aggregateYear(2024, [at("2024-01-01", 1)], ""))
+    const three = speciesCurves({ fetchedAt: "", years: [before, last, now] }, 2026, "2026-03-10")
+    expect(three?.averageYears).toBe(2)
+    expect(three?.low?.[0]).toBe(1)
+    expect(three?.high?.[0]).toBe(2)
+    expect(three?.low).toHaveLength(53)
+    expect(three?.average?.[0]).toBe(1.5)
+  })
+
   it("needs the year's weekly curve", () => {
     expect(speciesCurves({ fetchedAt: "", years: [] }, 2026, "2026-03-10")).toBeNull()
   })

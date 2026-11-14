@@ -1,0 +1,19 @@
+---
+/**
+ * A figure's numbers as a table, one tap under it, with no script
+ * (docs/design.md, "Obsar och statistik"): the chart's tooltips enhance, the
+ * table is where every value can be read, by keyboard and screen reader too.
+ */
+interface Props {
+  label?: string
+}
+
+const { label = "Visa siffrorna" } = Astro.props
+---
+
+<details class="measure flex flex-col">
+  <summary class="link flex min-h-11 w-fit cursor-pointer items-center font-medium">{label}</summary>
+  <div class="pt-2">
+    <slot />
+  </div>
+</details>

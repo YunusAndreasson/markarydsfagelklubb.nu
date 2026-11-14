@@ -74,8 +74,8 @@ const title = `Årslistan ${year}`
             chart={{ kind: "phenology", data: { species: rhythm.map((one) => ({ name: one.name, weeks: one.weeks })) } }}
             height={`${rhythm.length * 18 + 40}px`}
           >
-            De {rhythm.length} mest rapporterade arterna vecka för vecka, i den ordning de kom. Ju mörkare ruta, desto fler
-            rapporter. Stannfåglarna syns hela året, flyttfåglarna bara mellan ankomst och flytt.
+            De {rhythm.length} mest rapporterade arterna vecka för vecka, i den ordning de kom. Varje rad är mörkast den vecka
+            arten rapporterades mest, så ovanliga arter syns lika tydligt som vanliga. Stannfåglarna syns hela året, flyttfåglarna bara mellan ankomst och flytt.
           </ChartFigure>
         </ObsarSection>
       )

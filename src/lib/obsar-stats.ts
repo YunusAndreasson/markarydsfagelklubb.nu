@@ -17,6 +17,9 @@ export type SpeciesCurves = {
   previous: number[] | null
   /** The mean of up to ten earlier years. */
   average: number[] | null
+  /** The fewest and most of the same years, week by week: a normal year's range. */
+  low: number[] | null
+  high: number[] | null
   averageYears: number
 }
 
@@ -30,6 +33,10 @@ export function speciesCurves(history: History, year: number, today: string): Sp
     .sort((a, b) => b.year - a.year)
   const window = earlier.slice(0, 10)
   const previous = earlier.find((one) => one.year === year - 1)
+  const across = (pick: (values: number[]) => number) =>
+    window.length
+      ? Array.from({ length: 53 }, (_, week) => pick(window.map((one) => one.weeks[week])))
+      : null
   return {
     year,
     current: current.weeks.map((value, week) => (week <= thisWeek ? value : null)),
@@ -43,6 +50,8 @@ export function speciesCurves(history: History, year: number, today: string): Sp
             ) / 10
         )
       : null,
+    low: across((values) => Math.min(...values)),
+    high: across((values) => Math.max(...values)),
     averageYears: window.length,
   }
 }

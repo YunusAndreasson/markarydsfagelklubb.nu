@@ -77,8 +77,12 @@ export default function LeagueRace({ year, until, runners }: Props) {
       if (disposed) return
       const instance = init(element, undefined, { renderer: "canvas" })
       chartRef.current = instance
+      // Under reduced motion the race still plays, week by week, but the bars
+      // jump to their places instead of sliding there.
+      const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches
       instance.setOption({
-        animationDurationUpdate: 450,
+        animation: motion,
+        animationDurationUpdate: motion ? 450 : 0,
         animationEasingUpdate: "linear",
         grid: { left: 8, right: 48, top: 4, bottom: 4, containLabel: true },
         xAxis: { type: "value", max: "dataMax", show: false },
@@ -86,8 +90,8 @@ export default function LeagueRace({ year, until, runners }: Props) {
           type: "category",
           inverse: true,
           max: SHOWN - 1,
-          animationDuration: 300,
-          animationDurationUpdate: 300,
+          animationDuration: motion ? 300 : 0,
+          animationDurationUpdate: motion ? 300 : 0,
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: { color: ink.black, fontFamily: fontSans, fontSize: 13 },
@@ -101,7 +105,7 @@ export default function LeagueRace({ year, until, runners }: Props) {
             label: {
               show: true,
               position: "right",
-              valueAnimation: true,
+              valueAnimation: motion,
               color: ink.black,
               fontFamily: fontSans,
               fontWeight: 600,
