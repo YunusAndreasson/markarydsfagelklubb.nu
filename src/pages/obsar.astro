@@ -14,6 +14,7 @@ import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import StatTable from "@/components/site/obsar/StatTable.astro"
 import TableTwin from "@/components/site/obsar/TableTwin.astro"
+import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { bandColor } from "@/lib/charts/options"
 import { linesSvg } from "@/lib/charts/svg"
@@ -29,6 +30,8 @@ import {
   yearHeadline,
 } from "@/lib/obsar-stats"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
+import { thisWeek } from "@/lib/season"
+import { buildSpecies, taxonSlugs } from "@/lib/species"
 import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
 
 /**
@@ -56,9 +59,23 @@ const now = new Date()
 const today = toStockholmInputValue(now).slice(0, 10)
 const year = stockholmYear(now)
 const kv = obsarStore()
-const [history, stats, recent] = kv
-  ? await Promise.all([store.readHistory(kv), store.readYear(kv, year), store.readRecent(kv)])
-  : [null, null, null]
+const [history, stats, recent, season, names] = kv
+  ? await Promise.all([
+      store.readHistory(kv),
+      store.readYear(kv, year),
+      store.readRecent(kv),
+      store.readSeason(kv).catch(() => null),
+      store.readNames(kv).catch(() => null),
+    ])
+  : [null, null, null, null, null]
+// "Så här års" (docs/design.md): what usually arrives or leaves around now.
+const seasonWeek = thisWeek(season, now, stats)
+const seasonSlugs = taxonSlugs(
+  buildSpecies(
+    Object.entries(names ?? {}).map(([id, one]) => ({ id: Number(id), ...one })),
+    []
+  )
+)
 
 const curves = history ? speciesCurves(history, year, today) : null
 const pace = curves ? paceAgainstAverage(curves) : null
@@ -143,7 +160,6 @@ const paceSentence =
   <article class="flex flex-col gap-12 md:gap-16">
     <ObsarHeader
       title={page.title}
-      current="/obsar"
       crumb={false}
       ingress={page.description || "Det klubbens medlemmar och andra rapporterar i Markaryds kommun, hämtat från Artportalen."}
     />
@@ -196,6 +212,12 @@ const paceSentence =
             )}
           </ObsarSection>
 
+          {(seasonWeek.arriving.length > 0 || seasonWeek.leaving.length > 0) && (
+            <ObsarSection id="sahar" title="Så här års">
+              <SeasonBlock week={seasonWeek} slugs={seasonSlugs} headingId="sahar" />
+            </ObsarSection>
+          )}
+
           {/* The year's four short lists, paired on the content track. */}
           <ObsarPair>
             <ObsarSection id="nya" title="Nya för året" href="/obsar/arslista" link="Hela årslistan" nested>
@@ -229,15 +251,30 @@ const paceSentence =
             </ObsarSection>
           </ObsarPair>
 
-          <ObsarSection measure>
-            <a href="/obsar/40-ar" class="surface-gran group flex flex-col gap-1 rounded-[4px] px-5 py-5">
-              <span class="type-section text-reflex underline decoration-1 underline-offset-4 group-hover:decoration-2">
-                40 år av fynd
-              </span>
-              <span class="text-muted-foreground leading-relaxed">
-                Klubben fyller 40. Så har fågellivet och rapporterandet i kommunen förändrats sedan 1986.
-              </span>
-            </a>
+          {/* The two pages the sections above don't already lead to, so
+              Översikt reaches every Obsar page without a row of tabs. */}
+          <ObsarSection>
+            <div class="grid gap-4 sm:grid-cols-2">
+              {[
+                {
+                  href: "/obsar/markarydslistan",
+                  title: "Markarydslistan",
+                  text: "Alla arter som någonsin setts i kommunen, med en sida för varje.",
+                },
+                {
+                  href: "/obsar/40-ar",
+                  title: "40 år av fynd",
+                  text: "Klubben fyller 40. Så har fågellivet och rapporterandet i kommunen förändrats sedan 1986.",
+                },
+              ].map((one) => (
+                <a href={one.href} class="surface-gran group flex flex-col gap-1 rounded-[4px] px-5 py-5">
+                  <span class="type-section text-reflex underline decoration-1 underline-offset-4 group-hover:decoration-2">
+                    {one.title}
+                  </span>
+                  <span class="text-muted-foreground leading-relaxed">{one.text}</span>
+                </a>
+              ))}
+            </div>
           </ObsarSection>
         </>
       )

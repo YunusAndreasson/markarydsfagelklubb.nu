@@ -12,9 +12,8 @@ import {
 /**
  * The header's menu (docs/design.md, "Header"): the page tree's top level, with
  * the pages beneath each section that the header's panels and the phone menu
- * list. Three sections are filled from more than the tree:
+ * list. Two sections are filled from more than the tree:
  *
- * - **Artiklar** lists its categories, which live in `categories`, not `pages`.
  * - **Obsar** lists the site's own statistics pages, which live in code. The
  *   tree's kommun links under Obsar predate them and still point at
  *   Artportalen, so only its *Rapportera* and region links are kept, after the
@@ -24,32 +23,22 @@ import {
  *
  * Every section page is still the first entry of its own list, so the panel is
  * a shortcut and never the only way to the section.
+ *
+ * Artiklar has no list: its categories filter the article list, so they are
+ * tabs on that page, and listing them here too repeated them (2026-11-15). The
+ * header chooses a page; the page's own controls change what it shows.
  */
 
-export type MenuCategory = { name: string; slug: string }
-
-const ARTICLES = "/artiklar"
 const OBSAR = "/obsar"
 const CLUB = "/om-foreningen"
 
 const LEADS: Readonly<Record<string, string>> = {
-  [ARTICLES]: "Nyheter från klubben och referat från exkursioner och tävlingar.",
   [OBSAR]: "Det som rapporteras i Markaryds kommun, hämtat från Artportalen.",
   [CLUB]: "Föreningen, medlemskapet och det klubben gör för fåglarna.",
 }
 
 function entry(title: string, href: string, extra: Partial<MenuEntry> = {}): MenuEntry {
   return { title, href, external: !href.startsWith("/"), children: [], ...extra }
-}
-
-function articleChildren(categories: readonly MenuCategory[]): MenuEntry[] {
-  if (categories.length === 0) return []
-  return [
-    entry("Alla artiklar", ARTICLES),
-    ...categories.map((category) =>
-      entry(category.name, `${ARTICLES}/kategori/${encodeURIComponent(category.slug)}`)
-    ),
-  ]
 }
 
 type ObsarNode = PageNode & { description?: string }
@@ -74,18 +63,10 @@ function obsarChildren(node: ObsarNode | undefined): MenuEntry[] {
   ]
 }
 
-/** Fills the three sections' lists; every other entry passes through. */
-export function withSections(
-  menu: readonly MenuEntry[],
-  tree: PageTree | null,
-  categories: readonly MenuCategory[]
-): MenuEntry[] {
+/** Fills the two sections' lists; every other entry passes through. */
+export function withSections(menu: readonly MenuEntry[], tree: PageTree | null): MenuEntry[] {
   return menu.map((top) => {
     if (top.external) return top
-    if (top.href === ARTICLES) {
-      const children = articleChildren(categories)
-      return children.length > 0 ? { ...top, description: LEADS[ARTICLES], children } : top
-    }
     if (top.href === OBSAR) {
       const node = tree?.roots.find((root) => root.kind === "page" && root.slug === "obsar")
       return { ...top, description: LEADS[OBSAR], children: obsarChildren(node) }
@@ -101,8 +82,8 @@ export function withSections(
   })
 }
 
-export function buildSiteMenu(tree: PageTree, categories: readonly MenuCategory[]): MenuEntry[] {
-  return withSections(buildMenu(tree), tree, categories)
+export function buildSiteMenu(tree: PageTree): MenuEntry[] {
+  return withSections(buildMenu(tree), tree)
 }
 
 /**
@@ -110,7 +91,7 @@ export function buildSiteMenu(tree: PageTree, categories: readonly MenuCategory[
  * or a failed read): the fixed top level, with Obsar's own pages, which need
  * no query.
  */
-export const SITE_FALLBACK_MENU: MenuEntry[] = withSections(FALLBACK_MENU, null, [])
+export const SITE_FALLBACK_MENU: MenuEntry[] = withSections(FALLBACK_MENU, null)
 
 /**
  * A child is the page being viewed. The section's own page, first in its list,

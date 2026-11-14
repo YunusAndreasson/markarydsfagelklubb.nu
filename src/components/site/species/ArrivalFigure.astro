@@ -1,0 +1,162 @@
+---
+import TableTwin from "@/components/site/obsar/TableTwin.astro"
+import { ink } from "@/lib/charts/theme"
+import { type ArrivalFigure, dayMonth, FEW_REPORTS, offsetPhrase } from "@/lib/species-page"
+
+/**
+ * "När den kommer" (docs/design.md, "Arter"): the first sighting of each year
+ * as a dot, later lower, the way a calendar page runs, with the typical day as
+ * a dashed guide and this year in Markaryd green. The species page's one loud
+ * thing: forty springs at a glance.
+ *
+ * Server-drawn, with no island. The SVG holds only the lines (month and decade
+ * rules, the dashed guide) and scales with the box. The dots are HTML laid over
+ * it by percentage, so they stay round at any shape and each can carry its own
+ * note: hovering a dot, or tapping it on a phone, shows the year, the date,
+ * how it compares and how many reports it rests on, in CSS alone. A year with
+ * only one or two reports is drawn hollow: its "first date" is mostly when
+ * someone happened to write it down, which is why the early years scatter.
+ * The dots are hidden from assistive tech; the table twin carries every value.
+ */
+interface Props {
+  figure: ArrivalFigure
+  sentence: string
+  headingId: string
+}
+
+const { figure, sentence, headingId } = Astro.props
+const { width, height } = figure
+const line = (x1: number, y1: number, x2: number, y2: number, color: string, dash = "") =>
+  `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1"${dash ? ` stroke-dasharray="${dash}"` : ""} vector-effect="non-scaling-stroke"/>`
+const rules = [
+  ...figure.months.map((month) => line(0, month.top * height, width, month.top * height, ink.line)),
+  ...figure.decades.map((decade) =>
+    line(decade.left * width, 0, decade.left * width, height, ink.line)
+  ),
+  ...(figure.typicalY === null
+    ? []
+    : [line(0, figure.typicalY, width, figure.typicalY, ink.pencil, "5 4")]),
+].join("")
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true" focusable="false" style="display:block;width:100%;height:100%;overflow:visible">${rules}</svg>`
+
+// This year last, so it paints over a neighbour.
+const dots = [
+  ...figure.dots.filter((one) => !one.current),
+  ...figure.dots.filter((one) => one.current),
+]
+const hasFew = figure.dots.some((one) => one.reports < FEW_REPORTS)
+const reportWord = (count: number) =>
+  count === 1 ? "1 rapport" : `${count.toLocaleString("sv-SE")} rapporter`
+const newestFirst = [...figure.dots].reverse()
+---
+
+<figure class="flex flex-col gap-3" aria-labelledby={headingId}>
+  <div class="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2">
+    <div class="relative" aria-hidden="true">
+      {
+        figure.months.map((month) => (
+          <span class="type-meta text-muted-foreground absolute right-0 -translate-y-1/2 whitespace-nowrap" style={{ top: `${month.top * 100}%` }}>
+            {month.label}
+          </span>
+        ))
+      }
+    </div>
+    <div class="relative aspect-[4/3] w-full sm:aspect-[16/6] lg:aspect-[16/5]" aria-hidden="true">
+      <div class="absolute inset-0" set:html={svg} />
+      {
+        dots.map((one) => {
+          const left = (one.x / width) * 100
+          return (
+            <span
+              tabindex="-1"
+              data-arrival-dot
+              class="group absolute flex size-6 -translate-x-1/2 -translate-y-1/2 cursor-default items-center justify-center outline-none hover:z-10 focus:z-10"
+              style={{ left: `${left}%`, top: `${(one.y / height) * 100}%` }}
+            >
+              <span
+                class:list={[
+                  "block rounded-full transition-transform duration-150 group-hover:scale-150 group-focus:scale-150 motion-reduce:transition-none",
+                  one.current ? "size-3" : "size-[7px]",
+                  !one.current && one.reports < FEW_REPORTS && "border-[1.5px] bg-background",
+                ]}
+                style={
+                  one.current
+                    ? { background: ink.green }
+                    : one.reports < FEW_REPORTS
+                      ? { borderColor: ink.pencil }
+                      : { background: ink.gran }
+                }
+              />
+              <span
+                class:list={[
+                  "bg-popover text-popover-foreground pointer-events-none absolute bottom-full mb-1 hidden w-max max-w-56 flex-col rounded-md border px-2.5 py-1.5 text-sm leading-snug shadow-sm group-hover:flex group-focus:flex",
+                  left < 15 ? "left-0" : left > 85 ? "right-0" : "left-1/2 -translate-x-1/2",
+                ]}
+              >
+                <span class="font-semibold tabular-nums">{one.current ? `${one.year}, i år` : one.year}</span>
+                <span>
+                  Första {dayMonth(one.day)}
+                  {one.offset !== null && <span class="text-muted-foreground">, {offsetPhrase(one.offset)}</span>}
+                </span>
+                <span class="text-muted-foreground">{reportWord(one.reports)} det året</span>
+              </span>
+            </span>
+          )
+        })
+      }
+    </div>
+    <div class="type-meta text-muted-foreground relative col-start-2 h-6 pt-1.5" aria-hidden="true">
+      {
+        figure.decades.map((decade) => (
+          <span class="absolute -translate-x-1/2 tabular-nums" style={{ left: `${decade.left * 100}%` }}>
+            {decade.label}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+  <ul class="type-meta text-muted-foreground flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
+    {
+      figure.typical !== null && (
+        <li class="flex items-center gap-2">
+          <span class="w-5 border-t border-dashed" style={{ borderColor: ink.pencil }} />
+          Brukar komma, {dayMonth(figure.typical)}
+        </li>
+      )
+    }
+    <li class="flex items-center gap-2">
+      <span class="size-3 rounded-full" style={{ background: ink.green }} />I år
+    </li>
+    {
+      hasFew && (
+        <li class="flex items-center gap-2">
+          <span class="bg-background size-[7px] rounded-full border-[1.5px]" style={{ borderColor: ink.pencil }} />
+          Bara en eller två rapporter det året
+        </li>
+      )
+    }
+  </ul>
+  <figcaption class="text-muted-foreground measure leading-relaxed text-pretty">{sentence}</figcaption>
+  <TableTwin label="Visa alla år">
+    <table class="type-meta w-full max-w-sm tabular-nums">
+      <thead class="text-muted-foreground">
+        <tr>
+          <th scope="col" class="py-1 text-left font-medium">År</th>
+          <th scope="col" class="py-1 text-left font-medium">Första fyndet</th>
+          <th scope="col" class="py-1 text-right font-medium">Rapporter</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          newestFirst.map((one) => (
+            <tr class="border-border border-t">
+              <td class="py-1">{one.year}</td>
+              <td class="py-1">{dayMonth(one.day)}</td>
+              <td class="py-1 text-right">{one.reports.toLocaleString("sv-SE")}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </TableTwin>
+</figure>

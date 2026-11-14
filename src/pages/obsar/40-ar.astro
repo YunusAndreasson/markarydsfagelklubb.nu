@@ -103,6 +103,8 @@ const peopleSvg =
     })
     return `<div style="position:absolute;left:40px;right:16px;top:${panel.top * 100}%;height:${panel.height * 100}%"><span style="position:absolute;bottom:100%;left:0;padding-bottom:6px;font-size:12px;font-weight:600;color:${ink.black}">${one.name}</span>${svg}</div>`
   }).join("")
+
+import { speciesLink } from "@/lib/species"
 ---
 
 <SiteLayout
@@ -113,7 +115,7 @@ const peopleSvg =
   {history && <JubileeBand slot="band" history={history} allTime={allTime} thisYear={thisYear} interactive headingLevel={1} />}
 
   <article class="flex flex-col gap-12 md:gap-16">
-    <ObsarHeader title={history ? undefined : "40 år av fynd"} current="/obsar/40-ar" crumb={!history} />
+    <ObsarHeader title={history ? undefined : "40 år av fynd"} crumb={!history} />
 
     {!history && <NotReady />}
 
@@ -186,6 +188,7 @@ const peopleSvg =
                     when={one.first.slice(0, 4)}
                     datetime={one.first}
                     title={names?.[one.id]?.name ?? "Okänd art"}
+                    href={names?.[one.id] ? speciesLink(names[one.id]?.name ?? "") : null}
                     sci={names?.[one.id]?.sci}
                     notes={[`Först sedd ${shortDay(one.first)}`]}
                   />

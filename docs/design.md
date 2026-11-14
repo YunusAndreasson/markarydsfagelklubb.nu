@@ -761,7 +761,7 @@ desktop ≥ 768 px
   tagline shows from 1024 px up (`lg`; it was 768 until 2026-10-24, where it
   widened the wordmark's column enough to wrap "Klubben" onto a second line).
 - **Section panels (2026-11-14; replaces "No dropdowns").** From `lg`, the
-  sections with pages beneath them (Artiklar, Obsar, Klubben) and Sök open a
+  sections with pages beneath them (Obsar, Klubben) and Sök open a
   full-width panel under the bar instead of costing a page load first. The old
   rule sent a member who wanted Ligan or Referat through the section page
   every time. The panel follows the disclosure-navigation pattern: opened by
@@ -772,11 +772,19 @@ desktop ≥ 768 px
     what it holds) in the text track, links that leave the site in the aside
     with an outbound arrow. No shadow, no card: the header unfolds, and its
     rule moves to the panel's foot.
-  - The section's own page is the first entry of its list, and the in-page
-    navigation (Obsar's tabs, the category tabs) stays: the panel is a
+  - The section's own page is the first entry of its list, so the panel is a
     shortcut, never the only way in.
-  - What each panel lists is `src/lib/site-menu.ts`: Artiklar's categories
-    (from `categories`), Obsar's own pages (`OBSAR_PAGES`, in code) followed by
+  - **Each kind of navigation lives in one place (2026-11-15).** The header
+    chooses a page; a page's own controls only change what it shows (the
+    category tabs, a year strip, Markarydslistan's two orders). The user found
+    the section menu repeated under every Obsar title (header panel, then the
+    same six pages as tabs, then a crumb) read like a site inside the site, so
+    Obsar's tab row went: the crumb leads back to Översikt, which links to
+    every Obsar page. Artiklar lost its panel for the mirror reason: its
+    categories filter the list, so they stay tabs on `/artiklar`, and
+    Artiklar is a plain link (which also took the category read off every
+    page's navigation).
+  - What each panel lists is `src/lib/site-menu.ts`: Obsar's own pages (`OBSAR_PAGES`, in code) followed by
     the tree's *Rapportera* and region links, Klubben's tree pages. The tree's
     kommun links under Obsar still point at Artportalen and are not shown.
   - The server renders plain links; `SiteHeader.astro`'s script swaps in the
@@ -1153,6 +1161,93 @@ Nära Fjärholma                     ← links to the lokal's page
 - The page's closing line says `Kartan visar platsen som angavs i larmet.`
 - **Not on the home page.** A day map in the larm band was tried on 2026-11-14 and
   dropped: the paper map didn't sit well on the Gran band.
+
+### Arter (`/arter/<slug>`, and Markarydslistan's A–Ö)
+
+A page per bird (2026-11-14), the hub the Obsar registers and a larm's page link
+into. It joins two sources that share no key (`src/lib/species.ts`): Artportalen's
+taxa (every bird reported in the kommun) and the app's species list (the club's
+prefix and the larm), matched on scientific name, then Swedish name. A bird gets a
+page when Artportalen has seen it in the kommun or a member has larmed it; the
+app's catch-all "Övrigt (ej fågel)" never does. The slug is the slugified Swedish
+name; Artportalen's spelling of a bird the app names differently answers with a 301,
+so any page can link a bird by name (`speciesLink`).
+
+```
+Markarydslistan
+Gök                                         Första fyndet   12 maj 1967
+Cuculus canorus                             Senast sedd     16 juni 2026
+En flyttfågel som brukar komma till         Rapporter       401 under 49 år
+kommunen kring 7 maj.                       Larmad          En gång
+[5] Allmän på klubbens larmlista
+När den kommer
+[ prickar över hela bredden, text till sidans kant; årtionden under ]
+- - Brukar komma, 7 maj   ● I år   ○ Bara en eller två rapporter det året
+I år kom den första 7 maj, som vanligt. Tidigast: 29 apr 2007.
+
+Över året
+[ staplar per vecka, alla år; den här veckan grön ]
+Flest rapporter kommer i maj. Den här veckan brukar den inte synas.
+
+Larmat av medlemmarna
+[ larmen, med bild i raden som på /larm ]  [ karta med alla larm ]
+```
+
+- **What the bird is, once, at the top (2026-11-15).** An ingress under the name
+  (`leadSentence`) says it: a summer bird's usual arrival, a winter guest's return
+  and leaving, a resident, a rare guest, or a bird not seen in twenty years. The
+  arrival caption and legend then don't repeat the usual day, and a bird with no
+  migration season has no "När den kommer" section at all. A summer bird's leaving
+  is left out: its median last report is when it goes quiet (gök: early July).
+- **The figures use the whole track**, from the text's edge to the page's
+  (`ObsarSection`, as the Obsar charts), because the user found the page tight
+  with everything in the 38rem text track and the aside empty below the facts.
+  Captions keep the measure.
+- **Each larm once.** A first build put the photo larm in a rail above the list
+  and again in it; the list now carries each photo in its row, as `/larm` does.
+
+- **The arrival strip is the page's one loud thing**: forty springs as dots, later
+  lower as on a calendar page, the typical day dashed, this year in Markaryd green.
+  Only for a summer bird; a winter guest's first report of a year is in January.
+- **Both figures are server-drawn with no island**, unlike the Obsar charts: read at
+  a glance, and the caption plus "Visa alla år" carry every value. The SVG holds
+  only lines; the arrival dots are HTML over it by percentage, so they stay round,
+  and each shows its year, date, how it compares and its report count on hover or
+  tap, in CSS alone (the dots are `aria-hidden`; the table twin has the same).
+  A year with one or two reports is a hollow dot: its "first date" is mostly when
+  someone wrote it down, which is why the years before Artportalen scatter.
+- **No trend claim.** A first build said "kommer elva dagar tidigare nu än de
+  första åren"; the early years are thin reporting, not early birds, so it went.
+- **A bird only Artportalen knows has no chip**: it isn't on the club's list, and
+  "Allmän" could be badly wrong for it.
+- **One list, two orders.** The first build had its own A–Ö register at `/arter`, a
+  second list of the same 230 birds as Markarydslistan, and the user saw the overlap
+  the same evening. So Markarydslistan is the one list: "I den ordning de kom" (the
+  decades, its own story) and "A–Ö" (`?ordning=a-o`: the way to find a bird, with the
+  chip, the year it was first seen and the larm count), switched by two plain links.
+  `/arter` 301s to the A–Ö order, and a species page's crumb leads back to it.
+
+### Så här års
+
+Which birds usually arrive in the kommun, or leave it, within two weeks of today,
+from the last twenty years in Artportalen (`src/lib/season.ts`, the nightly `season`
+key). On the home page after "Fynd i kommunen", and on Obsar's Översikt after the
+year's headline. A
+sentence leads ("Så här års brukar gråsiska och storskrake komma till kommunen, och
+sävsparv lämna den."), then two short registers with the usual date in the margin
+and this year's status under each bird. Hidden when nothing falls in the window.
+
+- **What kind of bird it is decides everything** (`seasonKind` in `taxa.ts`), from
+  where its reports fall over the twenty years together: a summer bird has at most
+  3 % of its reports in winter, a winter guest at most 1.5 % in high summer, and
+  anything else is a resident with no season. Per-year first and last dates alone
+  called tjäder a spring arrival (few report it before March) and pilfink a November
+  departure (reports thin out); measured on the live data on 2026-11-14.
+- A summer bird's dates are the medians of its first and last reports; a winter
+  guest's come off the summer gap in its weekly reports: back in the autumn, gone in
+  the spring.
+- **Two weeks either way, "så här års"**: a ten-day window left the block empty for
+  weeks in late autumn, when little moves.
 
 ### Page
 

@@ -19,7 +19,9 @@ statistics**: `/obsar/*` and the home page's jubilee band, read from Artportalen
 API by Cron Triggers into the `OBSAR` KV namespace (`src/worker.ts`,
 `src/lib/artportalen/`). The key is the Worker secret `ARTPORTALEN_API_KEY`;
 `artportalen-key-scope.test.ts` keeps it out of pages and islands. `pnpm
-obsar:seed` fills local KV. Don't build features ahead of the step
+obsar:seed` fills local KV. **Species pages** (`/arter/<slug>`, listed A–Ö on
+Markarydslistan) and "Så här års" read a per-taxon index the same jobs keep in KV
+(`artportalen/taxa.ts`), joined to the app's species list (`src/lib/species.ts`). Don't build features ahead of the step
 you've been asked for. The full agenda, the
 decisions and the step order are in `docs/roadmap.md`; plan a step from its
 section there. The public site's design is in `docs/design.md`.

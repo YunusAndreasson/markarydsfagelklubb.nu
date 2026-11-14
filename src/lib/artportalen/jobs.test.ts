@@ -107,6 +107,25 @@ describe("runNightly", () => {
     expect((await store.readAllTime(kv))?.taxa).toHaveLength(2)
   })
 
+  it("files every refreshed year in the species index, and writes the season", async () => {
+    const kv = memoryKv()
+    await runNightly(kv, fakeClient(years), NOW, 8)
+    const index = await store.readTaxa(kv)
+    expect(index?.years).toEqual([2020, 2021, 2025])
+    expect(Object.keys(index?.taxa["1"]?.years ?? {})).toEqual(["2020", "2025"])
+    // Two years of a koltrast are too few to say when it usually comes.
+    expect((await store.readSeason(kv))?.taxa).toEqual([])
+  })
+
+  it("rebuilds a lost species index from the year keys, without calling the API for them", async () => {
+    const kv = memoryKv()
+    await runNightly(kv, fakeClient(years), NOW, 8)
+    kv.data.delete("ap:v1:taxa")
+    // No years refreshed this run: only the backfill can bring the index back.
+    await runNightly(kv, fakeClient(years), NOW, 0)
+    expect((await store.readTaxa(kv))?.years).toEqual([2020, 2021, 2025])
+  })
+
   it("names a taxon no scanned year named", async () => {
     const kv = memoryKv()
     await runNightly(kv, fakeClient({}), NOW, 0)

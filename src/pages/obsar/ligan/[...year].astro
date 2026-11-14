@@ -62,7 +62,6 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
   <article class="flex flex-col gap-12">
     <ObsarHeader
       title={title}
-      current="/obsar/ligan"
       ingress={stats &&
         leader &&
         `${stats.observerCount} personer har rapporterat fåglar i kommunen ${isCurrent ? "i år" : `under ${year}`}. ${leader.name} ${isCurrent ? "leder" : "vann"} med ${arter(leader.species)}.`}

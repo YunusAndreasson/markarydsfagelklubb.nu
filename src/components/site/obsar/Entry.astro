@@ -1,4 +1,7 @@
 ---
+import RarityChip from "@/components/site/RarityChip.astro"
+import type { RarityLevel } from "@/lib/rarity"
+
 /**
  * One line of a register: a short date or time in its own narrow column, the
  * species in Alegreya, then quieter lines under it (docs/design.md, "Obsar och
@@ -16,9 +19,11 @@ interface Props {
   count?: number | null
   sci?: string
   notes?: (string | null | undefined | false)[]
+  /** The club's rarity prefix, as a chip after the name; none for a bird not on the club's list. */
+  rarity?: RarityLevel | null
 }
 
-const { when = "", datetime, title, href, count, sci, notes = [] } = Astro.props
+const { when = "", datetime, title, href, count, sci, notes = [], rarity } = Astro.props
 const lines = notes.filter((note): note is string => Boolean(note))
 ---
 
@@ -36,6 +41,7 @@ const lines = notes.filter((note): note is string => Boolean(note))
           <span class="type-item">{title}</span>
         )
       }
+      {rarity !== null && rarity !== undefined && <RarityChip level={rarity} />}
     </p>
     {sci && <i class="font-display text-muted-foreground text-sm">{sci}</i>}
     {lines.map((line) => <p class="text-muted-foreground text-sm leading-snug">{line}</p>)}

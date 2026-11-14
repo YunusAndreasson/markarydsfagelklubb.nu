@@ -30,17 +30,13 @@ const EMPTY_NAVIGATION: SiteNavigation = {
 }
 
 /**
- * The page tree and the menu. A failure costs the menu, never the page; a
- * failed category read costs only the Artiklar panel.
+ * The page tree and the menu. A failure costs the menu, never the page.
  */
 export async function loadNavigation(db: SupabasePublicClient): Promise<SiteNavigation> {
-  const [{ data, error }, categories] = await Promise.all([
-    db
-      .from("pages")
-      .select("id, parent_id, kind, slug, title, link_url, show_in_menu, sort_order, description")
-      .overrideTypes<PublicPageRow[], { merge: false }>(),
-    listPublicCategories(db),
-  ])
+  const { data, error } = await db
+    .from("pages")
+    .select("id, parent_id, kind, slug, title, link_url, show_in_menu, sort_order, description")
+    .overrideTypes<PublicPageRow[], { merge: false }>()
   if (error) {
     console.error(`mafk-web: load navigation failed — ${error.message}`)
     return EMPTY_NAVIGATION
@@ -49,7 +45,7 @@ export async function loadNavigation(db: SupabasePublicClient): Promise<SiteNavi
   if (tree.unreachable.length > 0) {
     console.error(`mafk-web: pages unreachable from the top: ${tree.unreachable.join(", ")}`)
   }
-  return { tree, menu: buildSiteMenu(tree, categories) }
+  return { tree, menu: buildSiteMenu(tree) }
 }
 
 export type ArticleSummary = {

@@ -12,6 +12,8 @@ interface Props {
 
 const { species, count } = Astro.props
 const newest = species.slice(-count).reverse()
+
+import { speciesLink } from "@/lib/species"
 ---
 
 {
@@ -20,6 +22,7 @@ const newest = species.slice(-count).reverse()
       when={shortDay(one.first)}
       datetime={one.first}
       title={one.name}
+      href={speciesLink(one.name)}
       notes={[`Årets ${ordinal(species.indexOf(one) + 1)} art`]}
     />
   ))

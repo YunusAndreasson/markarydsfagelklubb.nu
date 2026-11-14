@@ -41,7 +41,6 @@ const fynd = (count: number) => `${count} fynd`
   <article class="flex flex-col gap-12">
     <ObsarHeader
       title="Senaste fynden"
-      current="/obsar/senaste"
       ingress={recent
         ? `${recent.sightings.length.toLocaleString("sv-SE")} rapporter om ${arter(species)} i kommunen de senaste ${recent.days} dagarna, de nyaste först.`
         : "Allt som rapporteras i kommunen, de nyaste först."}

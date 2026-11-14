@@ -9,7 +9,8 @@ import {
 } from "./aggregate"
 import type { Client } from "./client"
 import { type Kv, store } from "./store"
-import type { Meta } from "./types"
+import { buildSeason, mergeTaxa, needsRebuild, rebuildTaxa } from "./taxa"
+import type { Meta, YearStats } from "./types"
 
 /**
  * The two scheduled jobs (wrangler.jsonc `triggers.crons`, `src/worker.ts`).
@@ -59,7 +60,23 @@ async function refreshYear(
     kv,
     mergeHistory(await store.readHistory(kv), summarise(stats), fetchedAt)
   )
+  // The species pages' index (taxa.ts): this year's line replaces itself.
+  await store.writeTaxa(kv, mergeTaxa(await store.readTaxa(kv), stats, fetchedAt))
   return mergeNames(names, stats.species)
+}
+
+/**
+ * Build the species index from the year keys already in KV when it lacks a
+ * year that the history has — the first night after it was introduced, or if
+ * the key is ever lost. KV reads only: no API calls, so no rate limit.
+ */
+async function backfillTaxa(kv: Kv, fetchedAt: string): Promise<void> {
+  const history = await store.readHistory(kv)
+  const years = history?.years.map((one) => one.year) ?? []
+  if (!needsRebuild(await store.readTaxa(kv), years)) return
+  const stats = await Promise.all(years.map((year) => store.readYear(kv, year)))
+  const present = stats.filter((one): one is YearStats => one !== null)
+  await store.writeTaxa(kv, rebuildTaxa(present, fetchedAt))
 }
 
 async function fail(kv: Kv, meta: Meta, client: Client, error: unknown): Promise<JobResult> {
@@ -127,6 +144,8 @@ export async function runNightly(
         ?.slice(0, 4) ?? thisYear
     )
 
+    await backfillTaxa(kv, fetchedAt)
+
     let year =
       meta.cursor && meta.cursor < thisYear && meta.cursor >= earliest ? meta.cursor : thisYear - 1
     for (let done = 0; done < yearsPerRun && year >= earliest; done++) {
@@ -146,6 +165,10 @@ export async function runNightly(
       if (name) names = mergeNames(names, [{ id: one.taxonId, name, sci }])
     }
     if (names) await store.writeNames(kv, names)
+
+    // "Usually" only moves with past years, so once a night is enough.
+    const taxaIndex = await store.readTaxa(kv)
+    if (taxaIndex) await store.writeSeason(kv, buildSeason(taxaIndex, thisYear, fetchedAt))
 
     await store.writeMeta(kv, { ...meta, lastNightly: fetchedAt, lastError: null })
     return { ok: true, calls: client.calls, note: `cursor now ${meta.cursor}` }

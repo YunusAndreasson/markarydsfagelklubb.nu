@@ -12,12 +12,15 @@ import LarmBand from "@/components/site/LarmBand.astro"
 import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
 import ObsarHome from "@/components/site/obsar/ObsarHome.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
+import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linkPhones } from "@/lib/article-body"
 import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { listPublicAlerts } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
+import { thisWeek } from "@/lib/season"
+import { buildSpecies, taxonSlugs } from "@/lib/species"
 import { formatDate, isoDateTime, startOfStockholmDay, stockholmYear } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
 import { transitionName } from "@/lib/view-transition"
@@ -41,16 +44,19 @@ const now = new Date()
 // section, never the page.
 const kv = obsarStore()
 const thisYear = stockholmYear(now)
-const [navigation, page, larm, upcoming, history, allTime, yearStats, recent] = await Promise.all([
-  loadNavigation(db),
-  listPublishedArticles(db, { limit: 10 }),
-  listPublicAlerts({ limit: LARM_WINDOW }),
-  listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
-  kv ? store.readHistory(kv).catch(() => null) : null,
-  kv ? store.readAllTime(kv).catch(() => null) : null,
-  kv ? store.readYear(kv, thisYear).catch(() => null) : null,
-  kv ? store.readRecent(kv).catch(() => null) : null,
-])
+const [navigation, page, larm, upcoming, history, allTime, yearStats, recent, season, names] =
+  await Promise.all([
+    loadNavigation(db),
+    listPublishedArticles(db, { limit: 10 }),
+    listPublicAlerts({ limit: LARM_WINDOW }),
+    listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
+    kv ? store.readHistory(kv).catch(() => null) : null,
+    kv ? store.readAllTime(kv).catch(() => null) : null,
+    kv ? store.readYear(kv, thisYear).catch(() => null) : null,
+    kv ? store.readRecent(kv).catch(() => null) : null,
+    kv ? store.readSeason(kv).catch(() => null) : null,
+    kv ? store.readNames(kv).catch(() => null) : null,
+  ])
 const { lead, rest } = pickLead(page?.articles ?? [])
 const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
 // A lead photo too narrow or too tall for the 3:2 spread, such as a poster, still
@@ -58,6 +64,13 @@ const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
 const leadAside =
   lead?.image && !leadImage && lead.image.width >= 480 && lead.image.height > 0 ? lead.image : null
 const { tiles, list } = splitFeatured(withoutPhoto(rest, (leadImage ?? leadAside)?.src), 3)
+const seasonWeek = thisWeek(season, now, yearStats)
+const seasonSlugs = taxonSlugs(
+  buildSpecies(
+    Object.entries(names ?? {}).map(([id, one]) => ({ id: Number(id), ...one })),
+    []
+  )
+)
 // A larm failure costs the section, never the home page.
 const alerts = larm.ok ? larm.value.alerts : []
 const dayList = buildDayList(alerts, now)
@@ -237,6 +250,20 @@ const taken = Astro.locals.transitionNames
   <Sponsors class="mt-16 md:hidden" />
 
   <ObsarHome stats={yearStats} recent={recent} now={now} />
+
+  {/* "Så här års" (docs/design.md): what usually arrives or leaves around
+      now, from Artportalen's history. Links are built from Artportalen's own
+      names, so the page needs no read of the app's species list; a species
+      page answers a differently spelled slug with a 301. */}
+  {
+    (seasonWeek.arriving.length > 0 || seasonWeek.leaving.length > 0) && (
+      <HomeSection id="veckan" title="Så här års" href="/obsar/markarydslistan?ordning=a-o" link="Alla arter">
+        <div class="in-wide">
+          <SeasonBlock week={seasonWeek} slugs={seasonSlugs} headingId="veckan" />
+        </div>
+      </HomeSection>
+    )
+  }
 
   {/* Photos may take the whole width; the dated list keeps its dates in the
       margin. Four in the list: the archive is one click away. */}

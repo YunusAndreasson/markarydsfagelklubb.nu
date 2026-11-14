@@ -1,5 +1,5 @@
 import type { NameMap } from "./aggregate"
-import type { AllTime, History, Meta, Recent, YearStats } from "./types"
+import type { AllTime, History, Meta, Recent, Season, TaxonIndex, YearStats } from "./types"
 
 /**
  * The statistics live in KV (binding `OBSAR`), one JSON value per key. The
@@ -22,6 +22,8 @@ export const keys = {
   names: `${PREFIX}:names`,
   recent: `${PREFIX}:recent`,
   meta: `${PREFIX}:meta`,
+  taxa: `${PREFIX}:taxa`,
+  season: `${PREFIX}:season`,
 } as const
 
 async function read<T>(kv: Kv, key: string): Promise<T | null> {
@@ -45,4 +47,8 @@ export const store = {
   writeRecent: (kv: Kv, value: Recent) => write(kv, keys.recent, value),
   readMeta: (kv: Kv) => read<Meta>(kv, keys.meta),
   writeMeta: (kv: Kv, value: Meta) => write(kv, keys.meta, value),
+  readTaxa: (kv: Kv) => read<TaxonIndex>(kv, keys.taxa),
+  writeTaxa: (kv: Kv, value: TaxonIndex) => write(kv, keys.taxa, value),
+  readSeason: (kv: Kv) => read<Season>(kv, keys.season),
+  writeSeason: (kv: Kv, value: Season) => write(kv, keys.season, value),
 }

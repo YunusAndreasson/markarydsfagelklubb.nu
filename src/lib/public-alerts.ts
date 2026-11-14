@@ -18,6 +18,7 @@ import {
   type LokalSummary,
 } from "./lokal"
 import { classifyForLokal, type LarmPoint, lokalActivity, nearBox } from "./lokal-alerts"
+import type { AppSpecies } from "./species"
 import { type AlertsBackend, openAlertsBackend } from "./supabase-secret"
 
 /**
@@ -346,6 +347,8 @@ type SweepOptions = {
    * coordinate (see `lokal-alerts.ts`).
    */
   locationId?: number | null
+  /** Only larm of this species (`species.id`), for a species page. */
+  speciesId?: number | null
 }
 
 /**
@@ -373,6 +376,9 @@ async function sweepAlerts<T extends { id: string; sent_at: string; observed_at:
         .lte("latitude", options.box.maxLat)
         .gte("longitude", options.box.minLng)
         .lte("longitude", options.box.maxLng)
+    }
+    if (options.speciesId !== null && options.speciesId !== undefined) {
+      query = query.eq("species_id", options.speciesId)
     }
     if (cursor) query = query.or(olderThan(cursor))
 
@@ -506,4 +512,84 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
       directory: lokaler.map(({ id, slug: address, name }) => ({ id, slug: address, name })),
     },
   }
+}
+
+/** The lean row a species tally needs: which bird, and when. */
+const SPECIES_TALLY_SELECT = "id, sent_at, observed_at, species_id"
+
+type SpeciesTallyRow = {
+  id: string
+  sent_at: string
+  observed_at: string | null
+  species_id: number | null
+}
+
+/**
+ * The app's species list, with how many visible larm each has and when the
+ * last one was — what `/arter` needs to decide which birds get a page
+ * (`species.ts`). Reference data and a tally; no member data.
+ *
+ * `public.species` is readable only by `authenticated`, so it comes through
+ * the secret backend like the larm themselves.
+ */
+export async function listPublicSpecies(): Promise<LarmResult<AppSpecies[]>> {
+  const backend = open()
+  if (!backend.ok) return failed
+  const hidden = await loadHiddenIds(backend.value)
+  if (!hidden.ok) return failed
+
+  const [species, tally] = await Promise.all([
+    backend.value.db
+      .from("species")
+      .select("id, swedish_name, scientific_name, rarity")
+      .limit(REFERENCE_LIMIT),
+    sweepAlerts<SpeciesTallyRow>(backend.value, SPECIES_TALLY_SELECT, hidden.value),
+  ])
+  if (species.error) {
+    console.error(`mafk-web: load species failed — ${species.error.message}`)
+    return failed
+  }
+  if (!tally.ok) return failed
+  if (species.data.length === REFERENCE_LIMIT) {
+    console.error("mafk-web: species hit the row cap; the species read needs paging")
+  }
+
+  const counts = new Map<number, { count: number; last: string }>()
+  for (const row of tally.value) {
+    if (row.species_id === null) continue
+    const when = row.observed_at ?? row.sent_at
+    const seen = counts.get(row.species_id)
+    counts.set(row.species_id, {
+      count: (seen?.count ?? 0) + 1,
+      last: seen && seen.last > when ? seen.last : when,
+    })
+  }
+  return {
+    ok: true,
+    value: species.data.map((row) => ({
+      id: row.id,
+      name: row.swedish_name,
+      sci: row.scientific_name,
+      rarity: row.rarity,
+      alertCount: counts.get(row.id)?.count ?? 0,
+      lastAlertAt: counts.get(row.id)?.last ?? null,
+    })),
+  }
+}
+
+/**
+ * Every visible larm of one species, newest first, as public DTOs — a species
+ * page's list, prints and map. `publish()` applies the place ladder as
+ * everywhere, so a protected species carries no position.
+ */
+export async function listSpeciesAlerts(speciesId: number): Promise<LarmResult<PublicAlert[]>> {
+  const backend = open()
+  if (!backend.ok) return failed
+  const context = await loadContext(backend.value)
+  if (!context.ok) return failed
+  const rows = await sweepAlerts<AlertRow>(backend.value, ALERT_SELECT, context.value.hidden, {
+    speciesId,
+  })
+  if (!rows.ok) return failed
+  return { ok: true, value: rows.value.map((row) => publish(row, context.value)) }
 }

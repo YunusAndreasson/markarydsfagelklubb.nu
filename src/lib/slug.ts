@@ -16,6 +16,7 @@ export const RESERVED_TOP_LEVEL_SLUGS: ReadonlySet<string> = new Set([
   "404",
   "admin",
   "api",
+  "arter",
   "artiklar",
   "kalender",
   "larm",

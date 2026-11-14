@@ -28,7 +28,7 @@ export const OBSAR_PAGES = [
   {
     href: "/obsar/markarydslistan",
     label: "Markarydslistan",
-    description: "Alla arter som någonsin setts i kommunen.",
+    description: "Alla arter som någonsin setts i kommunen, med en sida för varje.",
   },
   {
     href: "/obsar/ligan",

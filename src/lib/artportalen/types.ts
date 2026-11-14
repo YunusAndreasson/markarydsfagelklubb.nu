@@ -121,3 +121,33 @@ export type Meta = {
   lastNightly: string | null
   lastError: string | null
 }
+
+/**
+ * One taxon's history, a year at a time (`taxa.ts`). Kept so a species page
+ * reads one key instead of every year's: dates are local `MM-DD`, and the
+ * weeks are the year's non-empty bins as `[week, reports]`, since most birds
+ * are seen in a handful of weeks.
+ */
+export type TaxonYear = { f: string; l: string; r: number; w: [number, number][] }
+
+export type TaxonEntry = { name: string; sci: string; years: Record<string, TaxonYear> }
+
+/** Every taxon seen in any merged year, keyed by taxon id. */
+export type TaxonIndex = { fetchedAt: string; years: number[]; taxa: Record<string, TaxonEntry> }
+
+/**
+ * When a taxon usually arrives and leaves, as a day of the year (1 = 1
+ * January), or null when it doesn't (a resident) or there are too few years
+ * to say. Small on purpose: the home page reads it on every request.
+ */
+export type SeasonTaxon = {
+  id: number
+  name: string
+  sci: string
+  arrival: number | null
+  departure: number | null
+  /** "winter" for a winter guest, whose arrival is in the autumn. */
+  kind: "summer" | "winter"
+}
+
+export type Season = { fetchedAt: string; taxa: SeasonTaxon[] }

@@ -32,7 +32,7 @@ if (!stored) return new Response(null, { status: 404 })
 const visible = ((pageRows ?? []) as AdminPageRow[]).filter(
   (row) => publishStateOf(row, now) === "published"
 )
-const menu = buildSiteMenu(buildPageTree(visible), categories ?? [])
+const menu = buildSiteMenu(buildPageTree(visible))
 
 const category = (categories ?? []).find((candidate) => candidate.id === stored.category_id)
 const article: FullArticle = {

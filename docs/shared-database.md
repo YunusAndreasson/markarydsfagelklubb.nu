@@ -138,6 +138,11 @@ every observation and every private storage object. What contains it:
   rounded and decided by `publicPlace` in `alert-place.ts`, which withholds it
   for a protected species; the test asserts both. The map island takes plain
   props built by `src/lib/larm-map.ts` and never imports the read path.
+  Since 2026-11-14 the same module also reads `public.species` (id, Swedish and
+  scientific name, rarity) and a lean tally of larm per species for the species
+  pages (`listPublicSpecies`, `listSpeciesAlerts`). `species` is readable only by
+  `authenticated`, so it comes through the secret backend too; it is reference data,
+  not member data.
 - **The admin screen does not use it.** `/admin/larm` reads with the admin's own
   session (`alerts` is readable by `authenticated`) and writes `hidden_alerts`
   the same way, so RLS stays the boundary there.

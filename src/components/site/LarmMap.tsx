@@ -18,8 +18,8 @@ import { createSiteMap, loadLeaflet, untabLinks } from "./map-setup"
  * It never imports the larm read path; `secret-key-scope.test.ts` fails any
  * `.tsx` that does.
  *
- * It is a still: the fynd, and the lokal its place label names as a ring. No
- * gestures. Like the lokal map it is
+ * It is a still: the fynd, and the lokal its place label names as a ring — or,
+ * on a species page, every larm of that bird. No gestures. Like the lokal map it is
  * `aria-hidden` with its links out of the tab order; the page's "Plats" says
  * the same thing in text, and links to the exact point on OpenStreetMap.
  */
@@ -53,7 +53,8 @@ export default function LarmMap({ pins, lokal = null }: Props) {
       const L = await loadLeaflet()
       if (cancelled) return
 
-      map = createSiteMap(L, element, { still: true }).map
+      const site = createSiteMap(L, element, { still: true })
+      map = site.map
 
       // The lokal under the fynd, so it draws first: a hollow ring. Unlabelled,
       // since "Plats" right above the map names it and the tiles often print
@@ -75,7 +76,26 @@ export default function LarmMap({ pins, lokal = null }: Props) {
       }
 
       const first = pins[0]
-      if (first && lokal) {
+      if (pins.length > 1) {
+        // A species page: every larm of one bird. Frame the ones in and around
+        // the kommun; a larm from Malmö or Dublin stays off the frame rather
+        // than zooming the map out to half of Europe.
+        const near = site.outline.getBounds().pad(0.5)
+        const points = pins
+          .map((pin): [number, number] => [pin.latitude, pin.longitude])
+          .filter((point) => near.contains(point))
+        map.fitBounds(
+          L.latLngBounds(
+            points.length > 0 ? points : pins.map((pin) => [pin.latitude, pin.longitude])
+          ),
+          {
+            paddingTopLeft: [32, 32],
+            paddingBottomRight: [32, 48],
+            maxZoom: MAX_ZOOM,
+            animate: false,
+          }
+        )
+      } else if (first && lokal) {
         map.fitBounds(
           L.latLngBounds([
             [first.latitude, first.longitude],

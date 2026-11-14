@@ -1,0 +1,217 @@
+---
+export const prerender = false
+
+import AlertList from "@/components/site/AlertList.astro"
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
+import LarmFold from "@/components/site/LarmFold.astro"
+import LarmMapFrame from "@/components/site/LarmMapFrame.astro"
+import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
+import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import RarityChip from "@/components/site/RarityChip.astro"
+import ArrivalFigure from "@/components/site/species/ArrivalFigure.astro"
+import YearFigure from "@/components/site/species/YearFigure.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { dayOfYear } from "@/lib/artportalen/aggregate"
+import { seasonWindow, typicalDays, weeksTotal } from "@/lib/artportalen/taxa"
+import { toLarmPins } from "@/lib/larm-map"
+import { obsarStore, store } from "@/lib/obsar-data"
+import { listPublicSpecies, listSpeciesAlerts } from "@/lib/public-alerts"
+import { loadNavigation } from "@/lib/public-content"
+import { isRare, rarityLabel } from "@/lib/rarity"
+import { buildSpecies, findBySpelling, findSpecies, speciesHref } from "@/lib/species"
+import {
+  arrivalFigure,
+  arrivalSentence,
+  countWord,
+  leadSentence,
+  weekOfDay,
+  yearSentence,
+} from "@/lib/species-page"
+import { formatDate, stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
+
+/**
+ * One bird (docs/design.md, "Arter"): a field-guide entry for Markaryds
+ * kommun. When it comes and when in the year it is seen, from Artportalen's
+ * history in KV (`artportalen/taxa.ts`); what the members have larmed, with
+ * their photos and a still map, from the app (`public-alerts.ts`).
+ *
+ * Either source can be missing — a bird only Artportalen has seen, one only
+ * a member has larmed, or KV not built yet — and the page shows what there is.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+const slug = Astro.params.slug ?? ""
+
+const kv = obsarStore()
+const [navigation, names, index, allTime, app] = await Promise.all([
+  loadNavigation(db),
+  kv ? store.readNames(kv).catch(() => null) : null,
+  kv ? store.readTaxa(kv).catch(() => null) : null,
+  kv ? store.readAllTime(kv).catch(() => null) : null,
+  listPublicSpecies(),
+])
+
+const taxa = Object.entries(names ?? {}).map(([id, one]) => ({ id: Number(id), ...one }))
+const species = buildSpecies(taxa, app.ok ? app.value : [])
+const bird = findSpecies(slug, species)
+if (!bird) {
+  const spelled = findBySpelling(slug, species)
+  if (spelled) return Astro.redirect(speciesHref(spelled.slug), 301)
+  return new Response(null, { status: 404 })
+}
+
+const now = new Date()
+const thisYear = stockholmYear(now)
+const today = dayOfYear(toStockholmInputValue(now).slice(0, 10))
+const entry = bird.taxonId !== null ? (index?.taxa[bird.taxonId] ?? null) : null
+const ever =
+  bird.taxonId !== null ? allTime?.taxa.find((one) => one.id === bird.taxonId) : undefined
+const typical = entry && index ? typicalDays(entry, seasonWindow(index.years, thisYear)) : null
+// The strip of first sightings only says "when it comes" for a summer bird; a
+// winter guest's first report of a year is in January, wherever it was.
+const figure =
+  entry && typical?.kind === "summer" && typical.arrival
+    ? arrivalFigure(entry, thisYear, typical.arrival)
+    : null
+const weeks = entry ? weeksTotal(entry) : null
+const yearsSeen = entry ? Object.keys(entry.years).length : 0
+const firstYearOfData = index?.years[0] ?? null
+
+const larm = bird.appId !== null ? await listSpeciesAlerts(bird.appId) : null
+const alerts = larm?.ok ? larm.value : []
+const pins = toLarmPins(alerts)
+const SHOWN = 8
+const lead = typical ? leadSentence(typical, ever ? Number(ever.last.slice(0, 4)) : null) : null
+const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
+---
+
+<SiteLayout
+  title={bird.name}
+  description={`${bird.name} (${bird.sci}) i Markaryds kommun: när den brukar komma, när på året den syns och vad klubbens medlemmar har larmat.`}
+  menu={navigation.menu}
+>
+  <article class="flex flex-col gap-14">
+    <header class="spread gap-y-6">
+      <div class="in-text flex flex-col gap-4">
+        <nav aria-label="Du är här" class="type-meta text-muted-foreground">
+          <a href="/obsar/markarydslistan?ordning=a-o" class="crumb">Markarydslistan</a>
+        </nav>
+        <div class="flex flex-col gap-2">
+          <h1 class="type-title">{bird.name}</h1>
+          {bird.sci && <p class="text-muted-foreground text-lg italic">{bird.sci}</p>}
+        </div>
+        {lead && <p class="type-ingress text-muted-foreground measure text-pretty">{lead}</p>}
+        {
+          bird.rarity !== null && (
+            <p class="flex items-center gap-2">
+              <RarityChip level={bird.rarity} />
+              <span class:list={[isRare(bird.rarity) && "text-rarity font-medium"]} aria-hidden="true">
+                {rarityLabel(bird.rarity)}
+              </span>
+              <span class="text-muted-foreground">på klubbens larmlista</span>
+            </p>
+          )
+        }
+      </div>
+      {
+        (ever || bird.alertCount > 0) && (
+          <Aside label="I kommunen" sticky={false} first={false} class="lg:pt-10">
+            {ever && (
+              <AsideNote label="Första fyndet">
+                <p>{date(ever.first)}</p>
+              </AsideNote>
+            )}
+            {ever && (
+              <AsideNote label="Senast sedd">
+                <p>{date(ever.last)}</p>
+              </AsideNote>
+            )}
+            {ever && (
+              <AsideNote label="Rapporter i Artportalen">
+                <p>
+                  {ever.reports.toLocaleString("sv-SE")}
+                  {firstYearOfData && yearsSeen > 0 && (
+                    <span class="text-muted-foreground"> under {yearsSeen === 1 ? "ett år" : `${yearsSeen} år`}</span>
+                  )}
+                </p>
+              </AsideNote>
+            )}
+            {bird.alertCount > 0 && (
+              <AsideNote label="Larmad av medlemmarna">
+                <p>
+                  <a href="#larm" class="link">{bird.alertCount === 1 ? "En gång" : `${bird.alertCount} gånger`}</a>
+                </p>
+              </AsideNote>
+            )}
+          </Aside>
+        )
+      }
+    </header>
+
+    {/* The figures take the whole track, from the text's edge to the page's,
+        like the Obsar figures; their captions keep the reading measure. */}
+    {
+      entry && figure && typical?.arrival && (
+        <ObsarSection id="nar" title="När den kommer">
+          <ArrivalFigure figure={figure} sentence={arrivalSentence(entry, typical.arrival, thisYear)} headingId="nar" />
+        </ObsarSection>
+      )
+    }
+
+    {
+      weeks && weeks.some((one) => one > 0) && (
+        <ObsarSection id="aret" title="Över året">
+          <YearFigure weeks={weeks} now={weekOfDay(today)} sentence={yearSentence(weeks)} headingId="aret" />
+        </ObsarSection>
+      )
+    }
+
+    {
+      !ever && bird.alertCount > 0 && (
+        <p class="text-muted-foreground measure at-text">
+          {bird.name} har aldrig rapporterats i Markaryds kommun i Artportalen, men en medlem har larmat om den
+          {bird.alertCount > 1 ? ` ${countWord(bird.alertCount)} gånger` : ""}.
+        </p>
+      )
+    }
+
+    {
+      alerts.length > 0 ? (
+        <section aria-labelledby="larm" class="spread gap-y-8">
+          <h2 id="larm" class="type-section in-text">Larmat av medlemmarna</h2>
+          <div class="in-text flex flex-col gap-5">
+            <AlertList alerts={alerts.slice(0, SHOWN)} headingLevel={3} years="other-years" />
+            {alerts.length > SHOWN && (
+              <LarmFold count={alerts.length - SHOWN}>
+                <AlertList alerts={alerts.slice(SHOWN)} headingLevel={3} years="other-years" photos={false} compact />
+              </LarmFold>
+            )}
+          </div>
+          {pins.length > 0 && (
+            /* Beside the list, from its first row. Each larm's photo is in its
+               own row, as on /larm, rather than in a rail that repeated them. */
+            <div class="in-aside flex flex-col gap-2 lg:row-start-2">
+              <LarmMapFrame
+                pins={pins}
+                fallback={`Kartan behöver JavaScript. Platserna står vid varje larm.`}
+                class="aspect-square w-full"
+              />
+              <p class="type-meta text-muted-foreground">Där medlemmarna har larmat om {bird.name.toLocaleLowerCase("sv")}.</p>
+            </div>
+          )}
+        </section>
+      ) : (
+        bird.appId !== null && (
+          <p class="text-muted-foreground measure at-text">
+            Ingen medlem har larmat om {bird.name.toLocaleLowerCase("sv")} ännu.{" "}
+            <a href="/larm" class="link">Se alla larm</a>
+          </p>
+        )
+      )
+    }
+
+    {entry && <SourceNote fetchedAt={index?.fetchedAt} />}
+  </article>
+</SiteLayout>

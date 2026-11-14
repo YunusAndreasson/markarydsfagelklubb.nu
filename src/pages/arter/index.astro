@@ -1,0 +1,10 @@
+---
+export const prerender = false
+
+/**
+ * The species register is Markarydslistan's A–Ö order (docs/design.md,
+ * "Arter"): one list of the kommun's birds, not two. This address stays
+ * for links made while /arter had a register of its own.
+ */
+return Astro.redirect("/obsar/markarydslistan?ordning=a-o", 301)
+---

@@ -48,6 +48,8 @@ const rhythm = stats
   : []
 const isCurrent = year === thisYear
 const title = `Årslistan ${year}`
+
+import { speciesLink } from "@/lib/species"
 ---
 
 <SiteLayout
@@ -58,7 +60,6 @@ const title = `Årslistan ${year}`
   <article class="flex flex-col gap-12">
     <ObsarHeader
       title={title}
-      current="/obsar/arslista"
       ingress={stats &&
         `${isCurrent ? "Hittills i år har" : `Under ${year} rapporterades`} ${arter(stats.speciesCount)}${isCurrent ? " rapporterats" : ""} i kommunen, i ${stats.reports.toLocaleString("sv-SE")} rapporter. Här i den ordning de först sågs.`}
     >
@@ -90,6 +91,7 @@ const title = `Årslistan ${year}`
                 when={shortDay(one.first)}
                 datetime={one.first}
                 title={one.name}
+                href={speciesLink(one.name)}
                 sci={one.sci}
                 notes={[one.reports === 1 ? "1 rapport" : `${one.reports.toLocaleString("sv-SE")} rapporter, senast ${shortDay(one.last)}`]}
               />

@@ -12,9 +12,12 @@ import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linesSvg } from "@/lib/charts/svg"
 import { ink } from "@/lib/charts/theme"
+import { registerLetter } from "@/lib/lokal"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { accumulation, arter, FOUNDED, shortDay } from "@/lib/obsar-stats"
+import { listPublicSpecies } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
+import { buildSpecies, speciesHref, speciesLink } from "@/lib/species"
 import { stockholmYear } from "@/lib/stockholm-time"
 
 /**
@@ -34,6 +37,44 @@ const [navigation, allTime, names] = await Promise.all([
 ])
 const thisYear = stockholmYear(new Date())
 
+/**
+ * Two orders of the one list (docs/design.md, "Arter"): the order the birds
+ * came, by decade, which is the list's own story; and A–Ö, the way to find a
+ * bird and its page, with the club's rarity chip and the larm count. A plain
+ * link switches between them, so it works with no script.
+ */
+const byName = Astro.url.searchParams.get("ordning") === "a-o"
+// Both orders print the same row as the species register: the bird's name,
+// its prefix on the club's list, and its page. A failed read of the app's
+// list costs only the chips and the larm counts.
+const app = await listPublicSpecies()
+const species = buildSpecies(
+  Object.entries(names ?? {}).map(([id, one]) => ({ id: Number(id), ...one })),
+  app.ok ? app.value : []
+).filter((one) => one.taxonId !== null)
+const refOf = new Map(species.map((one) => [one.taxonId as number, one]))
+const lastYear = new Map((allTime?.taxa ?? []).map((one) => [one.id, Number(one.last.slice(0, 4))]))
+/** A long-gone bird says so; the larm count follows. Nothing else, so the rows stay light. */
+const notesFor = (taxonId: number) => {
+  const ref = refOf.get(taxonId)
+  const last = lastYear.get(taxonId)
+  return [
+    last !== undefined && last < thisYear - 5 && `Senast sedd ${last}`,
+    ref && ref.alertCount > 0 && (ref.alertCount === 1 ? "1 larm" : `${ref.alertCount} larm`),
+  ]
+}
+const titleOf = (taxonId: number, fallback: string) => refOf.get(taxonId)?.name ?? fallback
+const hrefOf = (taxonId: number, fallback: string) => {
+  const ref = refOf.get(taxonId)
+  return ref ? speciesHref(ref.slug) : speciesLink(fallback)
+}
+const firstSeen = new Map((allTime?.taxa ?? []).map((one) => [one.id, one.first]))
+const letters = new Map<string, typeof species>()
+for (const one of species) {
+  const letter = registerLetter(one.name)
+  letters.set(letter, [...(letters.get(letter) ?? []), one])
+}
+
 const taxa = (allTime?.taxa ?? [])
   .map((one) => ({
     ...one,
@@ -50,8 +91,6 @@ for (const one of taxa) {
   const decade = Math.floor(Number(one.first.slice(0, 4)) / 10) * 10
   decadesOf.set(decade, [...(decadesOf.get(decade) ?? []), one])
 }
-const reports = (count: number) =>
-  count === 1 ? "1 rapport" : `${count.toLocaleString("sv-SE")} rapporter`
 const notSeenSince = taxa.filter((one) => Number(one.last.slice(0, 4)) < thisYear - 20).length
 
 const fallback =
@@ -72,15 +111,67 @@ const fallback =
   <article class="flex flex-col gap-12">
     <ObsarHeader
       title="Markarydslistan"
-      current="/obsar/markarydslistan"
       ingress={allTime &&
         `${arter(taxa.length)} har rapporterats i Markaryds kommun sedan ${firstYear}. När klubben bildades ${FOUNDED} var listan ${atFounding} arter lång.`}
     />
 
+    {
+      allTime && (
+        <nav aria-label="Ordning" class="at-text type-meta flex flex-wrap items-center gap-x-5">
+          <span class="text-muted-foreground">Ordning:</span>
+          <a
+            href="/obsar/markarydslistan"
+            aria-current={byName ? undefined : "page"}
+            class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2"
+          >
+            I den ordning de kom
+          </a>
+          <a
+            href="/obsar/markarydslistan?ordning=a-o"
+            aria-current={byName ? "page" : undefined}
+            class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2"
+          >
+            A–Ö
+          </a>
+        </nav>
+      )
+    }
+
+    {
+      allTime && byName && (
+        <>
+          <p class="type-meta text-muted-foreground at-text measure">
+            Året vid varje art är när den först sågs i kommunen. Siffran är artens prefix på klubbens
+            larmlista. Varje art har en egen sida.
+          </p>
+          {[...letters].map(([letter, list]) => (
+            <MarginGroup id={`bokstav-${letter.toLocaleLowerCase("sv")}`} label={letter}>
+              <Register>
+                {list.map((one) => {
+                  const first = one.taxonId !== null ? firstSeen.get(one.taxonId) : undefined
+                  return (
+                    <Entry
+                      when={first?.slice(0, 4) ?? ""}
+                      datetime={first}
+                      title={one.name}
+                      href={speciesHref(one.slug)}
+                      sci={one.sci}
+                      rarity={one.rarity}
+                      notes={notesFor(one.taxonId as number)}
+                    />
+                  )
+                })}
+              </Register>
+            </MarginGroup>
+          ))}
+        </>
+      )
+    }
+
     {!allTime && <NotReady href="https://www.artportalen.se/List/Top/Species/F%C3%A5glar/Total/Kommun/Markaryd/AnySite/OrderByDate/Desc" />}
 
     {
-      allTime && (
+      allTime && !byName && (
         <>
           <ObsarSection id="nyast" title="Senast på listan">
             <Register>
@@ -88,9 +179,11 @@ const fallback =
                 <Entry
                   when={one.first.slice(0, 4)}
                   datetime={one.first}
-                  title={one.name}
+                  title={titleOf(one.id, one.name)}
+                  href={hrefOf(one.id, one.name)}
                   sci={one.sci}
-                  notes={[`Först sedd ${shortDay(one.first)}, ${reports(one.reports)}`]}
+                  rarity={refOf.get(one.id)?.rarity}
+                  notes={[`Först sedd ${shortDay(one.first)}`]}
                 />
               ))}
             </Register>
@@ -117,9 +210,11 @@ const fallback =
                   <Entry
                     when={one.first.slice(0, 4)}
                     datetime={one.first}
-                    title={one.name}
+                    title={titleOf(one.id, one.name)}
+                    href={hrefOf(one.id, one.name)}
                     sci={one.sci}
-                    notes={[one.reports > 1 ? `${reports(one.reports)}, senast ${one.last.slice(0, 4)}` : reports(one.reports)]}
+                    rarity={refOf.get(one.id)?.rarity}
+                    notes={notesFor(one.id)}
                   />
                 ))}
               </Register>

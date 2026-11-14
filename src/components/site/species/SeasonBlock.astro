@@ -1,0 +1,93 @@
+---
+import Entry from "@/components/site/obsar/Entry.astro"
+import type { SeasonBird, ThisWeek } from "@/lib/season"
+import { speciesHref } from "@/lib/species"
+import { dayMonth } from "@/lib/species-page"
+import { formatDate } from "@/lib/stockholm-time"
+
+/**
+ * "Så här års" (docs/design.md, "Så här års"): the birds that usually
+ * arrive in the kommun, or leave it, within two weeks of today, from twenty years of
+ * Artportalen, and how this year is going. A sentence first, the way the larm
+ * band leads, then the birds as register entries with their usual day in the
+ * date column. Nothing renders when neither list has a bird.
+ */
+interface Props {
+  week: ThisWeek
+  /** Taxon id → species page slug (`taxonSlugs`). */
+  slugs: Map<number, string>
+  /** The heading's level: 2 on the home page, 2 on /arter too, but a caller may nest it. */
+  headingId: string
+}
+
+const { week, slugs, headingId } = Astro.props
+const { arriving, leaving } = week
+
+const capital = (name: string) => name.charAt(0).toLocaleUpperCase("sv") + name.slice(1)
+const listed = (birds: SeasonBird[]) => {
+  const names = birds.slice(0, 3).map((bird) => bird.name.toLocaleLowerCase("sv"))
+  if (names.length <= 1) return names.join("")
+  return `${names.slice(0, -1).join(", ")} och ${names.at(-1)}`
+}
+const sentence = [
+  arriving.length > 0 && `brukar ${listed(arriving)} komma till kommunen`,
+  leaving.length > 0 &&
+    (arriving.length > 0
+      ? `och ${listed(leaving)} lämna den`
+      : `brukar ${listed(leaving)} lämna kommunen`),
+]
+  .filter(Boolean)
+  .join(", ")
+const short = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
+---
+
+{
+  (arriving.length > 0 || leaving.length > 0) && (
+    <div class="flex flex-col gap-6">
+      <p class="type-ingress measure text-pretty">Så här års {sentence}.</p>
+      <div class="grid gap-x-10 gap-y-6 md:grid-cols-2">
+        {arriving.length > 0 && (
+          <section aria-labelledby={`${headingId}-kommer`} class="flex flex-col gap-3">
+            <h3 id={`${headingId}-kommer`} class="type-meta text-muted-foreground">Brukar komma nu</h3>
+            <ul>
+              {arriving.map((bird) => (
+                <Entry
+                  when={dayMonth(bird.day)}
+                  title={capital(bird.name)}
+                  href={slugs.has(bird.id) ? speciesHref(slugs.get(bird.id) as string) : null}
+                  notes={[
+                    bird.thisYear
+                      ? bird.kind === "winter"
+                        ? `Tillbaka i höst, senast sedd ${short(bird.thisYear)}`
+                        : `I år kom den första ${short(bird.thisYear)}`
+                      : bird.kind === "winter"
+                        ? "Inte sedd igen i höst än"
+                        : "Inte sedd i år än",
+                  ]}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+        {leaving.length > 0 && (
+          <section aria-labelledby={`${headingId}-lamnar`} class="flex flex-col gap-3">
+            <h3 id={`${headingId}-lamnar`} class="type-meta text-muted-foreground">Brukar lämna nu</h3>
+            <ul>
+              {leaving.map((bird) => (
+                <Entry
+                  when={dayMonth(bird.day)}
+                  title={capital(bird.name)}
+                  href={slugs.has(bird.id) ? speciesHref(slugs.get(bird.id) as string) : null}
+                  notes={[bird.thisYear ? `Senast sedd i år ${short(bird.thisYear)}` : "Inte sedd i år"]}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+      <p class="type-meta text-muted-foreground measure">
+        Datumen är medianen för de senaste tjugo åren i Artportalen.
+      </p>
+    </div>
+  )
+}

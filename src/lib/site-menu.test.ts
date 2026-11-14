@@ -41,11 +41,6 @@ function liveRows(): PageRow[] {
   ]
 }
 
-const categories = [
-  { name: "Referat", slug: "referat" },
-  { name: "Exkursioner", slug: "exkursioner" },
-]
-
 function section(menu: ReturnType<typeof buildSiteMenu>, title: string) {
   const found = menu.find((entry) => entry.title === title)
   if (!found) throw new Error(`no ${title}`)
@@ -53,7 +48,7 @@ function section(menu: ReturnType<typeof buildSiteMenu>, title: string) {
 }
 
 describe("buildSiteMenu", () => {
-  const menu = buildSiteMenu(buildPageTree(liveRows()), categories)
+  const menu = buildSiteMenu(buildPageTree(liveRows()))
 
   it("lists Obsar's own pages, then reporting and the regions, never the old kommun links", () => {
     const obsar = section(menu, "Obsar")
@@ -66,12 +61,8 @@ describe("buildSiteMenu", () => {
     expect(obsar.description).toBeTruthy()
   })
 
-  it("lists every article category after all articles", () => {
-    expect(section(menu, "Artiklar").children.map((child) => [child.title, child.href])).toEqual([
-      ["Alla artiklar", "/artiklar"],
-      ["Referat", "/artiklar/kategori/referat"],
-      ["Exkursioner", "/artiklar/kategori/exkursioner"],
-    ])
+  it("gives Artiklar no list: its categories are tabs on its own page", () => {
+    expect(section(menu, "Artiklar").children).toEqual([])
   })
 
   it("leads Klubben with its own page", () => {
@@ -85,11 +76,6 @@ describe("buildSiteMenu", () => {
   it("leaves sections without pages beneath them alone", () => {
     expect(section(menu, "Larm").children).toEqual([])
     expect(section(menu, "Larm").description).toBeUndefined()
-  })
-
-  it("gives Artiklar no list when the categories can't be read", () => {
-    const bare = buildSiteMenu(buildPageTree(liveRows()), [])
-    expect(section(bare, "Artiklar").children).toEqual([])
   })
 })
 

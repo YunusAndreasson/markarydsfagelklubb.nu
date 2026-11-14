@@ -1,27 +1,23 @@
 ---
-import ObsarNav from "./ObsarNav.astro"
-
 /**
  * The head of every Obsar page, on the grid's content track (docs/design.md,
  * "Obsar och statistik", "Grid"): the crumb, the title and the ingress at the
- * measure, then the section's tabs, then anything page-specific (a year strip).
- * The 40-year page has its title in the band, so `title` is optional.
+ * measure, then anything page-specific (a year strip). The 40-year page has its
+ * title in the band, so `title` is optional.
+ *
+ * No row of the section's pages: the header's Obsar panel (and the phone menu)
+ * already lists them, and repeating them here made the section read like a
+ * site of its own (2026-11-15). The crumb leads back to Översikt, which links
+ * to every page.
  */
 interface Props {
   title?: string
-  current:
-    | "/obsar"
-    | "/obsar/senaste"
-    | "/obsar/arslista"
-    | "/obsar/markarydslistan"
-    | "/obsar/ligan"
-    | "/obsar/40-ar"
   /** The crumb back to /obsar; off on /obsar itself. */
   crumb?: boolean
   ingress?: string | null | false
 }
 
-const { title, current, crumb = true, ingress } = Astro.props
+const { title, crumb = true, ingress } = Astro.props
 ---
 
 <header class="flex flex-col gap-5 at-text">
@@ -38,6 +34,5 @@ const { title, current, crumb = true, ingress } = Astro.props
       </div>
     )
   }
-  <ObsarNav current={current} />
   <slot name="after" />
 </header>

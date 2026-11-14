@@ -63,6 +63,8 @@ const fallback = larm.position
 // Named before the rail's photos ask (lib/view-transition.ts).
 Astro.locals.transitionNames ??= new Set()
 const photoTransition = transitionName(Astro.locals.transitionNames, "larm", larm.id)
+
+import { speciesLink } from "@/lib/species"
 ---
 
 <SiteLayout
@@ -89,6 +91,11 @@ const photoTransition = transitionName(Astro.locals.transitionNames, "larm", lar
               )}
             </h1>
             {larm.scientificName && <p class="text-muted-foreground text-lg italic">{larm.scientificName}</p>}
+            {larm.scientificName && (
+              <a href={speciesLink(larm.species)} class="link type-meta flex min-h-11 w-fit items-center">
+                Mer om {larm.species.toLocaleLowerCase("sv")}
+              </a>
+            )}
           </div>
         </div>
       </header>

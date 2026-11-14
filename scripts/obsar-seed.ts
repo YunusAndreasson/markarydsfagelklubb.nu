@@ -68,10 +68,19 @@ const started = Date.now()
 
 const fast = await runFast(kv, client)
 console.log("fast:", fast)
+let ok = fast.ok
 if (!process.argv.includes("--fast")) {
   // Every past year in one go: the cursor wraps once it passes the first year.
   const nightly = await runNightly(kv, client, new Date(), 80)
   console.log("nightly:", nightly)
+  ok = ok && nightly.ok
+}
+// A run that failed part-way holds only some keys, and some of those (the
+// names, the species index) shrunk to what it reached. Uploading it would
+// overwrite a good local set with a worse one, so stop and leave KV alone.
+if (!ok) {
+  console.error("A job failed; nothing was written to local KV. Run it again.")
+  process.exit(1)
 }
 console.log(
   `${client.calls} calls in ${Math.round((Date.now() - started) / 1000)}s, ${data.size} keys`
