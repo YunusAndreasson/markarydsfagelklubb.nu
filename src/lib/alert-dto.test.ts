@@ -11,6 +11,23 @@ import {
 
 const ID = "1f1c0f3a-9d1e-4a6b-9a8e-0c2c5b1a7f42"
 
+const HYLTE = {
+  id: 4242,
+  slug: "hylte-mosse",
+  name: "Hylte mosse",
+  latitude: 56.46,
+  longitude: 13.6,
+  description: "LEAK-description",
+}
+
+/** What `alert-place.ts` decides for the row below; the DTO copies, never derives. */
+const near = (label: string, lokal: typeof HYLTE | null = HYLTE) => ({
+  label,
+  lokal,
+  position: { latitude: 56.46123, longitude: 13.59877 },
+})
+const nowhere = (label: string) => ({ label, lokal: null, position: null })
+
 /** Every value that must never be published carries a searchable sentinel. */
 const row: AlertRow = {
   id: ID,
@@ -29,58 +46,92 @@ const row: AlertRow = {
 
 describe("toPublicAlert", () => {
   it("publishes exactly the pinned fields, and no others", () => {
-    const dto = toPublicAlert(row, "Nära Hylte mosse", "Anna Andersson")
+    const dto = toPublicAlert(row, near("Nära Hylte mosse"), "Anna Andersson")
     expect(Object.keys(dto).sort()).toEqual([...PUBLIC_ALERT_FIELDS])
   })
 
   it("carries no forbidden value, however it is nested or spread", () => {
-    const serialized = JSON.stringify(toPublicAlert(row, "Nära Hylte mosse", "Anna Andersson"))
-    // 4242 is `location_id`: read so a lokal page can group larm, never published.
-    for (const sentinel of ["LEAK-user-id", "LEAK-image-path", "56.46", "13.59", "4242"]) {
+    const serialized = JSON.stringify(
+      toPublicAlert(row, near("Nära Hylte mosse"), "Anna Andersson")
+    )
+    // 4242 is `location_id`: read so a lokal page can group larm, never
+    // published. The row's own seven-decimal coordinate never survives either:
+    // the position published is the place module's, rounded.
+    for (const sentinel of [
+      "LEAK-user-id",
+      "LEAK-image-path",
+      "56.4612345",
+      "13.5987654",
+      "4242",
+    ]) {
       expect(serialized, sentinel).not.toContain(sentinel)
     }
+  })
+
+  it("publishes the position only under `position`, and only as the place module gave it", () => {
+    const dto = toPublicAlert(row, near("Nära Hylte mosse"), null)
+    expect(dto.position).toEqual({ latitude: 56.46123, longitude: 13.59877 })
+    // Withheld by the place module (a protected species): the row's coordinate
+    // is still sitting there, and the DTO must not reach for it.
+    const withheld = toPublicAlert(row, nowhere("Markaryds kommun"), null)
+    expect(withheld.position).toBeNull()
+    expect(JSON.stringify(withheld)).not.toMatch(/56\.46|13\.59/)
+  })
+
+  it("copies only the lokal's address, name and position, never its id or text", () => {
+    const dto = toPublicAlert(row, near("Nära Hylte mosse"), null)
+    expect(dto.lokal).toEqual({
+      slug: "hylte-mosse",
+      name: "Hylte mosse",
+      latitude: 56.46,
+      longitude: 13.6,
+    })
+    expect(JSON.stringify(dto)).not.toContain("LEAK-description")
+    expect(toPublicAlert(row, near("Markaryds kommun", null), null).lokal).toBeNull()
   })
 
   it("takes the place and the observer as given, never from the row", () => {
     // The row says Hylte mosse and a user id; the DTO says what the policy
     // modules decided. A future edit reaching back into the row is the bug
     // this asserts against.
-    const dto = toPublicAlert(row, "Markaryds kommun", null)
+    const dto = toPublicAlert(row, nowhere("Markaryds kommun"), null)
     expect(dto.place).toBe("Markaryds kommun")
     expect(dto.observer).toBeNull()
   })
 
   it("addresses the photo through the Worker, never the storage path", () => {
-    expect(toPublicAlert(row, "x", null).photoUrl).toBe(`/larm/bild/${ID}`)
+    expect(toPublicAlert(row, nowhere("x"), null).photoUrl).toBe(`/larm/bild/${ID}`)
   })
 
   it("has no photo when the observation is gone or never had one", () => {
     // 21 of the 238 live larm have lost their observation, and 70 more never
     // carried a picture.
-    expect(toPublicAlert({ ...row, observation: null }, "x", null).photoUrl).toBeNull()
+    expect(toPublicAlert({ ...row, observation: null }, nowhere("x"), null).photoUrl).toBeNull()
     expect(
-      toPublicAlert({ ...row, observation: { image_path: null } }, "x", null).photoUrl
+      toPublicAlert({ ...row, observation: { image_path: null } }, nowhere("x"), null).photoUrl
     ).toBeNull()
     expect(
-      toPublicAlert({ ...row, observation: { image_path: "" } }, "x", null).photoUrl
+      toPublicAlert({ ...row, observation: { image_path: "" } }, nowhere("x"), null).photoUrl
     ).toBeNull()
   })
 
   it("survives a species that has been deleted, rather than rendering blank", () => {
-    const dto = toPublicAlert({ ...row, species: null }, "x", null)
+    const dto = toPublicAlert({ ...row, species: null }, nowhere("x"), null)
     expect(dto.species).toBe("Obestämd art")
     expect(dto.scientificName).toBe("")
     expect(dto.rarity).toBe(5)
   })
 
   it("normalises rarity to the club's scale, defaulting an unlisted species", () => {
-    expect(toPublicAlert(row, "x", null).rarity).toBe(1)
+    expect(toPublicAlert(row, nowhere("x"), null).rarity).toBe(1)
     const unlisted = { ...row, species: { ...row.species, rarity: null } } as AlertRow
-    expect(toPublicAlert(unlisted, "x", null).rarity).toBe(5)
+    expect(toPublicAlert(unlisted, nowhere("x"), null).rarity).toBe(5)
   })
 
   it("falls back to the sent time if a larm ever arrives without an observed one", () => {
-    expect(toPublicAlert({ ...row, observed_at: null }, "x", null).observedAt).toBe(row.sent_at)
+    expect(toPublicAlert({ ...row, observed_at: null }, nowhere("x"), null).observedAt).toBe(
+      row.sent_at
+    )
   })
 })
 

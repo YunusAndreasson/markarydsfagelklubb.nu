@@ -1,0 +1,31 @@
+---
+import LarmMap, { type LarmMapLokal } from "@/components/site/LarmMap"
+import type { LarmPin } from "@/lib/larm-map"
+import "@/styles/map.css"
+
+/**
+ * The larm map's frame (docs/design.md, "Larm på kartan"): the box, sized
+ * before hydration so the page doesn't shift as the tiles arrive, and the
+ * text a reader without JavaScript gets instead.
+ */
+
+interface Props {
+  pins: LarmPin[]
+  lokal?: LarmMapLokal | null
+  /** What the map shows, for the no-JavaScript line. */
+  fallback: string
+  /** Aspect and width. */
+  class?: string
+}
+
+const { pins, lokal = null, fallback, class: className = "" } = Astro.props
+---
+
+<div class:list={["bg-muted relative overflow-hidden rounded-[4px]", className]}>
+  <LarmMap pins={pins} lokal={lokal} client:visible />
+  <noscript>
+    <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-4 text-center text-sm">
+      {fallback}
+    </p>
+  </noscript>
+</div>

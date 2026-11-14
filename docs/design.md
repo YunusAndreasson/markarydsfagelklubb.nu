@@ -1087,7 +1087,7 @@ På lokalen
 
 I närheten
               De 12 senaste larmen inom tre kilometer från lokalen.
-              Platsen för ett larm är alltid ungefärlig.
+              Platsen står som närmaste lokal; kartan finns på varje larm.
  2 sep.       Kungsfiskare
 06:28         Nära Klintbadet   Per Persson
 ```
@@ -1106,6 +1106,38 @@ I närheten
   and the breadcrumb already leads back to the map.
 - A lokal with nothing says `Inga larm har skickats härifrån ännu.` and offers
   `Se alla larm`.
+- **An active lokal names its recent birds** (2026-11-14): its map tooltip reads
+  the name, then `Nyss: kungsfiskare, storskrake` in Blyerts under it, and its row
+  in "Larmat senaste två veckorna" prints the same line. The row is the tooltip's
+  accessible twin, so the two always say the same. Birds larmed *from* the lokal
+  in the fortnight, newest first, at most five; never a protected species.
+
+### Larm på kartan (`/larm/<id>`)
+
+Since 2026-11-14 a larm's exact position is published (roadmap D1, revised), and
+its own page draws it. **The map is the facts' picture**: it sits under "Plats" in
+the facts column, square beside the photo, a 2:1 still in the text track when there
+is no photo. On a phone it follows the facts, as they do.
+
+```
+Plats
+Nära Fjärholma                     ← links to the lokal's page
+[ stillbild: fyndet, och lokalen som en ring med sitt namn ]
+Öppna platsen i OpenStreetMap      ← the exact point, for a phone in the field
+```
+
+- **The fynd is a disc, not a dot**: 14 px, Gran, with the paper halo the lokal
+  dots wear, so the two marks never read as each other. Larmrött for "Ovanlig" and
+  rarer, the colour the text already uses for them.
+- **The lokal the label names is a hollow ink ring with its name set beside it**,
+  like an atlas label: ink with a paper halo, no box, no arrow. It answers "near
+  what?" without a legend. The frame fits both, never closer than zoom 15.
+- **A still**: no dragging, zooming or tooltips; the OpenStreetMap link is the
+  way to explore, and the no-JavaScript fallback.
+- **A protected species gets no map at all**, and no lokal name either.
+- The page's closing line says `Kartan visar platsen som angavs i larmet.`
+- **Not on the home page.** A day map in the larm band was tried on 2026-11-14 and
+  dropped: the paper map didn't sit well on the Gran band.
 
 ### Page
 

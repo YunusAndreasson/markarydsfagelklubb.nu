@@ -1,4 +1,4 @@
-import { distanceKm, NEAR_KM } from "./alert-place"
+import { distanceKm, NEAR_KM, PLACE_SUPPRESSED_SPECIES } from "./alert-place"
 
 /**
  * Which lokal a larm belongs to (docs/roadmap.md, F5, answered 2026-09-20).
@@ -53,15 +53,20 @@ export type LokalPoint = {
 
 /**
  * The larm side. This is the lean row the read path fetches for the map — no
- * species, no observer, no photo, because none of that is needed to decide
- * which lokal a larm belongs to.
+ * observer and no photo. The species is optional: deciding which lokal a larm
+ * belongs to never needs it, and only the map's "Nyss:" line reads it.
  */
 export type LarmPoint = {
   sent_at: string
   latitude: number | null
   longitude: number | null
   location_id: number | null
+  species_id?: number | null
+  species?: { swedish_name: string; scientific_name: string } | null
 }
+
+/** How many species an active lokal's "Nyss:" line names, newest first. */
+export const RECENT_SPECIES = 5
 
 export type LokalRelation = "at" | "near" | "elsewhere"
 
@@ -117,6 +122,12 @@ export type LokalActivity = {
   /** ISO 8601 of the most recent of those, or null when there is none. */
   lastAlertAt: string | null
   active: boolean
+  /**
+   * The birds larmed **from** the lokal inside the fortnight, newest first and
+   * each once, at most {@link RECENT_SPECIES}. Never a protected species, and
+   * never the app's "Övrigt (ej fågel)", which has no scientific name.
+   */
+  recentSpecies: string[]
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -146,18 +157,30 @@ export function lokalActivity(
   let alertCount = 0
   let lastAlertAt: string | null = null
   let active = false
+  const recent: { name: string; sentAt: string }[] = []
 
   for (const point of larm) {
     if (homeLokalId(point, lokaler) !== lokal.id) continue
     alertCount++
     if (lastAlertAt === null || point.sent_at > lastAlertAt) lastAlertAt = point.sent_at
-    if (!active) {
-      const sent = Date.parse(point.sent_at)
-      if (Number.isFinite(sent) && sent >= since) active = true
+    const sent = Date.parse(point.sent_at)
+    if (!Number.isFinite(sent) || sent < since) continue
+    active = true
+    const name = point.species?.swedish_name
+    const protectedSpecies =
+      point.species_id != null && PLACE_SUPPRESSED_SPECIES.has(point.species_id)
+    if (name && point.species?.scientific_name && !protectedSpecies) {
+      recent.push({ name, sentAt: point.sent_at })
     }
   }
 
-  return { alertCount, lastAlertAt, active }
+  const recentSpecies: string[] = []
+  for (const { name } of recent.sort((a, b) => (a.sentAt < b.sentAt ? 1 : -1))) {
+    if (recentSpecies.length === RECENT_SPECIES) break
+    if (!recentSpecies.includes(name)) recentSpecies.push(name)
+  }
+
+  return { alertCount, lastAlertAt, active, recentSpecies }
 }
 
 /**

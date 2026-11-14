@@ -262,6 +262,17 @@ goes public:
     in it never gets a place finer than the kommun, lokal name included. The
     list itself needs the club's input, following Artportalen's skyddsklassade
     arter, **before launch**.
+- **Revised 2026-11-14: positions are published exactly.** The user reversed
+  the place rule so a larm can be drawn where it was reported. The label ladder
+  above still writes the text the feed and the lists print; a larm's own page
+  (`/larm/<id>`) now also draws the reported point on a still map, rounded to
+  about a metre, with the lokal the label names as a ring beside it and a link
+  to the point on OpenStreetMap. The position reaches the DTO only through
+  `publicPlace` in `src/lib/alert-place.ts`, which withholds it — and the lokal
+  name — for a protected species. What this costs, and is accepted: a member who
+  reports from home day after day puts a named pin on their house, until the
+  administrator hides those larm. Two launch items become **blockers** (see the
+  launch checklist): the privacy-policy wording, and the protected-species list.
 
 ### D2 — Admin sign-in
 
@@ -689,6 +700,10 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
     Ängabäcks kraftstation) are drawn as one pin that names both.
   - **Never a larm pin.** D1 forbids publishing the coordinate, so a larm is
     only ever drawn at the lokal it resolves to.
+    *Superseded 2026-11-14:* a larm's own page draws its exact point (D1,
+    revised). `/lokaler` still draws no larm pin; an active lokal's tooltip
+    and its row in "Larmat senaste två veckorna" now name the birds larmed
+    from it in the fortnight ("Nyss: kungsfiskare, storskrake").
   - **A lokal page lists its larm under two headings.** "På lokalen" uses the
     app's rule — within `LOKAL_RADIUS_M` (300 m) of the lokal, or the reporter
     picked it — which is 78 larm across 21 lokaler. "I närheten" holds the rest
@@ -892,12 +907,18 @@ time.
   the other). Remove `noindex` and `robots.txt` `Disallow` together.
 - **Auth.** Supabase auth `site_url` becomes the new domain. (The admin signs
   in with a password, so there's no sign-in redirect URL to update.)
-- **Privacy policy (D1).** The club updates the app's privacy policy and tells
-  the members which larm details the website publishes — species, count, time, a
-  coarse place, the photo and the observer's display name. This is the step that
-  was deferred from step 4 on the grounds that the site was unlisted; going to
-  the real domain is what makes it public. **The protected-species list
-  (`PLACE_SUPPRESSED_SPECIES`) is filled in here too.**
+- **Privacy policy (D1). A blocker since 2026-11-14.** The club updates the
+  app's privacy policy and tells the members which larm details the website
+  publishes — species, count, time, the place label **and the exact position on
+  a map**, the photo and the observer's display name — and that the
+  administrator can take any larm off the site. This is the step that was
+  deferred from step 4 on the grounds that the site was unlisted; going to the
+  real domain is what makes it public.
+- **Protected species. A blocker since 2026-11-14.** Fill in
+  `PLACE_SUPPRESSED_SPECIES` (ids, from Artportalen's skyddsklassade arter)
+  before the cutover. With exact positions published, an empty list puts a
+  nesting raptor's or a tjäder lek's exact place on the public web: the preview
+  on 2026-11-14 already showed exact pins for a kattuggla and a tjäder.
 - **Checks.** The legal pages (with D1's updated privacy policy) resolve at both
   old URLs. A sample of old post URLs 301 to the right article. No dummy
   article is left.
@@ -928,3 +949,4 @@ time.
 | F6 | Larmligan | **From Artportalen, not from the club's larm.** It is Artportalen's Observatörsligan for Markaryds kommun — the list the WP site already links to — so it touches no member data and drops out of the shared-database work entirely. Folded into step 9 as a **link** for now. A table on the site is possible — `occurrence.recordedBy` is in the data — but there is no aggregation by observer (only GeoGrid and Taxon), so it means scanning a kommun-year under a 10 000-record cap, and it would be our ranking rather than Artportalen's. **F7's spike decides it** | 2026-09-20 |
 | F3, D4 | The third design pass ("Dagslistan", `docs/design.md`) | **Free hands from the user.** The day's species lead the home page, the newest article under them; Alegreya for headings; larm sort on `observed_at`; `/sok` and `/artiklar/ar/<år>`, added to the agenda here (the old site had both); `events` gets a contact and a last sign-up day, filled from the Årsprogram for upcoming events; public read failures answer 500 with the site's page, not 503 as plain text | 2026-10-31 |
 | F6, F7 | Artportalen on the site (step 10) | **Built native, before launch** (the user, 2026-11-14): the spike matched Artportalen's lists exactly. **Observers named** in the league and the sightings, as Artportalen names them; the page says it is our count of the open data. **Cron Trigger → KV**, never a call per request. **ECharts** in `client:visible` islands over our own SVG first paint. Pages: the year so far, senaste fynden, årslistan and ligan for every year, Markarydslistan, 40 år; a jubilee band on the home page. Artsidor and lokal statistics are later | 2026-11-14 |
+| D1 (revised) | A larm's position | **Published exactly** (the user, 2026-11-14), reversing D1's "never a coordinate": a still map on `/larm/<id>` with the reported point, the named lokal as a ring and an OpenStreetMap link. Labels in the feed stay coarse. Withheld for a protected species. The privacy-policy update and the protected-species list become **launch blockers**. A map in the home page's larm band was built and dropped the same day: it didn't sit well on the Gran band | 2026-11-14 |

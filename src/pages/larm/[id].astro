@@ -3,6 +3,7 @@ export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import LarmMapFrame from "@/components/site/LarmMapFrame.astro"
 import LarmRail from "@/components/site/LarmRail.astro"
 import PhotoViewer from "@/components/site/PhotoViewer.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
@@ -10,6 +11,7 @@ import SiteLayout from "@/layouts/site.astro"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
 import { splitLarm } from "@/lib/front-page"
+import { osmLink, toLarmPins } from "@/lib/larm-map"
 import { listPublicAlerts, loadPublicAlert } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
 import { isRare, rarityLabel } from "@/lib/rarity"
@@ -45,6 +47,18 @@ const title =
 // The place ladder writes "Nära Hualtet" for a blurred place, and "vid Nära
 // Hualtet" isn't Swedish: such a place takes no preposition of its own.
 const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` : `vid ${larm.place}`
+// The map: the fynd where it was reported, and the lokal its place names as a
+// ring beside it. No map when there is neither (a protected species, or a larm
+// that came without a position).
+const pins = toLarmPins([larm])
+const mapLokal =
+  larm.lokal && larm.lokal.latitude !== null && larm.lokal.longitude !== null
+    ? { name: larm.lokal.name, latitude: larm.lokal.latitude, longitude: larm.lokal.longitude }
+    : null
+const hasMap = pins.length > 0 || mapLokal !== null
+const fallback = larm.position
+  ? "Kartan behöver JavaScript. Länken under öppnar platsen i OpenStreetMap."
+  : `Kartan behöver JavaScript. Larmet kom ${where}.`
 // Named before the rail's photos ask (lib/view-transition.ts).
 Astro.locals.transitionNames ??= new Set()
 const photoTransition = transitionName(Astro.locals.transitionNames, "larm", larm.id)
@@ -113,14 +127,37 @@ const photoTransition = transitionName(Astro.locals.transitionNames, "larm", lar
             </time>
           </AsideNote>
           <AsideNote label="Plats">
-            <p class="text-lg leading-snug font-medium">{larm.place}</p>
+            {larm.lokal ? (
+              <a href={`/lokaler/${larm.lokal.slug}`} class="text-lg leading-snug font-medium decoration-primary w-fit underline-offset-4 hover:underline">
+                {larm.place}
+              </a>
+            ) : (
+              <p class="text-lg leading-snug font-medium">{larm.place}</p>
+            )}
           </AsideNote>
+          {hasMap && (
+            /* The fynd is the facts' picture: square beside a photo, a still
+               strip in the text track without one. */
+            <div class="flex flex-col gap-2">
+              <LarmMapFrame
+                pins={pins}
+                lokal={mapLokal}
+                fallback={fallback}
+                class={larm.photoUrl ? "aspect-square w-full" : "aspect-2/1 w-full"}
+              />
+              {larm.position && (
+                <a href={osmLink(larm.position)} class="link type-meta flex min-h-11 w-fit items-center" rel="noopener">
+                  Öppna platsen i OpenStreetMap
+                </a>
+              )}
+            </div>
+          )}
           <AsideNote label="Rapporterat av">
             <p>{larm.observer ?? ANONYMOUS_OBSERVER}</p>
             <p class:list={["type-meta", isRare(larm.rarity) ? "text-rarity" : "text-muted-foreground"]}>{rarityLabel(larm.rarity)}</p>
           </AsideNote>
           <p class="text-muted-foreground text-sm leading-relaxed">
-            Platsen är ungefärlig. Larmet skickades i klubbens app{" "}
+            {larm.position && "Kartan visar platsen som angavs i larmet. "}Larmet skickades i klubbens app{" "}
             <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
           </p>
         </div>

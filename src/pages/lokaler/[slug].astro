@@ -81,7 +81,8 @@ const description = lokal.description?.trim() || partOf?.note || null
 const lastAlertAt = at[0]?.sentAt ?? null
 const active =
   lastAlertAt !== null && Date.now() - Date.parse(lastAlertAt) <= ACTIVE_DAYS * 86_400_000
-const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
+// The still on its own page shows no tooltip, so it needs no "Nyss:" line.
+const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recentSpecies: [] })
 ---
 
 <SiteLayout
@@ -176,7 +177,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
                 near.length > NEAR_LIMIT
                   ? `De ${NEAR_LIMIT} senaste larmen inom tre kilometer från lokalen.`
                   : "Larm inom tre kilometer från lokalen."
-              } Platserna är ungefärliga.
+              } Platsen står som närmaste lokal; kartan finns på varje larm.
             </p>
           </div>
           <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} compact />

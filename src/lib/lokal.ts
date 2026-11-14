@@ -32,6 +32,8 @@ export type LokalPin = {
   longitude: number
   /** A larm in the last {@link ACTIVE_DAYS} days — the app's own marking. */
   active: boolean
+  /** The birds larmed from it in that fortnight, newest first; empty when quiet. */
+  recentSpecies: string[]
 }
 
 /** A lokal in the register, with the tally the list prints. */
@@ -40,6 +42,7 @@ export type LokalSummary = Lokal & {
   /** ISO 8601 of the most recent larm, or null when there has been none. */
   lastAlertAt: string | null
   active: boolean
+  recentSpecies: string[]
 }
 
 /**
@@ -95,6 +98,7 @@ export function toPin(lokal: LokalSummary): LokalPin | null {
     latitude: lokal.latitude,
     longitude: lokal.longitude,
     active: lokal.active,
+    recentSpecies: lokal.recentSpecies,
   }
 }
 

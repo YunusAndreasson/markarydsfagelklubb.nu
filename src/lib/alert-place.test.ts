@@ -10,6 +10,7 @@ import {
   nearestLocation,
   OUTSIDE_PLACE,
   PLACE_SUPPRESSED_SPECIES,
+  publicPlace,
   UNKNOWN_PLACE,
 } from "./alert-place"
 
@@ -174,6 +175,73 @@ describe("coarsePlace", () => {
       for (const value of [alert.latitude, alert.longitude]) {
         if (value !== null) expect(label, String(value)).not.toContain(String(value))
       }
+    }
+  })
+})
+
+describe("publicPlace", () => {
+  const lokaler = [
+    { id: 1, slug: "hualtet", name: "Hualtet", latitude: 56.48974, longitude: 13.63176 },
+    { id: 2, slug: "hammarsjon", name: "Hammarsjön", latitude: 56.54261, longitude: 13.72467 },
+  ]
+
+  it("publishes the position rounded to about a metre, not the GPS noise", () => {
+    const place = publicPlace(point(56.4876234, 13.6446678), lokaler)
+    expect(place.position).toEqual({ latitude: 56.48762, longitude: 13.64467 })
+  })
+
+  it("names the nearest lokal on rung 3, so the label can link to it", () => {
+    const place = publicPlace(point(56.48762, 13.64466), lokaler)
+    expect(place.label).toBe("Nära Hualtet")
+    expect(place.lokal?.slug).toBe("hualtet")
+  })
+
+  it("prefers the lokal id the reporter chose, and falls back to its name", () => {
+    const byId = {
+      ...point(56.48762, 13.64466),
+      location_id: 2,
+      location_name: "Hammarsjön (gamla)",
+    }
+    expect(publicPlace(byId, lokaler).lokal?.slug).toBe("hammarsjon")
+    const byName = { ...point(56.48762, 13.64466), location_name: "hammarsjön" }
+    expect(publicPlace(byName, lokaler).lokal?.slug).toBe("hammarsjon")
+    const unknown = { ...point(56.48762, 13.64466), location_name: "Någon annanstans" }
+    expect(publicPlace(unknown, lokaler).lokal).toBeNull()
+  })
+
+  it("names no lokal on the kommun and outside rungs, but still has the position", () => {
+    const kommun = publicPlace(point(56.62811, 13.49277), lokaler)
+    expect(kommun.lokal).toBeNull()
+    expect(kommun.position).not.toBeNull()
+    expect(publicPlace(point(55.58173, 13.02267), lokaler).lokal).toBeNull()
+  })
+
+  it("has no position when the larm carried none", () => {
+    expect(publicPlace(point(null, null), lokaler)).toEqual({
+      label: UNKNOWN_PLACE,
+      lokal: null,
+      position: null,
+    })
+  })
+
+  it("gives a protected species neither a position nor a lokal", () => {
+    const suppressed = PLACE_SUPPRESSED_SPECIES as Set<number>
+    suppressed.add(4242)
+    try {
+      const atLokal: AlertPoint = {
+        location_id: 2,
+        location_name: "Hammarsjön",
+        latitude: 56.54261,
+        longitude: 13.72467,
+        species_id: 4242,
+      }
+      expect(publicPlace(atLokal, lokaler)).toEqual({
+        label: KOMMUN_PLACE,
+        lokal: null,
+        position: null,
+      })
+    } finally {
+      suppressed.delete(4242)
     }
   })
 })

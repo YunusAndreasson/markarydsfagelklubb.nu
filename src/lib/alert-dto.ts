@@ -1,3 +1,4 @@
+import type { PublicPlace, PublicPosition } from "./alert-place"
 import type { RarityLevel } from "./rarity"
 import { rarityLevel } from "./rarity"
 
@@ -20,7 +21,13 @@ import { rarityLevel } from "./rarity"
  *   spreads that a list of keys would miss.
  *
  * Never published: `phone`, `observations.comment`, `image_path`, any user id,
- * `recipient_count`, `avatar_path`, and the exact latitude/longitude.
+ * `recipient_count`, `avatar_path` and `location_id`.
+ *
+ * **The position is published** since 2026-11-14, when the club reversed D1's
+ * "never a coordinate" so each larm can be drawn where it was reported
+ * (docs/roadmap.md, decision log). It reaches the DTO only through
+ * `alert-place.ts`'s {@link PublicPlace}, which withholds it for a protected
+ * species, and never as the row's own `latitude`/`longitude`.
  */
 
 export type PublicAlert = {
@@ -37,19 +44,36 @@ export type PublicAlert = {
   sentAt: string
   /** A coarse label from `alert-place.ts`. Never a coordinate. */
   place: string
+  /**
+   * The lokal the label names, for a link to its page and the ring on the
+   * larm's map. Its position is the club's own, the one `/lokaler` draws.
+   * Null on rungs 4 and 5.
+   */
+  lokal: PublicLokalRef | null
+  /** Where the larm was reported from, rounded to about a metre. Null for a protected species. */
+  position: PublicPosition | null
   /** The live display name, or null when the page should say "En medlem". */
   observer: string | null
   /** `/larm/bild/<id>`, or null when the report carried no photo. */
   photoUrl: string | null
 }
 
+export type PublicLokalRef = {
+  slug: string
+  name: string
+  latitude: number | null
+  longitude: number | null
+}
+
 export const PUBLIC_ALERT_FIELDS = [
   "count",
   "id",
+  "lokal",
   "observedAt",
   "observer",
   "photoUrl",
   "place",
+  "position",
   "rarity",
   "scientificName",
   "sentAt",
@@ -60,7 +84,8 @@ export const PUBLIC_ALERT_FIELDS = [
  * Exactly what PostgREST is asked for.
  *
  * `latitude`, `longitude`, `location_id` and `image_path` are read — the place
- * ladder, the lokal pages and the photo route need them — and never published.
+ * ladder, the lokal pages and the photo route need them. Only the position is
+ * published, and only as `alert-place.ts` decides; the other two never are.
  * `observer_name` is **not** read at all: it is a snapshot that outlives a
  * deleted account, and the name comes from `profiles` instead (see
  * `alert-observer.ts`).
@@ -117,9 +142,14 @@ export function alertPhotoUrl(id: string): string {
  * `place` and `observer` are decided by `alert-place.ts` and
  * `alert-observer.ts` and passed in, so this function has nothing to improvise
  * with — it cannot reach for `latitude` or `observer_name` even if a future
- * edit wanted to.
+ * edit wanted to. Of the place's lokal, only its address, name and position
+ * are copied — never its description or its id.
  */
-export function toPublicAlert(row: AlertRow, place: string, observer: string | null): PublicAlert {
+export function toPublicAlert(
+  row: AlertRow,
+  place: PublicPlace<PublicLokalRef>,
+  observer: string | null
+): PublicAlert {
   return {
     id: row.id,
     species: row.species?.swedish_name ?? "Obestämd art",
@@ -130,7 +160,16 @@ export function toPublicAlert(row: AlertRow, place: string, observer: string | n
     // ever is: the larm certainly existed then.
     observedAt: row.observed_at ?? row.sent_at,
     sentAt: row.sent_at,
-    place,
+    place: place.label,
+    lokal: place.lokal
+      ? {
+          slug: place.lokal.slug,
+          name: place.lokal.name,
+          latitude: place.lokal.latitude,
+          longitude: place.lokal.longitude,
+        }
+      : null,
+    position: place.position ? { ...place.position } : null,
     observer,
     photoUrl: row.observation?.image_path ? alertPhotoUrl(row.id) : null,
   }

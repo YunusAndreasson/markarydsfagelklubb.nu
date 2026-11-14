@@ -132,8 +132,12 @@ every observation and every private storage object. What contains it:
   `.dev.vars` loaded, so a prerendered larm page would read the real key on a
   developer's machine and write member data into `dist/` as a public asset.
   `alert-dto.test.ts` pins the published fields and the `select` string, and
-  asserts that sentinel values for a user id, `image_path` and the coordinates
-  don't survive serialisation.
+  asserts that sentinel values for a user id, `image_path` and the row's raw
+  coordinates don't survive serialisation. **Since 2026-11-14 the position is
+  published** (roadmap D1, revised): it reaches the DTO only as `position`,
+  rounded and decided by `publicPlace` in `alert-place.ts`, which withholds it
+  for a protected species; the test asserts both. The map island takes plain
+  props built by `src/lib/larm-map.ts` and never imports the read path.
 - **The admin screen does not use it.** `/admin/larm` reads with the admin's own
   session (`alerts` is readable by `authenticated`) and writes `hidden_alerts`
   the same way, so RLS stays the boundary there.

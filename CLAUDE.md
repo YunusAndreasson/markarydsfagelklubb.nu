@@ -28,7 +28,8 @@ section there. The public site's design is in `docs/design.md`.
 read it before touching `scripts/wp-import/`. The decisions behind it are in
 `docs/roadmap.md` (F2 and the decision log).
 
-**The larm feed is the one place this site publishes members' own data.** Read
+**The larm feed is the one place this site publishes members' own data**,
+including, since 2026-11-14, each larm's exact position on its own page. Read
 the secret-key section of `docs/shared-database.md` before touching anything
 under `src/lib/{public-alerts,supabase-secret,alert-*}.ts` or `src/pages/larm/`.
 Two tests hold the line — `secret-key-scope.test.ts` (who may reach the key)

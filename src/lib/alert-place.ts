@@ -1,15 +1,23 @@
 import boundary from "../data/markaryd-boundary.json"
 
 /**
- * Where a larm is published as having happened (docs/roadmap.md, D1).
+ * Where a larm is published as having happened (docs/roadmap.md, D1, revised
+ * 2026-11-14).
+ *
+ * Two answers, for two uses:
+ *
+ *   • a **label**, the text the feed, the lists and the admin print —
+ *     "Hualtet", "Nära Hualtet", "Markaryds kommun";
+ *   • the **position** the larm's own map draws, published exactly since
+ *     2026-11-14, and the lokal the label names, so the label can link to it.
  *
  * The app stores a free coordinate for all but 21 of the 238 larm, and many of
  * those coordinates repeat exactly — a member reporting from their own garden
- * day after day. So this is not a formatting helper: it is the rule that keeps
- * an exact position off the public web. **Nothing here ever returns a
- * coordinate**, and `alert-place.test.ts` asserts that for every rung.
+ * day after day. That is why a protected species (rung 1) gets **no position
+ * and no lokal at all**, only the kommun, and why `alert-place.test.ts` asserts
+ * that {@link coarsePlace}'s label never carries a coordinate on any rung.
  *
- * The ladder, in order:
+ * The label's ladder, in order:
  *
  *   1. a protected species          → never better than the kommun
  *   2. the larm names a lokal       → that name
@@ -25,6 +33,7 @@ import boundary from "../data/markaryd-boundary.json"
 export const NEAR_KM = 3
 
 export type AlertPoint = {
+  location_id?: number | null
   location_name: string | null
   latitude: number | null
   longitude: number | null
@@ -32,6 +41,7 @@ export type AlertPoint = {
 }
 
 export type NamedLocation = {
+  id?: number
   name: string
   latitude: number | null
   longitude: number | null
@@ -99,44 +109,106 @@ export function isInsideKommun(latitude: number, longitude: number): boolean {
   return RINGS.some((ring) => insideRing(longitude, latitude, ring))
 }
 
-export type NearestLocation = { name: string; km: number }
+export type NearestLocation<L extends NamedLocation = NamedLocation> = {
+  name: string
+  km: number
+  location: L
+}
 
 /** The closest named lokal, or null when none of them has a coordinate. */
-export function nearestLocation(
+export function nearestLocation<L extends NamedLocation>(
   latitude: number,
   longitude: number,
-  locations: readonly NamedLocation[]
-): NearestLocation | null {
-  let best: NearestLocation | null = null
+  locations: readonly L[]
+): NearestLocation<L> | null {
+  let best: NearestLocation<L> | null = null
   for (const location of locations) {
     if (location.latitude === null || location.longitude === null) continue
     const km = distanceKm(latitude, longitude, location.latitude, location.longitude)
-    if (!best || km < best.km) best = { name: location.name, km }
+    if (!best || km < best.km) best = { name: location.name, km, location }
   }
   return best
 }
 
-/** The public place label for one larm. Never a coordinate. */
-export function coarsePlace(alert: AlertPoint, locations: readonly NamedLocation[]): string {
+/**
+ * How finely a published position is written: five decimals, about a metre.
+ * Not a blur — the app's pins are already exact — only the GPS noise digits
+ * a page has no use for.
+ */
+const POSITION_DECIMALS = 5
+const roundCoordinate = (value: number) => Number(value.toFixed(POSITION_DECIMALS))
+
+export type PublicPosition = { latitude: number; longitude: number }
+
+export type PublicPlace<L extends NamedLocation = NamedLocation> = {
+  /** The label the lists print. Never a coordinate. */
+  label: string
+  /** The lokal the label names (rungs 2 and 3), or null. */
+  lokal: L | null
+  /** Where the larm was reported from, or null for a protected species or no pin. */
+  position: PublicPosition | null
+}
+
+const sameName = (a: string, b: string) => a.localeCompare(b, "sv", { sensitivity: "accent" }) === 0
+
+/**
+ * Everything a page may say about where one larm happened: the label, the
+ * lokal it names and the exact position.
+ *
+ * A protected species gets the kommun label and nothing else — no lokal, which
+ * would pinpoint the bird by name, and no position.
+ */
+export function publicPlace<L extends NamedLocation>(
+  alert: AlertPoint,
+  locations: readonly L[]
+): PublicPlace<L> {
   const { latitude, longitude } = alert
-  const hasPoint = latitude !== null && longitude !== null
+  const hasPoint =
+    latitude !== null &&
+    longitude !== null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude)
 
   // Rung 1. Ahead of the lokal name, which would otherwise pinpoint the bird.
   if (alert.species_id !== null && PLACE_SUPPRESSED_SPECIES.has(alert.species_id)) {
-    if (!hasPoint) return KOMMUN_PLACE
-    return isInsideKommun(latitude, longitude) ? KOMMUN_PLACE : OUTSIDE_PLACE
+    const label = hasPoint && !isInsideKommun(latitude, longitude) ? OUTSIDE_PLACE : KOMMUN_PLACE
+    return { label, lokal: null, position: null }
   }
 
-  // Rung 2. The reporter chose a lokal; it is already a public place name.
-  const named = alert.location_name?.trim()
-  if (named) return named
+  const position = hasPoint
+    ? { latitude: roundCoordinate(latitude), longitude: roundCoordinate(longitude) }
+    : null
 
-  if (!hasPoint) return UNKNOWN_PLACE
+  // Rung 2. The reporter chose a lokal; it is already a public place name. The
+  // id is the honest join; the name is the fallback for a lokal renamed since.
+  const named = alert.location_name?.trim()
+  if (named) {
+    const lokal =
+      locations.find(
+        (location) => location.id !== undefined && location.id === alert.location_id
+      ) ??
+      locations.find((location) => sameName(location.name, named)) ??
+      null
+    return { label: named, lokal, position }
+  }
+
+  if (!hasPoint) return { label: UNKNOWN_PLACE, lokal: null, position: null }
 
   // Rung 3. Close enough that the lokal is a fair description of where to look.
   const nearest = nearestLocation(latitude, longitude, locations)
-  if (nearest && nearest.km <= NEAR_KM) return `Nära ${nearest.name}`
+  if (nearest && nearest.km <= NEAR_KM) {
+    return { label: `Nära ${nearest.name}`, lokal: nearest.location, position }
+  }
 
   // Rungs 4 and 5.
-  return isInsideKommun(latitude, longitude) ? KOMMUN_PLACE : OUTSIDE_PLACE
+  return {
+    label: isInsideKommun(latitude, longitude) ? KOMMUN_PLACE : OUTSIDE_PLACE,
+    lokal: null,
+    position,
+  }
+}
+
+/** The public place label for one larm. Never a coordinate. */
+export function coarsePlace(alert: AlertPoint, locations: readonly NamedLocation[]): string {
+  return publicPlace(alert, locations).label
 }

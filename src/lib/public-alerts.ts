@@ -8,7 +8,7 @@ import {
 import { type AlertCursor, newerThan, olderThan } from "./alert-keyset"
 import { observerIndex, observerName } from "./alert-observer"
 import type { PhotoTransform } from "./alert-photo"
-import { coarsePlace } from "./alert-place"
+import { publicPlace } from "./alert-place"
 import {
   buildLokaler,
   byName,
@@ -121,7 +121,13 @@ async function loadObservers(backend: AlertsBackend): Promise<LarmResult<Map<str
   return { ok: true, value: observerIndex(data) }
 }
 
-type Context = { hidden: string[]; locations: LokalRow[]; observers: Map<string, string> }
+type Context = {
+  hidden: string[]
+  locations: LokalRow[]
+  /** The same rows with their slugs, built once, for the place's link. */
+  lokaler: Lokal[]
+  observers: Map<string, string>
+}
 
 async function loadContext(backend: AlertsBackend): Promise<LarmResult<Context>> {
   const [hidden, locations, observers] = await Promise.all([
@@ -132,14 +138,19 @@ async function loadContext(backend: AlertsBackend): Promise<LarmResult<Context>>
   if (!hidden.ok || !locations.ok || !observers.ok) return failed
   return {
     ok: true,
-    value: { hidden: hidden.value, locations: locations.value, observers: observers.value },
+    value: {
+      hidden: hidden.value,
+      locations: locations.value,
+      lokaler: buildLokaler(locations.value),
+      observers: observers.value,
+    },
   }
 }
 
 function publish(row: AlertRow, context: Context): PublicAlert {
   return toPublicAlert(
     row,
-    coarsePlace(row, context.locations),
+    publicPlace(row, context.lokaler),
     observerName(row.observer_user_id, context.observers)
   )
 }
@@ -314,8 +325,12 @@ export async function openAlertPhoto(
 const MAX_SWEEP_PAGES = 10
 const SWEEP_PAGE_SIZE = 1000
 
-/** The lean row the map's tally needs: no species, no observer, no photo. */
-const LARM_POINT_SELECT = "id, sent_at, observed_at, latitude, longitude, location_id"
+/**
+ * The lean row the map's tally needs: no observer, no photo. The species name
+ * is for the map's "Nyss:" line on an active lokal.
+ */
+const LARM_POINT_SELECT =
+  "id, sent_at, observed_at, latitude, longitude, location_id, species_id, species:species(swedish_name, scientific_name)"
 
 type SweptPoint = LarmPoint & { id: string; observed_at: string | null }
 
@@ -464,7 +479,7 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
   const context = await loadContext(backend.value)
   if (!context.ok) return failed
 
-  const lokaler = buildLokaler(context.value.locations)
+  const { lokaler } = context.value
   const lokal = findLokal(slug, lokaler)
   if (!lokal) return { ok: true, value: null }
 

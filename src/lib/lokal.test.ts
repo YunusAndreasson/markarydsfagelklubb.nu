@@ -75,6 +75,7 @@ describe("toPin", () => {
     alertCount: 3,
     lastAlertAt: "2026-09-12T08:00:00Z",
     active: true,
+    recentSpecies: ["Kungsfiskare"],
   }
 
   it("publishes only what the map needs to draw a dot", () => {
@@ -84,6 +85,7 @@ describe("toPin", () => {
       latitude: 56.5,
       longitude: 13.6,
       active: true,
+      recentSpecies: ["Kungsfiskare"],
     })
   })
 

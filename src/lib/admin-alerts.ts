@@ -7,7 +7,8 @@ import {
   toPublicAlert,
 } from "./alert-dto"
 import { observerIndex, observerName } from "./alert-observer"
-import { coarsePlace, type NamedLocation } from "./alert-place"
+import { publicPlace } from "./alert-place"
+import { buildLokaler } from "./lokal"
 import type { SupabaseServerClient } from "./supabase-server"
 
 /**
@@ -40,7 +41,7 @@ export async function listAdminAlerts(
       .order("sent_at", { ascending: false })
       .limit(limit)
       .overrideTypes<AlertRow[], { merge: false }>(),
-    supabase.from("locations").select("name, latitude, longitude").limit(1000),
+    supabase.from("locations").select("id, name, latitude, longitude, description").limit(1000),
     supabase.from("profiles").select(PROFILE_SELECT).limit(1000),
     supabase.from("hidden_alerts").select("alert_id, reason").limit(1000),
   ])
@@ -53,12 +54,12 @@ export async function listAdminAlerts(
 
   // Every error was handled above, so the `?? []` are only to satisfy the
   // response type, which pairs `data: null` with `error: null` structurally.
-  const named: NamedLocation[] = locations.data ?? []
+  const lokaler = buildLokaler(locations.data ?? [])
   const observers = observerIndex(profiles.data ?? [])
   const reasons = new Map((hidden.data ?? []).map((row) => [row.alert_id, row.reason ?? ""]))
 
   return (alerts.data ?? []).map((row) => ({
-    ...toPublicAlert(row, coarsePlace(row, named), observerName(row.observer_user_id, observers)),
+    ...toPublicAlert(row, publicPlace(row, lokaler), observerName(row.observer_user_id, observers)),
     hidden: reasons.has(row.id),
     reason: reasons.get(row.id) ?? "",
   }))

@@ -129,7 +129,34 @@ describe("lokalActivity", () => {
       alertCount: 0,
       lastAlertAt: null,
       active: false,
+      recentSpecies: [],
     })
+  })
+
+  it("names the birds larmed from it lately, newest first, each once", () => {
+    const bird = (sentAt: string, name: string, metres = 0, scientific = "Aves") =>
+      north(metres, {
+        sent_at: sentAt,
+        species_id: 1,
+        species: { swedish_name: name, scientific_name: scientific },
+      })
+    const activity = lokalActivity(
+      HUALTET,
+      [
+        bird("2026-09-19T08:00:00+00:00", "Blåmes"),
+        bird("2026-09-18T08:00:00+00:00", "Kungsfiskare"),
+        bird("2026-09-17T08:00:00+00:00", "Blåmes"),
+        // Near, not at: it belongs to the "I närheten" list, not to this line.
+        bird("2026-09-19T09:00:00+00:00", "Storskrake", 2_000),
+        // The app's "Övrigt (ej fågel)" has no scientific name.
+        bird("2026-09-19T10:00:00+00:00", "Övrigt (ej fågel)", 0, ""),
+        // Outside the fortnight.
+        bird("2026-08-01T08:00:00+00:00", "Sädgås"),
+      ],
+      ALL,
+      now
+    )
+    expect(activity.recentSpecies).toEqual(["Blåmes", "Kungsfiskare"])
   })
 
   it("never returns a coordinate, whatever it was given", () => {
@@ -137,7 +164,12 @@ describe("lokalActivity", () => {
     const published = JSON.stringify(activity)
     expect(published).not.toContain("56.4")
     expect(published).not.toContain("13.6")
-    expect(Object.keys(activity).sort()).toEqual(["active", "alertCount", "lastAlertAt"])
+    expect(Object.keys(activity).sort()).toEqual([
+      "active",
+      "alertCount",
+      "lastAlertAt",
+      "recentSpecies",
+    ])
   })
 })
 

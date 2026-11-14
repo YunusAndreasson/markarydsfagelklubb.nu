@@ -1,20 +1,22 @@
 import "leaflet/dist/leaflet.css"
 
-import type { DivIcon, LatLngExpression, Map as LeafletMap } from "leaflet"
+import type { DivIcon, Map as LeafletMap } from "leaflet"
 import { useEffect, useRef } from "react"
 
-import boundary from "@/data/markaryd-boundary.json"
 import type { LokalPin } from "@/lib/lokal"
 import { type MapPoint, pointsToFrame } from "@/lib/lokal-points"
+
+import { createSiteMap, FIT_PADDING, loadLeaflet, tooltipText, untabLinks } from "./map-setup"
 
 /**
  * The club's lokaler on a map (docs/design.md, "Lokaler").
  *
  * The site's **first public island**, and deliberately the narrowest one that
  * can exist: it takes an array of place names and positions, draws them, and
- * navigates on a click. It holds no larm, no observer and no coordinate that
- * isn't the club's own — `secret-key-scope.test.ts` fails any `.tsx` that
- * reaches the larm read path, and the props below are the whole contract.
+ * navigates on a click. It holds no larm and no observer; the only larm data
+ * it sees is an active lokal's recent species names. `secret-key-scope.test.ts`
+ * fails any `.tsx` that reaches the larm read path, and the props below are the
+ * whole contract.
  *
  * The register below the map is the accessible equivalent: every lokal, in
  * order, as ordinary links. So the markers are not focusable and the container
@@ -23,12 +25,12 @@ import { type MapPoint, pointsToFrame } from "@/lib/lokal-points"
  * focusable element must not sit inside a hidden subtree. Change one of those
  * and you have to change the other.
  *
- * **Leaflet is imported inside the effect, not at the top of the file.** It
- * reads `window` while its module body runs, and an `.astro` page importing
- * this component pulls it into the Worker bundle even under `client:visible` —
- * which fails the route with `window is not defined` rather than degrading.
- * The dynamic import keeps it strictly in the browser, and keeps the island
- * deferred until the map scrolls into view.
+ * **Leaflet is loaded inside the effect** (`map-setup.ts` says why), which also
+ * keeps the island deferred until the map scrolls into view.
+ *
+ * An active lokal's tooltip names the birds larmed from it lately ("Nyss:
+ * kungsfiskare, storskrake"); the register prints the same line, so the map
+ * says nothing the page doesn't.
  */
 
 type Props = {
@@ -42,19 +44,12 @@ type Props = {
   points?: MapPoint[]
 }
 
-/** Standard OpenStreetMap raster tiles. The host is in the CSP's `img-src`. */
-const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-
-/** Room around the pins so none of them sits against the frame. */
-const FIT_PADDING: [number, number] = [28, 28]
 /** How close a single-pin still sits. Zoom 14 shows the lokal and its approach roads. */
 const STILL_ZOOM = 14
 
-/** The boundary is stored as [lng, lat], the way GeoJSON writes it; Leaflet wants [lat, lng]. */
-const boundaryRings: LatLngExpression[][] = (boundary.rings as [number, number][][]).map((ring) =>
-  ring.map(([lng, lat]) => [lat, lng] as LatLngExpression)
-)
+/** "kungsfiskare, storskrake": lower case, as the band writes species in a sentence. */
+const recentLine = (species: readonly string[]) =>
+  species.map((name) => name.toLocaleLowerCase("sv")).join(", ")
 
 export default function LokalMap({ pins, still = false, points = [] }: Props) {
   const container = useRef<HTMLDivElement>(null)
@@ -67,10 +62,8 @@ export default function LokalMap({ pins, still = false, points = [] }: Props) {
     let cancelled = false
 
     void (async () => {
-      const L = (await import("leaflet")).default
+      const L = await loadLeaflet()
       if (cancelled) return
-
-      const quiet = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
       /**
        * A dot, not a teardrop. Leaflet's default pin is a recognisable piece
@@ -88,32 +81,9 @@ export default function LokalMap({ pins, still = false, points = [] }: Props) {
           iconAnchor: [12, 12],
         })
 
-      map = L.map(element, {
-        // A map that swallows the page's scroll is a bug on a reading page;
-        // the zoom buttons and pinch-zoom still work.
-        scrollWheelZoom: false,
-        dragging: !still,
-        touchZoom: !still,
-        doubleClickZoom: !still,
-        boxZoom: !still,
-        zoomControl: !still,
-        keyboard: false,
-        attributionControl: true,
-        zoomAnimation: !quiet,
-        fadeAnimation: !quiet,
-        markerZoomAnimation: !quiet,
-      })
-
-      L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 18 }).addTo(map)
-
-      // The kommun the whole site is about, as a hairline. No fill: it frames
-      // the pins and shows which lokaler fall outside, without tinting the map.
-      const outline = L.polygon(boundaryRings, {
-        className: "lokal-boundary",
-        fill: false,
-        weight: 1.5,
-        interactive: false,
-      }).addTo(map)
+      const site = createSiteMap(L, element, { still })
+      map = site.map
+      const { outline } = site
 
       for (const pin of pins) {
         const marker = L.marker([pin.latitude, pin.longitude], {
@@ -123,7 +93,9 @@ export default function LokalMap({ pins, still = false, points = [] }: Props) {
           interactive: !still,
         })
         if (!still) {
-          marker.bindTooltip(pin.name, {
+          const recent =
+            pin.recentSpecies.length > 0 ? `Nyss: ${recentLine(pin.recentSpecies)}` : null
+          marker.bindTooltip(tooltipText(pin.name, recent), {
             direction: "top",
             offset: [0, -8],
             className: "lokal-tip",
@@ -146,7 +118,7 @@ export default function LokalMap({ pins, still = false, points = [] }: Props) {
           keyboard: false,
           title: point.name,
         })
-        marker.bindTooltip(point.name, {
+        marker.bindTooltip(tooltipText(point.name), {
           direction: "top",
           offset: [0, -12],
           className: "lokal-tip",
@@ -178,7 +150,7 @@ export default function LokalMap({ pins, still = false, points = [] }: Props) {
         map.fitBounds(outline.getBounds(), { padding: FIT_PADDING, animate: false })
       }
 
-      for (const link of element.querySelectorAll("a")) link.tabIndex = -1
+      untabLinks(element)
     })()
 
     return () => {
