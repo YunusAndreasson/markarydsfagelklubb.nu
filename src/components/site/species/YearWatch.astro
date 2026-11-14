@@ -1,0 +1,82 @@
+---
+import Entry from "@/components/site/obsar/Entry.astro"
+import { speciesHref } from "@/lib/species"
+import { dayMonth } from "@/lib/species-page"
+import { type MissingBird, ratioPhrase, type UnusualBird } from "@/lib/year-watch"
+
+/**
+ * "Året så här långt" (docs/design.md): this year against the same point in
+ * the last twenty. Up to three short registers side by side: birds nearly
+ * always seen by now and not yet, and birds far above or below their usual
+ * share of the reports. Renders nothing when all three are empty.
+ */
+interface Props {
+  missing: MissingBird[]
+  more: UnusualBird[]
+  less: UnusualBird[]
+  /** Taxon id → species page slug (`taxonSlugs`). */
+  slugs: Map<number, string>
+  headingId: string
+}
+
+const { missing, more, less, slugs, headingId } = Astro.props
+const capital = (name: string) => name.charAt(0).toLocaleUpperCase("sv") + name.slice(1)
+const href = (id: number) => (slugs.has(id) ? speciesHref(slugs.get(id) as string) : null)
+const reports = (count: number) => (count === 1 ? "1 rapport" : `${count} rapporter`)
+const groups = [
+  missing.length > 0 && { id: "saknas", title: "Saknas i år", kind: "missing" as const },
+  more.length > 0 && { id: "mer", title: "Fler rapporter än vanligt", kind: "more" as const },
+  less.length > 0 && { id: "mindre", title: "Färre rapporter än vanligt", kind: "less" as const },
+].filter((group) => group !== false)
+---
+
+{
+  groups.length > 0 && (
+    <div class="flex flex-col gap-6">
+      <p class="text-muted-foreground measure leading-relaxed">
+        Året hittills jämfört med samma tid de senaste tjugo åren i Artportalen.
+      </p>
+      <div class:list={["grid gap-x-10 gap-y-8 md:grid-cols-2", groups.length > 2 && "lg:grid-cols-3"]}>
+        {groups.map((group) => (
+          <section aria-labelledby={`${headingId}-${group.id}`} class="flex flex-col gap-3">
+            <h3 id={`${headingId}-${group.id}`} class="type-meta text-muted-foreground">{group.title}</h3>
+            <ul>
+              {group.kind === "missing" &&
+                missing.map((bird) => (
+                  <Entry
+                    when={dayMonth(bird.usual)}
+                    title={capital(bird.name)}
+                    href={href(bird.id)}
+                    notes={[`Sedd vid den här tiden ${bird.byNow} av ${bird.of} år, men inte i år`]}
+                  />
+                ))}
+              {group.kind !== "missing" &&
+                (group.kind === "more" ? more : less).map((bird) => {
+                  const link = href(bird.id)
+                  return (
+                    <li class="mb-3.5 flex break-inside-avoid flex-col">
+                      {link ? (
+                        <a href={link} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
+                          {capital(bird.name)}
+                        </a>
+                      ) : (
+                        <span class="type-item">{capital(bird.name)}</span>
+                      )}
+                      <span class="text-muted-foreground text-sm leading-snug">{capital(ratioPhrase(bird.ratio))}:</span>
+                      <span class="text-muted-foreground text-sm leading-snug tabular-nums">
+                        {reports(bird.count)} i år, brukar vara {bird.expected}
+                      </span>
+                    </li>
+                  )
+                })}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <p class="type-meta text-muted-foreground measure">
+        Datumet är när den brukar ses första gången. Fler rapporter kan betyda fler fåglar eller fler som letar efter dem; jämförelsen räknar andelen av årets alla
+        rapporter, så att fler rapportörer inte i sig blir fler fåglar.
+      </p>
+    </div>
+  )
+}

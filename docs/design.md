@@ -1249,6 +1249,30 @@ and this year's status under each bird. Hidden when nothing falls in the window.
 - **Two weeks either way, "så här års"**: a ten-day window left the block empty for
   weeks in late autumn, when little moves.
 
+### Året så här långt
+
+This year against the same point in the last twenty (2026-11-15,
+`src/lib/year-watch.ts`), on Översikt after "Så här års" and as an "I år" fact on a
+species page. Read from the per-taxon index, so it moves with every fast run.
+
+- **Saknas i år**: a bird seen by today's date in at least 80 % of the window's
+  years (a window of 15 years or more), not reported this year. Its usual first
+  date in the margin. It must have been seen last year and in two of the last three,
+  or a taxon Artportalen renamed would read as a bird gone missing.
+- **Fler / färre rapporter än vanligt**: the bird's share of every report made before
+  this week, against its average share by the same week over the window. A share,
+  not a count: the kommun has twice the reporters it had in 2010, so counts rise for
+  every bird. Twice or half the usual, with at least ten reports this year (more) or
+  ten expected (fewer), and a bird seen by this date in ten of the years.
+- **Words round toward the usual**: 5.6 times is "fem gånger", just over an eighth is
+  "en åttondel", so a sentence never says more than the numbers. Each row also gives
+  the counts ("44 rapporter i år, brukar vara 7"), and a footnote says that more
+  reports can mean more birds or more people looking.
+- **A species page's ingress names seasons, never "året runt" by default**: a bird
+  with no migration season whose reports sit in one or two seasons is "mest på
+  hösten" (vinterhämpling) or "mest under våren och hösten"; "året runt" only when
+  three or four seasons each hold 15 % of its reports.
+
 ### Page
 
 The page title and body, in the same column. A section page (one with children)

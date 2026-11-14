@@ -29,6 +29,7 @@ import {
   yearSentence,
 } from "@/lib/species-page"
 import { formatDate, stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
+import { missingNote, ratioPhrase, unusualNote, weeksBefore, yearTotals } from "@/lib/year-watch"
 
 /**
  * One bird (docs/design.md, "Arter"): a field-guide entry for Markaryds
@@ -83,7 +84,19 @@ const larm = bird.appId !== null ? await listSpeciesAlerts(bird.appId) : null
 const alerts = larm?.ok ? larm.value : []
 const pins = toLarmPins(alerts)
 const SHOWN = 8
-const lead = typical ? leadSentence(typical, ever ? Number(ever.last.slice(0, 4)) : null) : null
+// "I år" against the last twenty (docs/design.md, "Året så här långt").
+const window = index ? seasonWindow(index.years, thisYear) : []
+const missing = entry ? missingNote(entry, window, thisYear, today) : null
+const before = weeksBefore(today)
+const unusual =
+  entry && index
+    ? unusualNote(entry, window, thisYear, before, yearTotals(index, [...window, thisYear], before))
+    : null
+const capital = (text: string) => text.charAt(0).toLocaleUpperCase("sv") + text.slice(1)
+
+const lead = typical
+  ? leadSentence(typical, ever ? Number(ever.last.slice(0, 4)) : null, weeks ?? [])
+  : null
 const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
 ---
 
@@ -135,6 +148,26 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
                   {firstYearOfData && yearsSeen > 0 && (
                     <span class="text-muted-foreground"> under {yearsSeen === 1 ? "ett år" : `${yearsSeen} år`}</span>
                   )}
+                </p>
+              </AsideNote>
+            )}
+            {missing && (
+              <AsideNote label="I år">
+                <p>
+                  Inte rapporterad än.{" "}
+                  <span class="text-muted-foreground">
+                    Brukar vara sedd vid den här tiden, {missing.byNow} av {missing.of} år.
+                  </span>
+                </p>
+              </AsideNote>
+            )}
+            {unusual && (
+              <AsideNote label="I år">
+                <p>
+                  {capital(ratioPhrase(unusual.ratio))}.{" "}
+                  <span class="text-muted-foreground">
+                    {unusual.count} hittills, brukar vara {unusual.expected} vid den här tiden.
+                  </span>
                 </p>
               </AsideNote>
             )}

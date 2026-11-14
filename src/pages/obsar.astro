@@ -15,7 +15,10 @@ import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import StatTable from "@/components/site/obsar/StatTable.astro"
 import TableTwin from "@/components/site/obsar/TableTwin.astro"
 import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
+import YearWatch from "@/components/site/species/YearWatch.astro"
 import SiteLayout from "@/layouts/site.astro"
+import { dayOfYear } from "@/lib/artportalen/aggregate"
+import { seasonWindow } from "@/lib/artportalen/taxa"
 import { bandColor } from "@/lib/charts/options"
 import { linesSvg } from "@/lib/charts/svg"
 import { ink, sequence } from "@/lib/charts/theme"
@@ -33,6 +36,7 @@ import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-c
 import { thisWeek } from "@/lib/season"
 import { buildSpecies, taxonSlugs } from "@/lib/species"
 import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
+import { missingBirds, unusualBirds } from "@/lib/year-watch"
 
 /**
  * Obsar (docs/design.md, "Obsar och statistik"): the kommun's year so far, read
@@ -59,15 +63,16 @@ const now = new Date()
 const today = toStockholmInputValue(now).slice(0, 10)
 const year = stockholmYear(now)
 const kv = obsarStore()
-const [history, stats, recent, season, names] = kv
+const [history, stats, recent, season, names, taxa] = kv
   ? await Promise.all([
       store.readHistory(kv),
       store.readYear(kv, year),
       store.readRecent(kv),
       store.readSeason(kv).catch(() => null),
       store.readNames(kv).catch(() => null),
+      store.readTaxa(kv).catch(() => null),
     ])
-  : [null, null, null, null, null]
+  : [null, null, null, null, null, null]
 // "Så här års" (docs/design.md): what usually arrives or leaves around now.
 const seasonWeek = thisWeek(season, now, stats)
 const seasonSlugs = taxonSlugs(
@@ -76,6 +81,12 @@ const seasonSlugs = taxonSlugs(
     []
   )
 )
+
+// "Året så här långt" (docs/design.md): this year against the last twenty.
+const watchWindow = taxa ? seasonWindow(taxa.years, year) : []
+const dayNow = dayOfYear(today)
+const missing = taxa ? missingBirds(taxa, watchWindow, year, dayNow) : []
+const { more, less } = taxa ? unusualBirds(taxa, watchWindow, year, dayNow) : { more: [], less: [] }
 
 const curves = history ? speciesCurves(history, year, today) : null
 const pace = curves ? paceAgainstAverage(curves) : null
@@ -215,6 +226,12 @@ const paceSentence =
           {(seasonWeek.arriving.length > 0 || seasonWeek.leaving.length > 0) && (
             <ObsarSection id="sahar" title="Så här års">
               <SeasonBlock week={seasonWeek} slugs={seasonSlugs} headingId="sahar" />
+            </ObsarSection>
+          )}
+
+          {(missing.length > 0 || more.length > 0 || less.length > 0) && (
+            <ObsarSection id="hittills" title="Året så här långt">
+              <YearWatch missing={missing} more={more} less={less} slugs={seasonSlugs} headingId="hittills" />
             </ObsarSection>
           )}
 

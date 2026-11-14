@@ -6,6 +6,7 @@ import {
   arrivalSentence,
   dayMonth,
   leadSentence,
+  seasonsPhrase,
   yearSentence,
 } from "./species-page"
 
@@ -43,26 +44,51 @@ describe("arrivalSentence", () => {
 
 describe("leadSentence", () => {
   it("names a summer bird's coming, not its last report", () => {
-    expect(leadSentence({ arrival: 127, departure: 185, kind: "summer", years: 20 }, 2026)).toBe(
-      "En flyttfågel som brukar komma till kommunen kring 7 maj."
-    )
+    expect(
+      leadSentence({ arrival: 127, departure: 185, kind: "summer", years: 20 }, 2026, [])
+    ).toBe("En flyttfågel som brukar komma till kommunen kring 7 maj.")
   })
 
   it("tells a winter guest by its autumn return", () => {
-    expect(leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 2026)).toBe(
+    expect(leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 2026, [])).toBe(
       "En vintergäst som brukar komma till kommunen kring 18 okt och stanna till kring 5 apr."
     )
   })
 
   it("has a plain line for a resident, a rare guest and a bird long gone", () => {
     const none = { arrival: null, departure: null, kind: null }
-    expect(leadSentence({ ...none, years: 20 }, 2026)).toContain("året runt")
-    expect(leadSentence({ ...none, years: 3 }, 2026)).toBe(
+    const allYear = Array.from({ length: 53 }, () => 2)
+    expect(leadSentence({ ...none, years: 20 }, 2026, allYear)).toContain("året runt")
+    expect(leadSentence({ ...none, years: 3 }, 2026, [])).toBe(
       "Sedd i kommunen tre av de senaste tjugo åren, en ovanlig gäst."
     )
-    expect(leadSentence({ ...none, years: 0 }, 1996)).toBe(
+    expect(leadSentence({ ...none, years: 0 }, 1996, [])).toBe(
       "Inte rapporterad i kommunen de senaste tjugo åren. Senast sedd 1996."
     )
+  })
+
+  it("never says 'året runt' about a bird that only passes in the autumn", () => {
+    const october = Array.from({ length: 53 }, (_, week) => (week >= 40 && week <= 46 ? 5 : 0))
+    expect(
+      leadSentence({ arrival: null, departure: null, kind: null, years: 20 }, 2026, october)
+    ).toBe("Ses i kommunen varje år, mest på hösten.")
+  })
+})
+
+describe("seasonsPhrase", () => {
+  const weeks = (...ranges: [number, number][]) =>
+    Array.from({ length: 53 }, (_, week) =>
+      ranges.some(([from, to]) => week >= from && week <= to) ? 5 : 0
+    )
+
+  it("names one season, or two in the order they run", () => {
+    expect(seasonsPhrase(weeks([40, 46]))).toBe("mest på hösten")
+    expect(seasonsPhrase(weeks([12, 18], [36, 42]))).toBe("mest under våren och hösten")
+    expect(seasonsPhrase(weeks([0, 6], [44, 46]))).toBe("mest under hösten och vintern")
+  })
+
+  it("is null for a bird seen the year round", () => {
+    expect(seasonsPhrase(Array.from({ length: 53 }, () => 1))).toBeNull()
   })
 })
 
