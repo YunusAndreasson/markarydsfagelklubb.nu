@@ -639,11 +639,35 @@ desktop ≥ 768 px
 - The club's name is a wordmark in Inter at 600 weight, linking home. The
   tagline shows from 1024 px up (`lg`; it was 768 until 2026-10-24, where it
   widened the wordmark's column enough to wrap "Klubben" onto a second line).
-- **No dropdowns.** A top-level item links to its section page, and that page
-  lists the section's pages. It's simple, accessible, and needs no JS.
+- **Section panels (2026-11-14; replaces "No dropdowns").** From `lg`, the
+  sections with pages beneath them (Artiklar, Obsar, Klubben) and Sök open a
+  full-width panel under the bar instead of costing a page load first. The old
+  rule sent a member who wanted Ligan or Referat through the section page
+  every time. The panel follows the disclosure-navigation pattern: opened by
+  click or Enter, **never hover**; one open at a time; Escape closes it and
+  returns focus; a click outside or focus leaving the header closes it.
+  - It lies on the page's own spread: the section's name in Alegreya in the
+    margin, one line about the section and its pages (title, plus one line of
+    what it holds) in the text track, links that leave the site in the aside
+    with an outbound arrow. No shadow, no card: the header unfolds, and its
+    rule moves to the panel's foot.
+  - The section's own page is the first entry of its list, and the in-page
+    navigation (Obsar's tabs, the category tabs) stays: the panel is a
+    shortcut, never the only way in.
+  - What each panel lists is `src/lib/site-menu.ts`: Artiklar's categories
+    (from `categories`), Obsar's own pages (`OBSAR_PAGES`, in code) followed by
+    the tree's *Rapportera* and region links, Klubben's tree pages. The tree's
+    kommun links under Obsar still point at Artportalen and are not shown.
+  - The server renders plain links; `SiteHeader.astro`'s script swaps in the
+    buttons. Without it, the bar is the row of links it was.
+- **Sök (2026-11-14):** from `lg` a button with the magnifier opens a search
+  panel with the field focused, the shortcuts "Gå direkt till" in the aside,
+  and `/` opens it from anywhere outside a field. Below `lg` it's a round
+  magnifier beside "Meny" that goes to `/sok`, which focuses its field while
+  it's empty and offers the same shortcuts; the menu no longer carries a form.
+  `/sok` says how many hits there are.
 - **Mobile menu:** a `<details>` disclosure labelled "Meny", which opens the
-  whole tree, children indented. No JS, and it works in every browser the club
-  uses.
+  whole menu, each section's pages under it (two-up from `sm`). No JS.
 - The current section is marked with `aria-current` and underlined in green.
 
 ### Sponsorer (2026-10-24)

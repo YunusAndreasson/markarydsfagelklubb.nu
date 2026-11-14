@@ -158,7 +158,9 @@ exactly what the `to anon` policies allow, and they send
 never query. Hydrate only the narrowest interactive leaf, using
 `client:visible` or `client:idle` (`client:load` only when it must be
 immediate); today the only islands are the admin's editor and uploader
-(`client:only`). `/admin/*` is SSR with `Cache-Control: private, no-store`.
+(`client:only`). The one plain script on every public page is the header's
+section panels (`SiteHeader.astro`), which only enhances links that already
+work without it. `/admin/*` is SSR with `Cache-Control: private, no-store`.
 Everything but prerendered pages passes through `src/middleware.ts`.
 
 Article and page bodies are **sanitized on save** (`src/lib/sanitize.ts`), never

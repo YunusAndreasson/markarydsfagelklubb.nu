@@ -93,9 +93,16 @@ export type MenuEntry = {
   /** Leaves the site: an absolute http(s) or mailto link. */
   external: boolean
   children: MenuEntry[]
+  /**
+   * One plain line: on a top-level entry, what the section is (the header
+   * panel's lead); on a child, what the page holds. See site-menu.ts.
+   */
+  description?: string
+  /** A child's heading within its section's panel; ungrouped children come first. */
+  group?: string
 }
 
-function hrefOf(node: PageNode): string {
+export function hrefOf(node: PageNode): string {
   return node.kind === "link" ? (node.link_url ?? "/") : node.path
 }
 

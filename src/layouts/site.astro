@@ -10,11 +10,10 @@
  */
 import logo from "@/assets/logo.webp"
 import AppLinks from "@/components/site/AppLinks.astro"
-import { buttonVariants } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import SiteHeader from "@/components/site/SiteHeader.astro"
 import BaseLayout from "@/layouts/base.astro"
-import { FALLBACK_MENU, isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
-import { cn } from "@/lib/utils"
+import type { MenuEntry } from "@/lib/page-tree"
+import { SITE_FALLBACK_MENU } from "@/lib/site-menu"
 
 interface Props {
   /** The page's own title; the club's name is appended. */
@@ -22,7 +21,7 @@ interface Props {
   description?: string
   /**
    * From the page tree. Each route loads it; the layout queries nothing. Empty
-   * (a prerendered page, or a failed read) shows FALLBACK_MENU.
+   * (a prerendered page, or a failed read) shows SITE_FALLBACK_MENU.
    */
   menu: MenuEntry[]
   /** For a shared link's preview; see base.astro. */
@@ -41,7 +40,7 @@ const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
 const JOIN_PATH = "/om-foreningen/medlemskap"
 
 const { title, description, menu: loaded, image, type } = Astro.props
-const menu = loaded.length > 0 ? loaded : FALLBACK_MENU
+const menu = loaded.length > 0 ? loaded : SITE_FALLBACK_MENU
 
 /**
  * The footer's links (docs/design.md, "Footer"): only routes that live in code,
@@ -74,8 +73,6 @@ const footerGroups = [
     ],
   },
 ]
-const { pathname } = Astro.url
-const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" : undefined)
 ---
 
 <BaseLayout title={title ? `${title} · ${SITE_NAME}` : SITE_NAME} description={description ?? TAGLINE} image={image} type={type}>
@@ -89,87 +86,7 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
   {/* A column the height of the window, so the footer sits at the bottom of a
       short page instead of halfway up it. */}
   <div class="flex min-h-svh flex-col">
-    <header class="relative border-b">
-      <div class="mx-auto flex w-full max-w-page items-center justify-between gap-6 px-4 py-3 sm:px-6">
-        <div class="flex items-center gap-3">
-          <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
-            <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12" />
-          </a>
-          <a href="/" class="font-display text-xl leading-tight font-bold md:text-[1.375rem]">{SITE_NAME}</a>
-        </div>
-
-        <div class="flex items-center gap-3 lg:gap-8">
-          {
-            menu.length > 0 && (
-              <nav aria-label="Huvudmeny" class="hidden lg:block">
-                <ul class="flex flex-wrap justify-end gap-x-6 gap-y-2">
-                  {menu.map((entry) => (
-                    <li>
-                      <a
-                        href={entry.href}
-                        aria-current={current(entry)}
-                        class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
-                      >
-                        {entry.title}
-                      </a>
-                    </li>
-                  ))}
-                  <li>
-                    <a
-                      href="/sok"
-                      aria-current={pathname === "/sok" ? "page" : undefined}
-                      class="hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
-                    >
-                      Sök
-                    </a>
-                  </li>
-                </ul>
-              </nav>
-            )
-          }
-
-          <a href={JOIN_PATH} class={cn(buttonVariants(), "focus-strong hidden h-11 px-4 text-base md:inline-flex")}>Bli medlem</a>
-
-          {
-            menu.length > 0 && (
-              <details class="group lg:hidden">
-                <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
-                  <span class="group-open:hidden">Meny</span>
-                  <span class="hidden group-open:inline">Stäng</span>
-                </summary>
-                <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
-                  <a href={JOIN_PATH} class={cn(buttonVariants(), "focus-strong mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
-                  <form action="/sok" method="get" role="search" class="mb-2 flex gap-2">
-                    <Input type="search" name="q" aria-label="Sök på webbplatsen" placeholder="En art, en plats, ett år …" className="focus-strong h-12 min-w-0 flex-1 text-base" />
-                    <button type="submit" class={buttonVariants({ variant: "outline", className: "focus-strong h-12 px-4 text-base" })}>Sök</button>
-                  </form>
-                  <ul class="flex flex-col">
-                    {menu.map((entry) => (
-                      <li class="border-b last:border-b-0">
-                        <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:decoration-primary flex min-h-12 items-center text-lg font-medium underline-offset-[0.4em] aria-[current=page]:underline aria-[current=page]:decoration-2">
-                          {entry.title}
-                        </a>
-                        {entry.children.length > 0 && (
-                          <ul class="flex flex-col pb-3 pl-4">
-                            {entry.children.map((child) => (
-                              <li>
-                                <a href={child.href} aria-current={pathname === child.href ? "page" : undefined} class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center">
-                                  {child.title}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
-              </details>
-            )
-          }
-        </div>
-      </div>
-    </header>
+    <SiteHeader siteName={SITE_NAME} menu={menu} joinPath={JOIN_PATH} />
 
     <main id="innehall" class="flex flex-1 flex-col">
       {/* Full width above the container: the home page's day list. */}

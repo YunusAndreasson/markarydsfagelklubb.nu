@@ -12,16 +12,7 @@ export function obsarStore(): Kv | null {
   return kv
 }
 
+export { OBSAR_PAGES } from "@/lib/obsar"
 export { store }
-
-/** The Obsar section's own pages, in the order of the sub-navigation. */
-export const OBSAR_PAGES = [
-  { href: "/obsar", label: "Översikt" },
-  { href: "/obsar/senaste", label: "Senaste fynden" },
-  { href: "/obsar/arslista", label: "Årslistan" },
-  { href: "/obsar/markarydslistan", label: "Markarydslistan" },
-  { href: "/obsar/ligan", label: "Ligan" },
-  { href: "/obsar/40-ar", label: "40 år" },
-] as const
 
 export const ARTPORTALEN_REPORT_URL = "https://www.artportalen.se/"

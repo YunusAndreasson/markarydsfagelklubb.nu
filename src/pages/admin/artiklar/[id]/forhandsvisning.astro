@@ -7,9 +7,10 @@ import SiteLayout from "@/layouts/site.astro"
 import { type AdminPageRow, listCategories, listPageRows, loadArticle } from "@/lib/admin-content"
 import { parseRouteId } from "@/lib/content-form"
 import type { MediaFormat } from "@/lib/media"
-import { buildMenu, buildPageTree } from "@/lib/page-tree"
+import { buildPageTree } from "@/lib/page-tree"
 import type { FullArticle } from "@/lib/public-content"
 import { publishStateOf } from "@/lib/publish-state"
+import { buildSiteMenu } from "@/lib/site-menu"
 import { formatDate } from "@/lib/stockholm-time"
 
 // The public article page, rendered with the admin's session so a draft or a
@@ -31,7 +32,7 @@ if (!stored) return new Response(null, { status: 404 })
 const visible = ((pageRows ?? []) as AdminPageRow[]).filter(
   (row) => publishStateOf(row, now) === "published"
 )
-const menu = buildMenu(buildPageTree(visible))
+const menu = buildSiteMenu(buildPageTree(visible), categories ?? [])
 
 const category = (categories ?? []).find((candidate) => candidate.id === stored.category_id)
 const article: FullArticle = {

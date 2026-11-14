@@ -1,0 +1,78 @@
+---
+import { ArrowUpRight } from "lucide-react"
+import type { MenuEntry } from "@/lib/page-tree"
+import { isCurrentChild } from "@/lib/site-menu"
+import { cn } from "@/lib/utils"
+
+/**
+ * A section's pages under the header, opened from the menu (docs/design.md,
+ * "Header"). It lies on the page's own spread: the section's name in the
+ * margin, its pages in the text track, and the links that leave the site (on
+ * Obsar) in the aside, so the panel reads as the page's grid unfolding from
+ * the header rather than a box floating over it.
+ */
+interface Props {
+  id: string
+  entry: MenuEntry
+  pathname: string
+}
+
+const { id, entry, pathname } = Astro.props
+const main = entry.children.filter((child) => !child.group)
+const groups = [
+  ...new Set(entry.children.flatMap((child) => (child.group ? [child.group] : []))),
+].map((title) => ({ title, links: entry.children.filter((child) => child.group === title) }))
+---
+
+<div id={id} hidden class="bg-background absolute inset-x-0 top-full z-20 border-b">
+  <div class="spread mx-auto w-full max-w-page gap-y-4 px-4 pt-6 pb-10 sm:px-6">
+    <p class="in-margin type-item">{entry.title}</p>
+    <div class="in-text flex flex-col gap-4">
+      {entry.description && <p class="text-muted-foreground">{entry.description}</p>}
+      <ul class="grid grid-cols-2 gap-x-8">
+        {
+          main.map((child) => (
+            <li>
+              <a
+                href={child.href}
+                aria-current={isCurrentChild(child, entry, pathname) ? "page" : undefined}
+                class="group/link flex min-h-11 flex-col justify-center py-1.5"
+              >
+                <span class="group-aria-[current=page]/link:decoration-primary w-fit font-medium underline-offset-4 group-hover/link:underline group-aria-[current=page]/link:underline group-aria-[current=page]/link:decoration-2">
+                  {child.title}
+                </span>
+                {child.description && <span class="text-muted-foreground text-sm text-pretty">{child.description}</span>}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    {
+      groups.length > 0 && (
+        <div class="in-aside flex flex-col gap-5 pt-0.5">
+          {groups.map((group) => (
+            <section aria-label={group.title} class="flex flex-col gap-1">
+              <h2 class="type-meta text-muted-foreground">{group.title}</h2>
+              <ul class={cn("grid gap-x-5", group.links.length > 1 && "grid-cols-2")}>
+                {group.links.map((child) => (
+                  <li>
+                    <a href={child.href} class="hover:decoration-primary flex min-h-11 items-center gap-1 font-medium underline-offset-4 hover:underline">
+                      {child.title}
+                      {child.external && (
+                        <>
+                          <ArrowUpRight aria-hidden="true" className="text-muted-foreground size-4" />
+                          <span class="sr-only">(annan webbplats)</span>
+                        </>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</div>

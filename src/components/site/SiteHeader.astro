@@ -1,0 +1,268 @@
+---
+import { ArrowUpRight, ChevronDown, Search } from "lucide-react"
+import logo from "@/assets/logo.webp"
+import SectionPanel from "@/components/site/SectionPanel.astro"
+import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
+import { isCurrentChild } from "@/lib/site-menu"
+import { cn } from "@/lib/utils"
+
+/**
+ * The site's header (docs/design.md, "Header"). From lg the sections with pages
+ * beneath them (Artiklar, Obsar, Klubben) and Sök open a panel under the bar
+ * instead of costing a page load first. The server renders each as a plain link
+ * to its section page; the script below swaps in the disclosure button beside
+ * it, so without the script the header is the plain row of links it used to be.
+ * Below lg, "Meny" is a `<details>` with the whole menu, and search is one tap
+ * away in the bar.
+ */
+interface Props {
+  siteName: string
+  menu: MenuEntry[]
+  joinPath: string
+}
+
+const { siteName, menu, joinPath } = Astro.props
+const { pathname } = Astro.url
+const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" : undefined)
+const panelId = (entry: MenuEntry) => `meny-${entry.href.slice(1).replace(/[^\w-]/g, "-")}`
+const hasPanel = (entry: MenuEntry) => !entry.external && entry.children.length > 0
+
+const item =
+  "hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center gap-1 font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+// A button can't be the current page, so the section it opens is marked with data-current.
+const toggle =
+  "group/toggle hover:text-foreground data-current:text-foreground data-current:decoration-primary aria-expanded:text-foreground text-muted-foreground flex min-h-11 cursor-pointer items-center gap-1 font-medium underline-offset-[0.6em] decoration-2 hover:underline data-current:underline aria-expanded:underline"
+const chevron =
+  "size-4 transition-transform group-aria-expanded/toggle:rotate-180 motion-reduce:transition-none"
+
+const shortcuts = [
+  { label: "Senaste fynden", href: "/obsar/senaste" },
+  { label: "Larm", href: "/larm" },
+  { label: "Fågellokaler", href: "/lokaler" },
+  { label: "Programmet", href: "/kalender" },
+]
+---
+
+<header class="relative border-b" data-site-header>
+  <div class="mx-auto flex w-full max-w-page items-center justify-between gap-6 px-4 py-3 sm:px-6">
+    <div class="flex items-center gap-3">
+      <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
+        <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12" />
+      </a>
+      <a href="/" class="font-display text-xl leading-tight font-bold md:text-[1.375rem]">{siteName}</a>
+    </div>
+
+    <div class="flex items-center gap-2 lg:gap-8">
+      <nav aria-label="Huvudmeny" class="hidden lg:block">
+        <ul class="flex justify-end gap-x-6">
+          {
+            menu.map((entry) =>
+              hasPanel(entry) ? (
+                <li>
+                  <a href={entry.href} aria-current={current(entry)} class={item} data-panel-link>
+                    {entry.title}
+                  </a>
+                  <button
+                    type="button"
+                    hidden
+                    aria-expanded="false"
+                    aria-controls={panelId(entry)}
+                    data-current={current(entry) ? "" : undefined}
+                    class={toggle}
+                    data-panel-toggle
+                  >
+                    {entry.title}
+                    <ChevronDown aria-hidden="true" className={chevron} />
+                  </button>
+                  <SectionPanel id={panelId(entry)} entry={entry} pathname={pathname} />
+                </li>
+              ) : (
+                <li>
+                  <a href={entry.href} aria-current={current(entry)} class={item}>
+                    {entry.title}
+                  </a>
+                </li>
+              )
+            )
+          }
+          <li>
+            <a href="/sok" aria-current={pathname === "/sok" ? "page" : undefined} class={item} data-panel-link>
+              <Search aria-hidden="true" className="size-4" />
+              Sök
+            </a>
+            <button
+              type="button"
+              hidden
+              aria-expanded="false"
+              aria-controls="meny-sok"
+              data-current={pathname === "/sok" ? "" : undefined}
+              class={toggle}
+              data-panel-toggle
+              data-search-toggle
+            >
+              <Search aria-hidden="true" className="size-4" />
+              Sök
+            </button>
+            <div id="meny-sok" hidden class="bg-background absolute inset-x-0 top-full z-20 border-b">
+              <div class="spread mx-auto w-full max-w-page gap-y-4 px-4 pt-6 pb-10 sm:px-6">
+                <p class="in-margin type-item">Sök</p>
+                <form action="/sok" method="get" role="search" class="in-text flex flex-col gap-2">
+                  <div class="flex gap-2">
+                    <div class="relative min-w-0 flex-1">
+                      <Search aria-hidden="true" className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2" />
+                      <Input
+                        type="search"
+                        name="q"
+                        aria-label="Sök bland artiklar, sidor och fågellokaler"
+                        placeholder="En art, en plats, ett år …"
+                        className="focus-strong h-12 pl-11 text-lg md:text-lg"
+                      />
+                    </div>
+                    <button type="submit" class={buttonVariants({ className: "focus-strong h-12 px-5 text-base" })}>Sök</button>
+                  </div>
+                  <p class="text-muted-foreground text-sm">
+                    Bland artiklar, sidor och fågellokaler. Tryck <kbd class="font-sans font-semibold">/</kbd> för att söka var du än är.
+                  </p>
+                </form>
+                <section aria-label="Gå direkt till" class="in-aside flex flex-col gap-1 pt-0.5">
+                  <h2 class="type-meta text-muted-foreground">Gå direkt till</h2>
+                  <ul class="grid grid-cols-2 gap-x-5">
+                    {
+                      shortcuts.map((shortcut) => (
+                        <li>
+                          <a href={shortcut.href} class="hover:decoration-primary flex min-h-11 items-center font-medium underline-offset-4 hover:underline">
+                            {shortcut.label}
+                          </a>
+                        </li>
+                      ))
+                    }
+                  </ul>
+                </section>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </nav>
+
+      <a href={joinPath} class={cn(buttonVariants(), "focus-strong hidden h-11 px-4 text-base md:inline-flex md:mr-2 lg:mr-0")}>Bli medlem</a>
+
+      <a href="/sok" aria-label="Sök" class="focus-strong flex size-11 items-center justify-center rounded-full border lg:hidden">
+        <Search aria-hidden="true" className="size-5" />
+      </a>
+
+      <details class="group lg:hidden">
+        <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-full border px-4 font-medium [&::-webkit-details-marker]:hidden">
+          <span class="group-open:hidden">Meny</span>
+          <span class="hidden group-open:inline">Stäng</span>
+        </summary>
+        <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
+          <a href={joinPath} class={cn(buttonVariants(), "focus-strong mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
+          <ul class="flex flex-col">
+            {
+              menu.map((entry) => {
+                const children = entry.children.filter((child) => child.href !== entry.href)
+                return (
+                  <li class="border-b last:border-b-0">
+                    <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:decoration-primary flex min-h-12 items-center text-lg font-medium underline-offset-[0.4em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                      {entry.title}
+                    </a>
+                    {children.length > 0 && (
+                      <ul class="grid pb-3 pl-4 sm:grid-cols-2 sm:gap-x-6">
+                        {children.map((child) => (
+                          <li>
+                            <a
+                              href={child.href}
+                              aria-current={isCurrentChild(child, entry, pathname) ? "page" : undefined}
+                              class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center gap-1"
+                            >
+                              {child.title}
+                              {child.external && (
+                                <>
+                                  <ArrowUpRight aria-hidden="true" className="size-4" />
+                                  <span class="sr-only">(annan webbplats)</span>
+                                </>
+                              )}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                )
+              })
+            }
+          </ul>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+
+<script>
+  /**
+   * The header's panels (docs/design.md, "Header"): the disclosure navigation
+   * pattern. Opened by click or Enter, never hover; one open at a time; Escape
+   * closes and returns focus; a click outside or focus leaving the header closes.
+   * "/" opens search, unless the visitor is typing somewhere already.
+   */
+  const header = document.querySelector<HTMLElement>("[data-site-header]")
+  if (header) {
+    const toggles = [...header.querySelectorAll<HTMLButtonElement>("[data-panel-toggle]")]
+    const panelOf = (toggle: HTMLButtonElement) =>
+      document.getElementById(toggle.getAttribute("aria-controls") ?? "")
+    const isOpen = (toggle: HTMLButtonElement) => toggle.getAttribute("aria-expanded") === "true"
+
+    const setOpen = (toggle: HTMLButtonElement, open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open))
+      const panel = panelOf(toggle)
+      if (panel) panel.hidden = !open
+    }
+    const closeAll = () => {
+      for (const toggle of toggles) setOpen(toggle, false)
+    }
+    const open = (toggle: HTMLButtonElement) => {
+      closeAll()
+      setOpen(toggle, true)
+      panelOf(toggle)?.querySelector<HTMLInputElement>("input[type=search]")?.focus()
+    }
+
+    for (const toggle of toggles) {
+      const link = toggle.previousElementSibling
+      if (link instanceof HTMLElement && link.hasAttribute("data-panel-link")) link.hidden = true
+      toggle.hidden = false
+      toggle.addEventListener("click", () => (isOpen(toggle) ? setOpen(toggle, false) : open(toggle)))
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const opened = toggles.find(isOpen)
+        if (opened) {
+          setOpen(opened, false)
+          opened.focus()
+        }
+        return
+      }
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select"))) return
+      const search = toggles.find((toggle) => toggle.hasAttribute("data-search-toggle"))
+      // Only where the bar shows it (lg up); a phone has no "/" to press.
+      if (!search || search.offsetParent === null) return
+      event.preventDefault()
+      open(search)
+    })
+    document.addEventListener("click", (event) => {
+      if (event.target instanceof Node && !header.contains(event.target)) closeAll()
+    })
+    // Only when focus moves somewhere: a click on the panel's own blank space has no relatedTarget.
+    header.addEventListener("focusout", (event) => {
+      if (event.relatedTarget instanceof Node && !header.contains(event.relatedTarget)) closeAll()
+    })
+    // A page restored from the back/forward cache comes back as it was left.
+    window.addEventListener("pageshow", (event) => {
+      if (event.persisted) closeAll()
+    })
+  }
+</script>

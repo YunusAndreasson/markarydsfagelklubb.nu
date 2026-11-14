@@ -5,6 +5,43 @@
  * links rather than vanishing. A description in /admin outranks the one here.
  */
 
+/**
+ * The Obsar section's own pages, in the order of the sub-navigation and the
+ * header's panel. The descriptions are the panel's one line under each title.
+ */
+export const OBSAR_PAGES = [
+  {
+    href: "/obsar",
+    label: "Översikt",
+    description: "Året hittills i kommunen, i siffror och kurvor.",
+  },
+  {
+    href: "/obsar/senaste",
+    label: "Senaste fynden",
+    description: "Det som har rapporterats de senaste 30 dagarna.",
+  },
+  {
+    href: "/obsar/arslista",
+    label: "Årslistan",
+    description: "Årets arter i kommunen, i den ordning de kom.",
+  },
+  {
+    href: "/obsar/markarydslistan",
+    label: "Markarydslistan",
+    description: "Alla arter som någonsin setts i kommunen.",
+  },
+  {
+    href: "/obsar/ligan",
+    label: "Ligan",
+    description: "Vem som har sett flest arter i kommunen i år.",
+  },
+  {
+    href: "/obsar/40-ar",
+    label: "40 år",
+    description: "Fågellivet och rapporterandet sedan klubben bildades 1986.",
+  },
+] as const
+
 const REGIONS = new Set(["Blekinge", "Halland", "Skåne", "Småland", "Öland"])
 
 const DESCRIPTIONS: readonly [RegExp, string][] = [

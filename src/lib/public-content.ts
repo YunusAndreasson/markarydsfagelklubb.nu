@@ -1,8 +1,9 @@
 import { type Cursor, newerThan, olderThan } from "./keyset"
 import type { LokalPointRow } from "./lokal-points"
 import type { MediaFormat, MediaImage } from "./media"
-import { buildMenu, buildPageTree, type MenuEntry, type PageRow, type PageTree } from "./page-tree"
+import { buildPageTree, type MenuEntry, type PageRow, type PageTree } from "./page-tree"
 import { searchFilter } from "./search"
+import { buildSiteMenu } from "./site-menu"
 import { startOfStockholmMonth, stockholmYear } from "./stockholm-time"
 import type { SupabasePublicClient } from "./supabase-public"
 import {
@@ -28,12 +29,18 @@ const EMPTY_NAVIGATION: SiteNavigation = {
   menu: [],
 }
 
-/** The page tree and the menu. A failure costs the menu, never the page. */
+/**
+ * The page tree and the menu. A failure costs the menu, never the page; a
+ * failed category read costs only the Artiklar panel.
+ */
 export async function loadNavigation(db: SupabasePublicClient): Promise<SiteNavigation> {
-  const { data, error } = await db
-    .from("pages")
-    .select("id, parent_id, kind, slug, title, link_url, show_in_menu, sort_order, description")
-    .overrideTypes<PublicPageRow[], { merge: false }>()
+  const [{ data, error }, categories] = await Promise.all([
+    db
+      .from("pages")
+      .select("id, parent_id, kind, slug, title, link_url, show_in_menu, sort_order, description")
+      .overrideTypes<PublicPageRow[], { merge: false }>(),
+    listPublicCategories(db),
+  ])
   if (error) {
     console.error(`mafk-web: load navigation failed — ${error.message}`)
     return EMPTY_NAVIGATION
@@ -42,7 +49,7 @@ export async function loadNavigation(db: SupabasePublicClient): Promise<SiteNavi
   if (tree.unreachable.length > 0) {
     console.error(`mafk-web: pages unreachable from the top: ${tree.unreachable.join(", ")}`)
   }
-  return { tree, menu: buildMenu(tree) }
+  return { tree, menu: buildSiteMenu(tree, categories) }
 }
 
 export type ArticleSummary = {

@@ -1,6 +1,7 @@
 ---
 export const prerender = false
 
+import { Search } from "lucide-react"
 import ArticleList from "@/components/site/ArticleList.astro"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,13 @@ import { matchesName, normaliseSearchQuery } from "@/lib/search"
  */
 
 const ARTICLE_PAGE = 20
+const SHORTCUTS = [
+  { label: "Senaste fynden", href: "/obsar/senaste" },
+  { label: "Larm", href: "/larm" },
+  { label: "Fågellokaler", href: "/lokaler" },
+  { label: "Programmet", href: "/kalender" },
+  { label: "Artikelarkivet", href: "/artiklar" },
+]
 const OTHER_LIMIT = 8
 
 const { db } = Astro.locals
@@ -56,6 +64,14 @@ const nothing =
   foundLokaler.length === 0 &&
   firstPage
 
+/** "En träff", "12 träffar", or "Fler än 28 träffar" when the articles go on past this page. */
+const total = found.length + pages.length + foundLokaler.length
+const hits = articles?.older
+  ? `Fler än ${total} träffar`
+  : total === 1
+    ? "En träff"
+    : `${total} träffar`
+
 const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0]) =>
   `/sok?${new URLSearchParams({ q: query, [param]: encodeCursor(cursor) })}`
 ---
@@ -65,17 +81,43 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
     <header class="flex flex-col gap-5 at-text">
       <h1 class="type-title">Sök</h1>
       <form action="/sok" method="get" role="search" class="flex measure gap-2">
-        <Input
-          type="search"
-          name="q"
-          value={query}
-          aria-label="Sök bland artiklar, sidor och fågellokaler"
-          placeholder="En art, en plats, ett år …"
-          className="focus-strong h-11 min-w-0 flex-1 text-base"
-        />
-        <button type="submit" class={buttonVariants({ className: "focus-strong h-11 px-5 text-base" })}>Sök</button>
+        <div class="relative min-w-0 flex-1">
+          <Search aria-hidden="true" className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2" />
+          {/* Focused only while empty: with results on the page, the keyboard would cover them on a phone. */}
+          <Input
+            type="search"
+            name="q"
+            value={query}
+            autoFocus={!query}
+            enterKeyHint="search"
+            aria-label="Sök bland artiklar, sidor och fågellokaler"
+            placeholder="En art, en plats, ett år …"
+            className="focus-strong h-12 pl-11 text-lg md:text-lg"
+          />
+        </div>
+        <button type="submit" class={buttonVariants({ className: "focus-strong h-12 px-5 text-base" })}>Sök</button>
       </form>
+      {
+        query && firstPage && !failed && !nothing && (
+          <p class="text-muted-foreground measure">{hits} på ”{query}”.</p>
+        )
+      }
     </header>
+
+    {
+      !query && (
+        <section aria-labelledby="sok-genvagar" class="flex measure flex-col gap-2 at-text">
+          <h2 id="sok-genvagar" class="type-meta text-muted-foreground">Eller gå direkt till</h2>
+          <ul class="flex flex-wrap gap-x-6">
+            {SHORTCUTS.map((shortcut) => (
+              <li>
+                <a href={shortcut.href} class="link flex min-h-11 items-center font-medium">{shortcut.label}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
 
     {
       failed && (
