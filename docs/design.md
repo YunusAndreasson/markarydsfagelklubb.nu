@@ -58,6 +58,15 @@ A small pass on rows that didn't line up.
 - **On a phone, a programme date's month and time are stacked**, always: in
   the 4.25rem margin "nov 18:30" wrapped but "jan 08:00" didn't, so two
   entries read differently. From md they share a line again.
+- **A lead without a hero photo still shows its photo.** If the lead's first
+  image is too narrow or too tall for the 3:2 spread (a poster, a portrait),
+  it now sits whole in the aside track beside the headline. From sm it's at most
+  16rem wide, and on a phone 60% wide after the text. Before, it was dropped,
+  and a post that was only a poster led with a bare title. The type-only lead
+  also gets the spread it was drawn on: `flex` had beaten `spread` on the same
+  element. From md its category stands over the headline, because
+  "Föreningsaktuellt" is wider than the 7rem margin and Gecko won't hyphenate it
+  there.
 - **`focus-strong` replaces shadcn's ring rather than adding to it.** The search
   field showed its green border, the 30% halo and the 2 px outline: three
   lines. The utility now clears the box-shadow, and the outline stands in for

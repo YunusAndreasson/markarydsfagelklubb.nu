@@ -53,7 +53,11 @@ const [navigation, page, larm, upcoming, history, allTime, yearStats, recent] = 
 ])
 const { lead, rest } = pickLead(page?.articles ?? [])
 const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
-const { tiles, list } = splitFeatured(withoutPhoto(rest, leadImage?.src), 3)
+// A lead photo too narrow or too tall for the 3:2 spread, such as a poster, still
+// leads: whole, beside the headline in the outer margin (docs/design.md, "Kontaktark").
+const leadAside =
+  lead?.image && !leadImage && lead.image.width >= 480 && lead.image.height > 0 ? lead.image : null
+const { tiles, list } = splitFeatured(withoutPhoto(rest, (leadImage ?? leadAside)?.src), 3)
 // A larm failure costs the section, never the home page.
 const alerts = larm.ok ? larm.value.alerts : []
 const dayList = buildDayList(alerts, now)
@@ -93,8 +97,11 @@ const taken = Astro.locals.transitionNames
     lead && (
       <article
         class:list={[
-          "flex flex-col gap-5",
-          leadImage ? "lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-x-10" : "spread gap-y-3",
+          // Not "flex" on both: it beat "spread", so a lead without a hero photo
+          // never sat on the margin and text tracks.
+          leadImage
+            ? "flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-x-10"
+            : "spread gap-y-4",
         ]}
       >
         {leadImage && (
@@ -117,7 +124,7 @@ const taken = Astro.locals.transitionNames
         <p
           class:list={[
             "type-meta text-muted-foreground flex flex-wrap items-center gap-x-3",
-            !leadImage && "md:in-margin md:flex-col md:items-start md:gap-y-1.5 md:pt-[0.9rem]",
+            !leadImage && "md:in-margin md:flex-col md:items-start md:gap-y-1.5 md:pt-[0.15rem]",
             leadImage && "lg:hidden",
           ]}
         >
@@ -126,12 +133,22 @@ const taken = Astro.locals.transitionNames
             <span>{formatDate(lead.published_at, "dayMonth")}</span>
           </time>
           {lead.category && (
-            <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
+            /* From md, without a hero photo, the category stands over the headline
+               instead: "Föreningsaktuellt" is wider than the 7rem margin, and Gecko
+               won't hyphenate it there. */
+            <a href={`/artiklar/kategori/${lead.category.slug}`} class:list={["crumb", !leadImage && "md:hidden"]}>
               {lead.category.name}
             </a>
           )}
         </p>
         <div class:list={["flex flex-col gap-4", !leadImage && "in-text"]}>
+          {!leadImage && lead.category && (
+            <p class="type-meta text-muted-foreground -mb-2 hidden md:flex">
+              <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
+                {lead.category.name}
+              </a>
+            </p>
+          )}
           {leadImage && (
             <p class="type-meta text-muted-foreground hidden flex-wrap items-center gap-x-3 lg:flex">
               <time datetime={isoDateTime(lead.published_at)}>
@@ -159,6 +176,28 @@ const taken = Astro.locals.transitionNames
             </a>
           )}
         </div>
+        {leadAside && (
+          /* Like the hero photo, a repeat of the headline's link: hidden from the
+             accessibility tree and the tab order. The article page carries its alt. */
+          <a
+            href={`/artiklar/${lead.slug}`}
+            tabindex="-1"
+            aria-hidden="true"
+            class="in-aside block w-full max-w-[60%] self-start sm:max-w-[16rem] lg:row-start-1 lg:max-w-none lg:pt-3"
+          >
+            <img
+              src={leadAside.src}
+              srcset={leadAside.srcset || undefined}
+              sizes="(min-width: 64rem) 20rem, (min-width: 40rem) 16rem, 60vw"
+              width={leadAside.width}
+              height={leadAside.height}
+              alt=""
+              fetchpriority="high"
+              class="bg-muted h-auto w-full rounded-[4px]"
+              style={transitionName(taken, "artikel", lead.id)}
+            />
+          </a>
+        )}
       </article>
     )
   }

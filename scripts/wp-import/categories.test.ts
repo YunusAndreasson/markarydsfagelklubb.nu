@@ -35,7 +35,7 @@ describe("pickCategory", () => {
     const site = new Set(SITE_CATEGORIES.map((category) => category.slug))
     expect(SITE_CATEGORIES).toHaveLength(6)
     for (const target of Object.values(CATEGORY_MAP)) expect(site.has(target)).toBe(true)
-    // 46 WordPress categories, less Okategoriserade.
-    expect(Object.keys(CATEGORY_MAP)).toHaveLength(45)
+    // 47 WordPress categories, less Okategoriserade. Konstutställning came in 2026-11.
+    expect(Object.keys(CATEGORY_MAP)).toHaveLength(46)
   })
 })

@@ -173,7 +173,7 @@ export const TITLE_FIXES: Readonly<Record<number, string>> = {
   6483: "Nattfåglar – lördag 10 juni",
   6531: "Sträckräkning – Skararps ängar – lördag 19 september",
   6629: "Skararps ängar 16 september",
-  6652: "Smålandsrallyt 2025 1/11–2/11",
+  6652: "Smålandsrallyt 2026 31/10–1/11", // the club reused the 2025 post in October 2026
   6775: "Resultat Allhelgonarallyt 2023",
   6864: "Vinterfågelrally 4 januari 2026",
   6898: "Resultat vinterfågelrallyt 7 januari 2024",
@@ -213,4 +213,6 @@ export const TITLE_FIXES: Readonly<Record<number, string>> = {
   10190: "Lördagen 19 september – Sträckräkning, Skararps ängar",
   10240: "Programändring!",
   10340: "Smålandsrallyt 2026",
+  10347: "Smålandsrallyt 2026",
+  10472: "Arrangemangstips!",
 }

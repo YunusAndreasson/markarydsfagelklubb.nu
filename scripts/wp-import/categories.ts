@@ -35,6 +35,7 @@ export const CATEGORY_MAP: Readonly<Record<string, string>> = {
   upprop: "foreningsaktuellt",
   forsaljning: "foreningsaktuellt",
   foreningstips: "foreningsaktuellt",
+  konstutstallning: "foreningsaktuellt", // an art-exhibition tip, added 2026-11
   fagelholkar: "foreningsaktuellt",
   larmapp: "foreningsaktuellt",
   svalan: "foreningsaktuellt",
