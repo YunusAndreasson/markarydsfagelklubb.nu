@@ -46,6 +46,14 @@ It has no image of its own, so at the user's request it shows Programändring's 
 aside `.wp-import/cache/*posts_per_page*` before a run that should see them, and before
 `pnpm wp-import:redirects`.
 
+**November posts added 2026-11-14** (`--limit 8 --files`, after setting aside the
+cached post lists **and** `*categories*`, whose stale copy reported a new category
+by id). WordPress had a new category, Konstutställning (#54 → Föreningsaktuellt).
+6652 had been reused by the club for 2026, so its title fix changed. 10472 is a
+poster alone, so `BODY_FIXES` adds its text as alt text and as a sentence before
+the image. The rally PDF `rally2026-1.pdf` doesn't answer on WordPress, so its
+link was removed.
+
 **The pilot ran first, the same day**: the migration is applied, the dummy articles
 and their categories are deleted (the dummy pages and events stay until real
 ones replace them, since they are the whole menu and the whole kalender), and
