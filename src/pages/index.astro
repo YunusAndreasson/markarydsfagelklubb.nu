@@ -20,6 +20,7 @@ import { listPublicAlerts } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
 import { formatDate, isoDateTime, startOfStockholmDay, stockholmYear } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
+import { transitionName } from "@/lib/view-transition"
 
 // The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften",
 // "Uppslaget"): one sentence and the newest larm photos on the spruce band, the
@@ -59,6 +60,10 @@ const dayList = buildDayList(alerts, now)
 const prints = latestPrints(alerts, 5, now)
 // The same for the programme: nothing at all when it is empty.
 const events = upcoming ?? []
+
+// One set per page, shared by every list on it (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const taken = Astro.locals.transitionNames
 ---
 
 <SiteLayout menu={navigation.menu} image={leadImage?.src}>
@@ -105,6 +110,7 @@ const events = upcoming ?? []
               alt=""
               fetchpriority="high"
               class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px]"
+              style={transitionName(taken, "artikel", lead.id)}
             />
           </a>
         )}

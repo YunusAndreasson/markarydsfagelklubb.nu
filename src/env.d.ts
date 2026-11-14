@@ -27,6 +27,8 @@ declare global {
        * are the only ones a non-admin reaches.
        */
       isAdmin?: boolean
+      /** View-transition names already used on this page (`lib/view-transition.ts`). */
+      transitionNames?: Set<string>
     }
   }
 }

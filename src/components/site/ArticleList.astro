@@ -1,6 +1,7 @@
 ---
 import type { ArticleTeaser } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { transitionName } from "@/lib/view-transition"
 
 /**
  * The dated list: the date in the margin, the title and opening line, and the
@@ -32,6 +33,10 @@ const yearLabel = (index: number): number | null => {
   const previous = articles[index - 1]
   return previous && stockholmYear(previous.published_at) === year ? null : year
 }
+
+// One set per page, shared by every list on it (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const taken = Astro.locals.transitionNames
 ---
 
 <ol class="flex flex-col gap-8">
@@ -71,6 +76,7 @@ const yearLabel = (index: number): number | null => {
                 loading="lazy"
                 decoding="async"
                 class="bg-muted aspect-3/2 w-28 rounded-[4px] object-cover md:w-full"
+                style={transitionName(taken, "artikel", article.id)}
               />
             </a>
           )}

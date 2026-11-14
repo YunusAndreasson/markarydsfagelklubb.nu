@@ -1,8 +1,10 @@
 ---
-import { renderBody } from "@/lib/article-body"
-import { mediaFallbackUrl, mediaSrcset } from "@/lib/media"
+import PhotoViewer from "@/components/site/PhotoViewer.astro"
+import { photoLink, renderBody } from "@/lib/article-body"
 import type { FullArticle } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { liftHero } from "@/lib/teaser"
+import { transitionName } from "@/lib/view-transition"
 
 interface Props {
   article: FullArticle
@@ -11,6 +13,14 @@ interface Props {
 // The article page and the admin's preview render the same thing.
 const { article } = Astro.props
 const published = article.published_at
+// The photo the lists show opens the article (docs/design.md, "Lupen"), and
+// leaves the body so it doesn't print twice.
+const { hero, body } = liftHero(article.cover, article.body_html)
+// Named before the aside's list asks, so the article's own photo gets the name.
+Astro.locals.transitionNames ??= new Set()
+const heroTransition = transitionName(Astro.locals.transitionNames, "artikel", article.id)
+// The hero opens in the viewer like a photo in the body.
+const heroLink = hero && photoLink(hero.src, hero.srcset, hero.width, hero.height)
 ---
 
 {/* The notebook's spread (docs/design.md, "Uppslaget"): the title over the
@@ -39,23 +49,36 @@ const published = article.published_at
     </div>
   </header>
 
-  <div class="spread gap-y-8">
+  <div class="spread gap-y-8" data-photos>
     {
-      article.cover && (
-        <img
-          src={mediaFallbackUrl(article.cover)}
-          srcset={mediaSrcset(article.cover)}
-          sizes="(min-width: 48rem) 45rem, 100vw"
-          width={article.cover.width}
-          height={article.cover.height}
-          alt={article.cover.alt}
-          fetchpriority="high"
-          class="in-wide h-auto w-full rounded-[4px] lg:row-start-1"
-        />
+      hero && (
+        <figure class:list={[hero.wide ? "in-wide" : "in-text", "flex flex-col gap-2.5 lg:row-start-1"]}>
+          <a
+            class:list={["photo block cursor-zoom-in rounded-[4px]", hero.wide ? "w-full" : "w-fit max-w-full"]}
+            href={heroLink?.href ?? hero.src}
+            data-pswp-width={heroLink?.width}
+            data-pswp-height={heroLink?.height}
+          >
+            <img
+              src={hero.src}
+              srcset={hero.srcset || undefined}
+              sizes={hero.wide ? "(min-width: 48rem) 45rem, 100vw" : "(min-width: 40rem) 38rem, 100vw"}
+              width={hero.width || undefined}
+              height={hero.height || undefined}
+              alt={hero.alt}
+              fetchpriority="high"
+              style={heroTransition}
+              class:list={["rounded-[4px]", hero.wide ? "h-auto w-full" : "h-auto max-h-[75svh] w-auto max-w-full"]}
+            />
+          </a>
+          {hero.caption && (
+            <figcaption class:list={["type-meta text-muted-foreground text-pretty", hero.wide && "at-text measure"]} set:html={hero.caption} />
+          )}
+        </figure>
       )
     }
 
-    <div class:list={["in-margin type-meta text-muted-foreground -mt-4 flex flex-col md:mt-0 md:pt-1", article.cover ? "md:row-start-2" : "md:row-start-1"]}>
+    <div class:list={["in-margin type-meta text-muted-foreground -mt-4 flex flex-col md:mt-0 md:pt-1", hero ? "md:row-start-2" : "md:row-start-1"]}>
       {
         published && (
           <time datetime={isoDateTime(published)} class="flex flex-wrap gap-x-1 md:flex-col">
@@ -68,14 +91,16 @@ const published = article.published_at
       {article.author_name && <span class="mt-1">Text: {article.author_name}</span>}
     </div>
 
-    <div class:list={["in-text content", article.cover ? "md:row-start-2" : "md:row-start-1"]} set:html={renderBody(article.body_html)} />
+    <div class:list={["in-text content", hero ? "md:row-start-2" : "md:row-start-1"]} set:html={renderBody(body)} />
 
     {
       Astro.slots.has("aside") && (
-        <div class:list={["in-aside self-stretch max-lg:mt-8", article.cover ? "lg:row-span-2 lg:row-start-1" : "lg:row-start-1"]}>
+        <div class:list={["in-aside self-stretch max-lg:mt-8", hero ? "lg:row-span-2 lg:row-start-1" : "lg:row-start-1"]}>
           <slot name="aside" />
         </div>
       )
     }
   </div>
 </article>
+
+<PhotoViewer />

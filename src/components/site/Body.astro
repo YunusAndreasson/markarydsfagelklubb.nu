@@ -1,0 +1,19 @@
+---
+import PhotoViewer from "@/components/site/PhotoViewer.astro"
+import { renderBody } from "@/lib/article-body"
+
+/**
+ * A stored body (a page's, an event's), rendered and styled by `.content`, with
+ * its photos opening in the viewer. The article page lays out its own, beside
+ * the hero (`ArticleView.astro`).
+ */
+interface Props {
+  html: string
+  class?: string
+}
+
+const { html, class: className } = Astro.props
+---
+
+<div class:list={["content", className]} data-photos set:html={renderBody(html)} />
+<PhotoViewer />

@@ -3,6 +3,7 @@ import type { PublicAlert } from "@/lib/alert-dto"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
 import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
 import { dayLabel, formatDate, isoDateTime } from "@/lib/stockholm-time"
+import { transitionName } from "@/lib/view-transition"
 
 /**
  * The newest larm photos as a row of prints, the caption under each — a
@@ -34,6 +35,10 @@ interface Props {
 
 const { alerts, sizes, layout, brief = false } = Astro.props
 const now = new Date()
+
+// One set per page, shared by every list on it (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const taken = Astro.locals.transitionNames
 ---
 
 <ol
@@ -67,6 +72,7 @@ const now = new Date()
                 loading="lazy"
                 decoding="async"
                 class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+                style={transitionName(taken, "larm", alert.id)}
               />
             </a>
             <div class="flex flex-col gap-0.5">

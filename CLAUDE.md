@@ -160,7 +160,10 @@ never query. Hydrate only the narrowest interactive leaf, using
 immediate); today the only islands are the admin's editor and uploader
 (`client:only`). The one plain script on every public page is the header's
 section panels (`SiteHeader.astro`), which only enhances links that already
-work without it. `/admin/*` is SSR with `Cache-Control: private, no-store`.
+work without it. The other is the photo viewer (`PhotoViewer.astro`,
+PhotoSwipe), only on pages with a body or a larm photo; it too enhances links
+(`linkPhotos`) that already open the photo. Motion between pages is CSS
+(view transitions) and prefetching is speculation rules, never a client router. `/admin/*` is SSR with `Cache-Control: private, no-store`.
 Everything but prerendered pages passes through `src/middleware.ts`.
 
 Article and page bodies are **sanitized on save** (`src/lib/sanitize.ts`), never

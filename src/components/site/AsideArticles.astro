@@ -1,6 +1,7 @@
 ---
 import type { ArticleTeaser } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { transitionName } from "@/lib/view-transition"
 
 /**
  * A few articles in the outer margin (docs/design.md, "Uppslaget"): a small
@@ -14,6 +15,10 @@ interface Props {
 
 const { articles } = Astro.props
 const thisYear = stockholmYear(new Date())
+
+// One set per page, shared by every list on it (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const taken = Astro.locals.transitionNames
 ---
 
 <ol class="flex flex-col gap-4">
@@ -35,6 +40,7 @@ const thisYear = stockholmYear(new Date())
                 loading="lazy"
                 decoding="async"
                 class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+                style={transitionName(taken, "artikel", article.id)}
               />
             </a>
           ) : null}

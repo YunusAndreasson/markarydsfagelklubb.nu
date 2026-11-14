@@ -1,6 +1,7 @@
 ---
 import type { ArticleTeaser } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { transitionName } from "@/lib/view-transition"
 
 /**
  * One row of up to three articles with their photos (docs/design.md,
@@ -23,6 +24,10 @@ interface Props {
 const { articles, headingLevel = 3, showCategory = false } = Astro.props
 const Heading = headingLevel === 2 ? "h2" : "h3"
 const thisYear = stockholmYear(new Date())
+
+// One set per page, shared by every list on it (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const taken = Astro.locals.transitionNames
 ---
 
 <ol class="grid gap-x-6 gap-y-10 md:grid-cols-3">
@@ -43,6 +48,7 @@ const thisYear = stockholmYear(new Date())
                 loading="lazy"
                 decoding="async"
                 class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+                style={transitionName(taken, "artikel", article.id)}
               />
             </a>
           )}

@@ -4,8 +4,8 @@ export const prerender = false
 import { renderSVG } from "uqr"
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import Body from "@/components/site/Body.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { renderBody } from "@/lib/article-body"
 import {
   addressMailto,
   addressSms,
@@ -196,7 +196,7 @@ const linkClass = "link flex min-h-11 w-fit items-center font-medium"
         )
       }
 
-      {page.body_html && <div class="content at-text" set:html={renderBody(page.body_html)} />}
+      {page.body_html && <Body html={page.body_html} class="at-text" />}
       </div>
       {
         m && (m.contact_name || tel || m.contact_email) && (

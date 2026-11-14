@@ -121,6 +121,23 @@
   }
 
   /*
+   * A photo is a link to its largest file (lib/article-body.ts, `linkPhotos`), which
+   * the viewer opens (docs/design.md, "Lupen"). Not a text link: no colour or
+   * underline, the photo's own width, and a zoom cursor as the only sign.
+   */
+  .content a.photo {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    text-decoration: none;
+    border-radius: 4px;
+    cursor: zoom-in;
+  }
+  .content-gallery > a.photo {
+    width: 100%;
+  }
+
+  /*
    * A photo and its caption. The caption belongs to the photo, not to the
    * text: tight under it, in the meta size and Blyerts, so a photo credit never
    * reads as a paragraph of the article. The figure takes the image's space

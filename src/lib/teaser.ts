@@ -56,7 +56,7 @@ function decodeEntities(value: string): string {
 const escapeHtml = (value: string) =>
   value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
 
-function attributesOf(tag: string): Map<string, string> {
+export function attributesOf(tag: string): Map<string, string> {
   const found = new Map<string, string>()
   for (const [, name, value] of tag.matchAll(ATTRIBUTE)) {
     if (name !== undefined && value !== undefined && !found.has(name)) {
@@ -70,7 +70,7 @@ const positiveInteger = (value: string | undefined): number =>
   value !== undefined && /^\d+$/.test(value) ? Number(value) : 0
 
 /** The widest `480w` descriptor in a srcset, or 0. */
-function widestCandidate(srcset: string): number {
+export function widestCandidate(srcset: string): number {
   let widest = 0
   for (const candidate of srcset.split(",")) {
     const match = /\s(\d+)w$/.exec(candidate.trim())
@@ -231,4 +231,74 @@ export function leadOpening(html: string, title: string, budget = LEAD_BUDGET): 
     paragraphs,
     more: more || photos > 1 || /<(ul|ol|table|iframe|h[2-4]|blockquote)\b/.test(html),
   }
+}
+
+/**
+ * The photo an article opens with (docs/design.md, "Lupen"): the one its lists
+ * show, so the photo a reader taps is the photo they land on.
+ */
+export type Hero = TeaserImage & {
+  /** The figure's caption as stored (sanitized on save), or null. */
+  caption: string | null
+  /** Across margin and text; otherwise at its own width in the text track. */
+  wide: boolean
+}
+
+const FIGURE_OPEN = /<figure\b[^>]*>\s*$/
+const FIGCAPTION = /<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/
+const PARAGRAPH_OPEN = /<p\b[^>]*>\s*$/
+const PARAGRAPH_CLOSE = /^\s*(?:<br\s*\/?>\s*)*<\/p>/
+const LINK_OPEN = /<a\b[^>]*>\s*$/
+const LINK_CLOSE = /^\s*<\/a>/
+
+/**
+ * The article's hero and the body without it. A cover leads, as it always has,
+ * and the body is left alone: the import never set a cover the body repeats.
+ * Without one, the photo `pickTeaserImage` chose moves out of the body to the
+ * top, with its caption: its figure, or the bare image and the paragraph that
+ * held nothing else. The body was sanitized on save, so a figure never nests
+ * and its image comes first.
+ */
+export function liftHero(
+  cover: MediaImage | null,
+  html: string
+): { hero: Hero | null; body: string } {
+  if (cover) return { hero: { ...coverImage(cover), caption: null, wide: true }, body: html }
+  const image = pickTeaserImage(null, html)
+  if (!image) return { hero: null, body: html }
+
+  for (const match of html.matchAll(IMG_TAG)) {
+    if (attributesOf(match[0]).get("src") !== image.src) continue
+    let start = match.index
+    let end = start + match[0].length
+    let caption: string | null = null
+    const before = html.slice(0, start)
+
+    const figureOpen = FIGURE_OPEN.exec(before)
+    const figureClose = figureOpen ? html.indexOf("</figure>", end) : -1
+    if (figureOpen && figureClose !== -1) {
+      const figure = html.slice(figureOpen.index, figureClose)
+      caption = FIGCAPTION.exec(figure)?.[1]?.trim() || null
+      start = figureOpen.index
+      end = figureClose + "</figure>".length
+    } else {
+      // Two imported posts link a photo to itself; the link goes with it.
+      const linkOpen = LINK_OPEN.exec(before)
+      const linkClose = linkOpen ? LINK_CLOSE.exec(html.slice(end)) : null
+      if (linkOpen && linkClose) {
+        start = linkOpen.index
+        end += linkClose[0].length
+      }
+      const paragraphOpen = PARAGRAPH_OPEN.exec(html.slice(0, start))
+      const paragraphClose = PARAGRAPH_CLOSE.exec(html.slice(end))
+      if (paragraphOpen && paragraphClose) {
+        start = paragraphOpen.index
+        end += paragraphClose[0].length
+      }
+    }
+    const body = `${html.slice(0, start)}${html.slice(end)}`
+    return { hero: { ...image, caption, wide: isHeroWorthy(image) }, body }
+  }
+  // The chosen photo always comes from this body; this is only a guard.
+  return { hero: null, body: html }
 }

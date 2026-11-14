@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import { type MediaImage, SITE_MEDIA_PUBLIC_PREFIX } from "./media"
-import { bodyImages, isHeroWorthy, leadOpening, pickTeaserImage, teaserText } from "./teaser"
+import {
+  bodyImages,
+  isHeroWorthy,
+  leadOpening,
+  liftHero,
+  pickTeaserImage,
+  teaserText,
+} from "./teaser"
 
 const url = (name: string, width: number) =>
   `${SITE_MEDIA_PUBLIC_PREFIX}2026/05/${name}/${width}.webp`
@@ -229,5 +236,69 @@ describe("leadOpening", () => {
   it("skips what the teaser skips", () => {
     const html = "<p>Rallyt<br>Första stycket.</p><p>Foto: Anna A.</p>"
     expect(leadOpening(html, "Rallyt").paragraphs).toEqual(["Första stycket."])
+  })
+})
+
+describe("liftHero", () => {
+  const wide = imported("wide", 2560, 1707, "Sävsparv")
+  const tall = imported("tall", 1200, 1600, "Uggla")
+  const cover: MediaImage = {
+    storage_prefix: "2026/05/cover",
+    format: "webp",
+    widths: [480, 960],
+    width: 1600,
+    height: 1067,
+    alt: "Omslag",
+  }
+
+  it("leads with the cover and leaves the body as written", () => {
+    const body = `<p>Text</p>${wide}`
+    const { hero, body: rest } = liftHero(cover, body)
+    expect(hero?.alt).toBe("Omslag")
+    expect(hero?.wide).toBe(true)
+    expect(rest).toBe(body)
+  })
+
+  it("moves the list's photo out of its figure, caption and all", () => {
+    const body = `<p>Före</p><figure>${wide}<figcaption>Foto: <em>Anna</em></figcaption></figure><p>Efter</p>`
+    const { hero, body: rest } = liftHero(null, body)
+    expect(hero?.src).toBe(url("wide", 960))
+    expect(hero?.caption).toBe("Foto: <em>Anna</em>")
+    expect(hero?.wide).toBe(true)
+    expect(rest).toBe("<p>Före</p><p>Efter</p>")
+  })
+
+  it("takes the paragraph that held only the photo", () => {
+    const { hero, body } = liftHero(null, `<p>Före</p><p>${wide}<br /></p><p>Efter</p>`)
+    expect(hero?.caption).toBeNull()
+    expect(body).toBe("<p>Före</p><p>Efter</p>")
+  })
+
+  it("takes a link that held only the photo", () => {
+    const { body } = liftHero(
+      null,
+      `<p><a href="https://example.org/x.jpg">${wide}</a></p><p>Efter</p>`
+    )
+    expect(body).toBe("<p>Efter</p>")
+  })
+
+  it("leaves text that shares the photo's paragraph", () => {
+    const { body } = liftHero(null, `<p>Se här: ${wide}</p>`)
+    expect(body).toBe("<p>Se här: </p>")
+  })
+
+  it("lifts a portrait too, at its own width", () => {
+    const { hero } = liftHero(null, `<p>Text</p>${tall}`)
+    expect(hero?.wide).toBe(false)
+  })
+
+  it("takes one photo out of a run and leaves the rest", () => {
+    const { body } = liftHero(null, `${wide}${tall}`)
+    expect(body).toBe(tall)
+  })
+
+  it("leaves a body without a usable photo alone", () => {
+    const body = "<p>Bara text.</p>"
+    expect(liftHero(null, body)).toEqual({ hero: null, body })
   })
 })

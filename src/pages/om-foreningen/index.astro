@@ -3,9 +3,9 @@ export const prerender = false
 
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import Body from "@/components/site/Body.astro"
 import { buttonVariants } from "@/components/ui/button"
 import SiteLayout from "@/layouts/site.astro"
-import { renderBody } from "@/lib/article-body"
 import { loadMembership } from "@/lib/membership"
 import { resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
@@ -68,7 +68,7 @@ const hrefOf = (child: (typeof children)[number]) =>
         club, which is the "newcomers first" decision put into the layout. On a
         phone the note comes first, under the photo, as the fee line did. */}
     <div class="spread gap-y-10">
-      {page.body_html && <div class="in-wide content content-register" set:html={renderBody(page.body_html)} />}
+      {page.body_html && <Body html={page.body_html} class="in-wide content-register" />}
       {
         membership && (
           <Aside label="Bli medlem" class="max-md:pb-2">

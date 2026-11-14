@@ -4,6 +4,7 @@ export const prerender = false
 import AlertList from "@/components/site/AlertList.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import LarmRail from "@/components/site/LarmRail.astro"
+import PhotoViewer from "@/components/site/PhotoViewer.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
@@ -13,6 +14,7 @@ import { listPublicAlerts, loadPublicAlert } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
 import { isRare, rarityLabel } from "@/lib/rarity"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { transitionName } from "@/lib/view-transition"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -43,6 +45,9 @@ const title =
 // The place ladder writes "Nära Hualtet" for a blurred place, and "vid Nära
 // Hualtet" isn't Swedish: such a place takes no preposition of its own.
 const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` : `vid ${larm.place}`
+// Named before the rail's photos ask (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const photoTransition = transitionName(Astro.locals.transitionNames, "larm", larm.id)
 ---
 
 <SiteLayout
@@ -84,15 +89,20 @@ const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` :
             /* object-contain, not cover: the feed crops to keep its rhythm, but
                here the member's photo is shown whole, portrait or landscape, and
                the box reserves the space so nothing shifts as it loads. */
-            <div class="in-wide aspect-3/2 w-full lg:row-start-1">
-              <img
-                src={alertPhotoSrc(larm.photoUrl, "960")}
-                srcset={alertPhotoSrcset(larm.photoUrl, "detail")}
-                sizes="(min-width: 48rem) 45rem, 100vw"
-                alt={`Foto av ${larm.species}`}
-                decoding="async"
-                class="h-full w-full rounded-[4px] object-contain object-left-top"
-              />
+            <div class="in-wide aspect-3/2 w-full lg:row-start-1" data-photos>
+              {/* A link to the largest file, opened in the viewer (docs/design.md,
+                  "Lupen"); its height comes from the photo once it has loaded. */}
+              <a href={alertPhotoSrc(larm.photoUrl, "1600")} class="photo block size-full cursor-zoom-in rounded-[4px]" data-pswp-width="1600">
+                <img
+                  src={alertPhotoSrc(larm.photoUrl, "960")}
+                  srcset={alertPhotoSrcset(larm.photoUrl, "detail")}
+                  sizes="(min-width: 48rem) 45rem, 100vw"
+                  alt={`Foto av ${larm.species}`}
+                  decoding="async"
+                  style={photoTransition}
+                  class="h-full w-full rounded-[4px] object-contain object-left-top"
+                />
+              </a>
             </div>
           )
         }
@@ -137,4 +147,5 @@ const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` :
       )
     }
   </div>
+  {larm.photoUrl && <PhotoViewer />}
 </SiteLayout>

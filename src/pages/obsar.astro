@@ -1,6 +1,7 @@
 ---
 export const prerender = false
 
+import Body from "@/components/site/Body.astro"
 import ChartFigure from "@/components/site/charts/ChartFigure.astro"
 import ArrivalEntries from "@/components/site/obsar/ArrivalEntries.astro"
 import NotReady from "@/components/site/obsar/NotReady.astro"
@@ -12,7 +13,6 @@ import Register from "@/components/site/obsar/Register.astro"
 import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { renderBody } from "@/lib/article-body"
 import { linesSvg } from "@/lib/charts/svg"
 import { ink, sequence } from "@/lib/charts/theme"
 import { groupObsar, obsarDescription } from "@/lib/obsar"
@@ -116,7 +116,7 @@ const paceSentence =
     {
       page.body_html && (
         <ObsarSection measure>
-          <div class="content" set:html={renderBody(page.body_html)} />
+          <Body html={page.body_html} />
         </ObsarSection>
       )
     }

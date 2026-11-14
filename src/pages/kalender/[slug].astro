@@ -3,9 +3,9 @@ export const prerender = false
 
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import Body from "@/components/site/Body.astro"
 import EventList from "@/components/site/EventList.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { renderBody } from "@/lib/article-body"
 import { publicEventKindLabel } from "@/lib/event-kind"
 import { monthKey, monthRange, parseMonthKey, shiftMonth } from "@/lib/event-month"
 import {
@@ -175,7 +175,7 @@ const description = month
           </div>
 
           <div class="in-text flex flex-col gap-6">
-            {event.body_html && <div class="content" set:html={renderBody(event.body_html)} />}
+            {event.body_html && <Body html={event.body_html} />}
             <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
               Hela programmet
             </a>

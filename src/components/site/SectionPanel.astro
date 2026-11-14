@@ -24,7 +24,7 @@ const groups = [
 ].map((title) => ({ title, links: entry.children.filter((child) => child.group === title) }))
 ---
 
-<div id={id} hidden class="bg-background absolute inset-x-0 top-full z-20 border-b">
+<div id={id} hidden class="header-panel bg-background absolute inset-x-0 top-full z-20 border-b">
   <div class="spread mx-auto w-full max-w-page gap-y-4 px-4 pt-6 pb-10 sm:px-6">
     <p class="in-margin type-item">{entry.title}</p>
     <div class="in-text flex flex-col gap-4">

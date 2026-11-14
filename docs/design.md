@@ -1,8 +1,8 @@
 # Design: the public site
 
-**Read [Uppslaget](#uppslaget-2026-11-14) first, then [Dagslistan](#dagslistan-2026-10-31)
-with its "Larmbandet" correction.** Uppslaget is the newest pass and sets the grid every
-page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
+**Read [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14) first, then
+[Dagslistan](#dagslistan-2026-10-31) with its "Larmbandet" correction.** Lupen is the newest
+pass (photos and motion between pages); Uppslaget sets the grid every page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
 and the header.
 
 The design plan for mafk-web's public pages, written in step 3 with the
@@ -34,6 +34,59 @@ A birder's field notebook works the same way: each entry is dated in the
 margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
+
+## Lupen (2026-11-14)
+
+The fifth pass. The user asked for a senior UI/UX review using modern platform features and
+libraries, chose **small, earned islands** over both "native only" and an open budget, and
+scoped it to **navigation feel** and **photos and articles**. Search and sharing were left out.
+
+**What was wrong:** the members' photos are the club's best content and nothing could be done
+with them. 222 of 354 articles carry photos (29 of them four or more), a larm has one, and on
+a phone seeing the bird meant pinching the whole page. Only 10 articles have a cover, so an
+article opened on text even when its tile in the list was a photo, and that photo turned up
+somewhere further down. Every page change was a hard cut.
+
+**The one memorable thing: the photo carries through.** The photo you tap in a list is the
+photo the article opens with, it moves there, and from there it opens as a print you can zoom
+into. No new colour, typeface or decoration, and no motion the reader didn't ask for.
+
+- **The hero is the list's photo** (`liftHero` in `lib/teaser.ts`). The cover when there is
+  one; otherwise the photo `pickTeaserImage` already chose for the lists, moved out of the
+  body with its caption (its figure, or the bare image and a paragraph that held nothing
+  else). A landscape photo that is hero-worthy spans margin and text as a cover does; any other
+  stands in the text track at its own width, at most 75% of the screen's height, so a portrait
+  never spans the spread. The caption sits at the text's edge. This reverses Uppslaget's
+  "lift the body's first photo" rejection: that looked only at photos *opening* the body; this
+  lifts the one the reader has already seen, wherever it is.
+- **Lupen, the photo viewer** (`PhotoViewer.astro`, PhotoSwipe 5). Every site photo in a body
+  is rendered as a link to its largest file (`linkPhotos` in `lib/article-body.ts`), so it
+  opens without JS too, by tap or keyboard. With JS, the links in one `[data-photos]` block are
+  one sequence in the viewer: pinch or double-tap to zoom, swipe between photos, swipe down or
+  Esc to close, the figure's caption (or the photo's alt) under it, "3 av 14". The ink
+  background is Bläck. PhotoSwipe was chosen because a hand-built `<dialog>` can't zoom, and
+  zooming to the bird is the point; its lightbox is about 5 KB, and the viewer is imported on
+  the first tap. The only sign that a photo opens is a zoom cursor: no icon, no hover effect.
+  It runs on articles, pages, events, Klubben and a larm's photo (`Body.astro` renders a
+  stored body with it).
+- **Between pages** (CSS only, `global.css` "Motion"): cross-document view transitions, a
+  180 ms crossfade under a header that holds still (`view-transition-name: site-header`), and
+  a named photo that moves from a list to its own page (`lib/view-transition.ts`: articles and
+  larm, one name per id per page, since a duplicate name cancels the whole transition).
+  **Gecko has no cross-document view transitions yet**, so Zen navigates exactly as before;
+  the motion is seen in Chromium and Safari 18.2+.
+- **Speculation rules** (`base.astro`): a page is fetched ahead on a hover of about 200 ms and
+  rendered ahead on the press. Chromium only. The admin, the API, larm photos, the feeds and
+  search are left out, and so are the photo links (files, not pages).
+- **What opens, opens:** the phone menu, the larm folds and the year strip grow open
+  (`::details-content` with `interpolate-size`), and the header's panels fade in 4 px
+  (`@starting-style`). A global reduced-motion rule stops every animation and transition,
+  including tw-animate-css's.
+
+**Considered and dropped:** Astro's `<ClientRouter />` (ships a router, and the header's
+script would have to survive soft navigations) and Astro's `prefetch` (ships a script for
+what speculation rules do natively); scroll-driven reveals and section entrances (motion
+nobody asked for); a hand-built `<dialog>` viewer (no zoom).
 
 ## Uppslaget (2026-11-14)
 
@@ -110,7 +163,7 @@ tell, so it's used only on the programme. No new colour, motion or typeface.
 
 **Considered and dropped:** lifting a body's first photo into an article hero (Tidskriften's
 "left for later"). Only one of the newest 40 bodies opens with a photo, so it would almost
-never apply. The archive years beside the article list: the thumbnails already use that
+never apply. (Lupen lifts the list's photo instead, wherever it sits.) The archive years beside the article list: the thumbnails already use that
 track.
 
 **Content for the editor:** Säsongsavslutning's body gives the contact number as
@@ -440,10 +493,9 @@ of 2 in less weight than before (520–625 KB against 685 KB).
 
 ### Left for a later pass
 
-- The article page itself: a wide hero photo (the cover, or the body's first
-  photo moved up) and real `<figure>`/`<figcaption>` captions. Captions are
-  paragraphs today, so this needs a caption node in the editor and sanitizer
-  and a re-import.
+- ~~The article page itself: a wide hero photo and real `<figure>`/`<figcaption>`
+  captions.~~ Captions became figures in the editor and import; the hero came with
+  Lupen (2026-11-14).
 - Imported titles in lowercase or capitals ("programändring!", "EKEBACKEN 28
   APRIL") are for the editor to fix, not CSS.
 

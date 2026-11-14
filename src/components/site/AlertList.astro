@@ -4,6 +4,7 @@ import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
 import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { transitionName } from "@/lib/view-transition"
 
 /**
  * One larm per row, in the shape of a field-notebook entry: when it was seen
@@ -67,6 +68,10 @@ const yearLabel = (index: number): number | null => {
   const previous = alerts[index - 1]
   return previous && stockholmYear(previous.observedAt) === year ? null : year
 }
+
+// One set per page, shared by every list on it (lib/view-transition.ts).
+Astro.locals.transitionNames ??= new Set()
+const taken = Astro.locals.transitionNames
 ---
 
 <ol class:list={["flex flex-col", compact ? "gap-4" : "gap-9"]}>
@@ -133,6 +138,7 @@ const yearLabel = (index: number): number | null => {
               loading="lazy"
               decoding="async"
               class="bg-muted mt-2 aspect-3/2 w-full rounded-[4px] object-cover md:col-start-1 md:row-start-1 md:mt-0"
+              style={transitionName(taken, "larm", alert.id)}
             />
           )}
           </div>

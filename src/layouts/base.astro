@@ -23,6 +23,25 @@ interface Props {
 const { title, description, image, type = "website" } = Astro.props
 // Prerendered pages have no request to resolve against, and pass no image.
 const imageUrl = image ? new URL(image, Astro.url).href : null
+
+const notAPage = {
+  not: {
+    or: [
+      { href_matches: "/admin*" },
+      { href_matches: "/api/*" },
+      { href_matches: "/larm/bild/*" },
+      { href_matches: "/kalender.ics" },
+      { href_matches: "/feed" },
+      { href_matches: "/sok*" },
+      { selector_matches: "[rel~=nofollow], [download], .photo" },
+    ],
+  },
+}
+const pages = { and: [{ href_matches: "/*" }, notAPage] }
+const SPECULATION_RULES = {
+  prefetch: [{ where: pages, eagerness: "moderate" }],
+  prerender: [{ where: pages, eagerness: "conservative" }],
+}
 ---
 
 <html lang="sv">
@@ -60,6 +79,13 @@ const imageUrl = image ? new URL(image, Astro.url).href : null
     {description && <meta property="og:description" content={description} />}
     {imageUrl && <meta property="og:image" content={imageUrl} />}
     <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
+    {/* Pages a reader is about to open, fetched ahead (docs/design.md, "Lupen"):
+        on a hover of about 200 ms, and rendered ahead on the press itself.
+        Chromium only; other browsers ignore it. Public pages are cached for
+        60 s, so the fetched page is the one shown. Left out: the admin, the
+        API, larm photos, the calendar and RSS feeds (downloads, not pages),
+        and search (every query is new). */}
+    <script is:inline type="speculationrules" set:html={JSON.stringify(SPECULATION_RULES)} />
     <title>{title}</title>
   </head>
   <body class="bg-background text-foreground min-h-svh">

@@ -1,8 +1,8 @@
 ---
 export const prerender = false
 
+import Body from "@/components/site/Body.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { renderBody } from "@/lib/article-body"
 import { resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
 import { isValidSlug, RESERVED_TOP_LEVEL_SLUGS } from "@/lib/slug"
@@ -40,7 +40,7 @@ const children = node.children as (typeof node & Pick<PublicPageRow, "descriptio
       <h1 class="type-title">{page.title}</h1>
       {page.description && <p class="type-ingress text-muted-foreground measure">{page.description}</p>}
     </header>
-    {page.body_html && <div class="content" set:html={renderBody(page.body_html)} />}
+    {page.body_html && <Body html={page.body_html} />}
 
     {
       children.length > 0 && (

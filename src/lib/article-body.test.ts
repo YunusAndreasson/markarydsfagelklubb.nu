@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { linkPhones, renderBody, withGalleries } from "./article-body"
+import { linkPhones, linkPhotos, renderBody, withGalleries } from "./article-body"
+import { SITE_MEDIA_PUBLIC_PREFIX } from "./media"
 
 const figure = (n: number) => `<figure><img src="${n}.webp"><figcaption>${n}</figcaption></figure>`
 
@@ -69,5 +70,37 @@ describe("renderBody", () => {
     const out = renderBody(`${figure(1)}${figure(2)}<p>0701-740605</p>`)
     expect(out).toContain("content-gallery")
     expect(out).toContain("tel:0701740605")
+  })
+})
+
+describe("linkPhotos", () => {
+  const url = (width: number) => `${SITE_MEDIA_PUBLIC_PREFIX}2026/05/a/${width}.webp`
+  const img = `<img src="${url(960)}" srcset="${url(480)} 480w, ${url(1600)} 1600w" width="2400" height="1600" alt="Sävsparv" />`
+
+  it("links a photo to its largest file, at that file's size", () => {
+    expect(linkPhotos(`<p>a</p>${img}`)).toBe(
+      `<p>a</p><a class="photo" href="${url(1600)}" data-pswp-width="1600" data-pswp-height="1067">${img}</a>`
+    )
+  })
+
+  it("leaves a photo that already sits in a link", () => {
+    const html = `<a href="/artiklar/x">${img}</a>`
+    expect(linkPhotos(html)).toBe(html)
+  })
+
+  it("leaves other images alone", () => {
+    const html = '<img src="https://example.org/x.jpg" width="10" height="10" />'
+    expect(linkPhotos(html)).toBe(html)
+  })
+
+  it("gives no size when the image doesn't say", () => {
+    const bare = `<img src="${url(960)}" alt="" />`
+    expect(linkPhotos(bare)).toBe(`<a class="photo" href="${url(960)}">${bare}</a>`)
+  })
+
+  it("still makes a contact sheet of linked photos", () => {
+    expect(renderBody(`${img}${img}`)).toMatch(
+      /^<div class="content-gallery"><a class="photo"[\s\S]*<\/a><\/div>$/
+    )
   })
 })

@@ -1,0 +1,116 @@
+---
+/**
+ * Lupen, the photo viewer (docs/design.md, "Lupen"). Every photo inside a
+ * `[data-photos]` block is already a link to its largest file
+ * (`linkPhotos` in lib/article-body.ts), which works without JS. This turns
+ * those links into one viewer per block: pinch or double-tap to zoom in on the
+ * bird, swipe between the block's photos, swipe down or Esc to close.
+ *
+ * PhotoSwipe's lightbox is about 5 KB; the viewer itself is imported on the
+ * first tap. Pages without photos don't include this component.
+ */
+---
+
+<script>
+  import PhotoSwipeLightbox from "photoswipe/lightbox"
+  import "photoswipe/style.css"
+
+  if (document.querySelector("[data-photos] a.photo")) {
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches
+
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: "[data-photos]",
+      children: "a.photo",
+      pswpModule: () => import("photoswipe"),
+      bgOpacity: 1,
+      showHideAnimationType: reduceMotion ? "none" : "zoom",
+      closeTitle: "Stäng",
+      zoomTitle: "Zooma",
+      arrowPrevTitle: "Föregående bild",
+      arrowNextTitle: "Nästa bild",
+      indexIndicatorSep: " av ",
+      errorMsg: "Bilden gick inte att visa. Öppna den i en egen flik.",
+      // Room under the photo for its caption.
+      paddingFn: (viewport) => (viewport.x < 640 ? { top: 56, bottom: 88, left: 0, right: 0 } : { top: 56, bottom: 96, left: 72, right: 72 }),
+    })
+
+    // A photo whose size isn't stored (a larm's) takes it from its thumbnail:
+    // the stored width if there is one, and the thumbnail's own proportions.
+    lightbox.addFilter("domItemData", (itemData, _element, linkEl) => {
+      const thumbnail = linkEl.querySelector("img")
+      if ((!itemData.w || !itemData.h) && thumbnail && thumbnail.naturalWidth > 0) {
+        const width = itemData.w || thumbnail.naturalWidth
+        itemData.w = width
+        itemData.h = Math.round((thumbnail.naturalHeight * width) / thumbnail.naturalWidth)
+      }
+      itemData.alt = thumbnail?.alt ?? ""
+      return itemData
+    })
+
+    // The caption: the figure's own, or the photo's description.
+    lightbox.on("uiRegister", () => {
+      lightbox.pswp?.ui?.registerElement({
+        name: "caption",
+        order: 9,
+        isButton: false,
+        appendTo: "root",
+        onInit: (element, pswp) => {
+          element.setAttribute("aria-live", "polite")
+          pswp.on("change", () => {
+            const link = pswp.currSlide?.data.element
+            const figcaption = link?.closest("figure")?.querySelector("figcaption")
+            if (figcaption) {
+              element.innerHTML = figcaption.innerHTML
+            } else {
+              element.textContent = link?.querySelector("img")?.alt ?? ""
+            }
+            element.hidden = element.textContent?.trim() === ""
+          })
+        },
+      })
+    })
+
+    lightbox.init()
+  }
+</script>
+
+<style is:global>
+  /* The viewer in the site's own ink and type; PhotoSwipe's chrome otherwise. */
+  .pswp {
+    --pswp-bg: var(--foreground);
+    --pswp-placeholder-bg: var(--foreground);
+    --pswp-icon-color: var(--background);
+    --pswp-icon-color-secondary: var(--foreground);
+    --pswp-error-text-color: var(--background);
+    font-family: var(--font-sans);
+  }
+  .pswp__counter {
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+  }
+  .pswp__error-msg {
+    font-size: 1rem;
+  }
+  .pswp__caption {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    max-width: 38rem;
+    margin-inline: auto;
+    padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    color: var(--background);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    text-align: center;
+    text-wrap: pretty;
+  }
+  .pswp__caption a {
+    color: inherit;
+    text-decoration-line: underline;
+  }
+  .pswp__img {
+    border-radius: 4px;
+  }
+</style>
