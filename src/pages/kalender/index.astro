@@ -1,6 +1,8 @@
 ---
 export const prerender = false
 
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
 import EventList from "@/components/site/EventList.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { groupByMonth } from "@/lib/event-month"
@@ -45,22 +47,36 @@ const heading = (key: string) => {
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-10">
-    <header class="flex flex-col gap-5 md:pl-[7rem]">
-      <h1 class="type-title">Program</h1>
-      <p class="type-ingress text-muted-foreground max-w-[38rem]">
-        Klubbens exkursioner, möten och resor.
-      </p>
-      <p class="text-muted-foreground max-w-[38rem]">
-        <a href="/kalender.ics" class="link">
-          Prenumerera på programmet
-        </a>
-        {" "}så hamnar det i kalendern i din mobil eller dator, och ändringar kommer med automatiskt.
-      </p>
+    {/* The ways to keep up sit in the outer margin, beside the title
+        (docs/design.md, "Uppslaget"); the months take the text track. */}
+    <header class="spread gap-y-6">
+      <div class="in-text flex flex-col gap-5">
+        <h1 class="type-title">Program</h1>
+        <p class="type-ingress text-muted-foreground">Klubbens exkursioner, möten och resor.</p>
+      </div>
+      <Aside label="Följ programmet" sticky={false} first={false} class="lg:pt-3">
+        <AsideNote label="I din kalender">
+          <p class="text-muted-foreground leading-relaxed">
+            <a href="/kalender.ics" class="link font-medium">Prenumerera på programmet</a>
+            {" "}så hamnar det i kalendern i din mobil eller dator, och ändringar kommer med automatiskt.
+          </p>
+        </AsideNote>
+        {
+          earlierMonth && (
+            <AsideNote label="Det som har varit">
+              {/* The link says what it does: a bare month name reads as a stray heading. */}
+              <a href={`/kalender/${earlierMonth}`} class="link flex min-h-11 w-fit items-center font-medium">
+                Tidigare i programmet
+              </a>
+            </AsideNote>
+          )
+        }
+      </Aside>
     </header>
 
     {
       months.length === 0 && (
-        <p class="text-muted-foreground max-w-[38rem] md:pl-[7rem]">
+        <p class="at-text text-muted-foreground">
           Inget nytt är inlagt i programmet ännu. Om tidigare exkursioner kan du läsa under
           <a href="/artiklar" class="link"> Artiklar</a>.
         </p>
@@ -70,24 +86,12 @@ const heading = (key: string) => {
     {
       months.map((group) => (
         <section aria-labelledby={`manad-${group.key}`} class="flex flex-col gap-6">
-          <h2 id={`manad-${group.key}`} class="type-section md:pl-[7rem]">
+          <h2 id={`manad-${group.key}`} class="type-section at-text">
             {heading(group.key)}
           </h2>
           <EventList events={group.events} headingLevel={3} />
         </section>
       ))
-    }
-
-    {/* The link says what it does, not just where it goes: a bare month name
-        at the foot of the page reads as a stray heading. */}
-    {
-      earlierMonth && (
-        <nav aria-label="Tidigare i programmet" class="md:pl-[7rem]">
-          <a href={`/kalender/${earlierMonth}`} class="link flex min-h-11 w-fit items-center font-medium">
-            Tidigare i programmet
-          </a>
-        </nav>
-      )
     }
   </div>
 </SiteLayout>

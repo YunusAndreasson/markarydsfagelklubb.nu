@@ -62,9 +62,9 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
 <SiteLayout title={query ? `Sök: ${query}` : "Sök"} description="Sök bland Markaryds Fågelklubbs artiklar, sidor och fågellokaler." menu={navigation.menu}>
   <div class="flex flex-col gap-10">
-    <header class="flex flex-col gap-5 md:pl-[7rem]">
+    <header class="flex flex-col gap-5 at-text">
       <h1 class="type-title">Sök</h1>
-      <form action="/sok" method="get" role="search" class="flex max-w-[38rem] gap-2">
+      <form action="/sok" method="get" role="search" class="flex measure gap-2">
         <Input
           type="search"
           name="q"
@@ -79,7 +79,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
     {
       failed && (
-        <p class="text-muted-foreground max-w-[38rem] md:ml-[7rem]">
+        <p class="text-muted-foreground measure at-text">
           Sökningen gick inte att genomföra. Prova med andra ord, eller ladda om sidan om en stund.
         </p>
       )
@@ -87,7 +87,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
     {
       nothing && (
-        <div class="text-muted-foreground flex max-w-[38rem] flex-col gap-2 md:ml-[7rem]">
+        <div class="text-muted-foreground flex measure flex-col gap-2 at-text">
           <p>Ingen träff på ”{query}”.</p>
           <p>
             Prova ett annat ord eller färre ord. Fynd finns under <a href="/larm" class="link">Larm</a>
@@ -99,7 +99,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
     {
       foundLokaler.length > 0 && (
-        <section aria-labelledby="traff-lokaler" class="flex flex-col gap-4 md:pl-[7rem]">
+        <section aria-labelledby="traff-lokaler" class="flex flex-col gap-4 at-text">
           <h2 id="traff-lokaler" class="type-section">Fågellokaler</h2>
           <ul class="flex flex-col gap-3">
             {foundLokaler.map((lokal) => (
@@ -116,9 +116,9 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
     {
       pages.length > 0 && (
-        <section aria-labelledby="traff-sidor" class="flex flex-col gap-4 md:pl-[7rem]">
+        <section aria-labelledby="traff-sidor" class="flex flex-col gap-4 at-text">
           <h2 id="traff-sidor" class="type-section">Sidor</h2>
-          <ul class="flex max-w-[38rem] flex-col gap-4">
+          <ul class="flex measure flex-col gap-4">
             {pages.map((page) => (
               <li class="flex flex-col gap-0.5">
                 <a href={page.path} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
@@ -135,7 +135,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
     {
       found.length > 0 && (
         <section aria-labelledby="traff-artiklar" class="flex flex-col gap-6">
-          <h2 id="traff-artiklar" class="type-section md:pl-[7rem]">Artiklar</h2>
+          <h2 id="traff-artiklar" class="type-section at-text">Artiklar</h2>
           <ArticleList articles={found} headingLevel={3} years="changes" />
         </section>
       )
@@ -143,7 +143,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
     {
       (articles?.older || articles?.newer) && (
-        <nav aria-label="Fler träffar" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+        <nav aria-label="Fler träffar" class="flex flex-wrap gap-x-8 gap-y-2 at-text">
           {articles.newer && (
             <a href={link("efter", articles.newer)} class="link flex min-h-11 items-center font-medium">Nyare träffar</a>
           )}

@@ -2,6 +2,7 @@
 export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
 import LarmRail from "@/components/site/LarmRail.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
 import SiteLayout from "@/layouts/site.astro"
@@ -53,81 +54,85 @@ const where = larm.place.startsWith("Nära ") ? `nära ${larm.place.slice(5)}` :
 >
   <div class="flex flex-col gap-16">
     <article class="flex flex-col gap-8">
-      <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
-        <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
-          <a href="/larm" class="crumb">Larm</a>
-        </nav>
-
+      <header class="spread">
         {/* The scientific name belongs to the species, so it sits under it, as
             in a field guide, rather than among the facts about this larm. */}
-        <div class="flex flex-col gap-2 md:col-start-2">
-          <h1 class="type-title">
-            {larm.species}
-            {larm.count !== null && larm.count > 1 && (
-              <span class="text-muted-foreground font-normal">{larm.count} ex.</span>
-            )}
-          </h1>
-          {larm.scientificName && <p class="text-muted-foreground text-lg italic">{larm.scientificName}</p>}
-        </div>
-
-        <div class="type-meta text-muted-foreground flex flex-col md:col-start-1 md:row-start-3 md:pt-1">
-          <time datetime={isoDateTime(observed)} class="flex flex-wrap gap-x-1 md:flex-col">
-            <span>{formatDate(observed, "weekdayName")}</span>
-            <span>{formatDate(observed, "dayMonth")}</span>
-            <span>{stockholmYear(observed)}</span>
-            <span>{formatDate(observed, "clock")}</span>
-          </time>
-        </div>
-
-        {/* Two tiers beside the date: where (ink, the fact a reader acts on),
-            then how rare and who saw it, in the margin's own meta style. */}
-        <div class="flex flex-col gap-1 md:col-start-2 md:row-start-3">
-          <p class="text-lg font-medium">{larm.place}</p>
-          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
-            <span class:list={[isRare(larm.rarity) && "text-rarity"]}>{rarityLabel(larm.rarity)}</span>
-            <span>Rapporterat av {larm.observer ?? ANONYMOUS_OBSERVER}</span>
-          </p>
+        <div class="in-text flex flex-col gap-4">
+          <nav aria-label="Du är här" class="type-meta text-muted-foreground">
+            <a href="/larm" class="crumb">Larm</a>
+          </nav>
+          <div class="flex flex-col gap-2">
+            <h1 class="type-title">
+              {larm.species}
+              {larm.count !== null && larm.count > 1 && (
+                <span class="text-muted-foreground font-normal">{larm.count} ex.</span>
+              )}
+            </h1>
+            {larm.scientificName && <p class="text-muted-foreground text-lg italic">{larm.scientificName}</p>}
+          </div>
         </div>
       </header>
 
-      {
-        larm.photoUrl && (
-          /* object-contain, not cover: the feed crops to keep its rhythm, but
-             here the member's photo is shown whole, portrait or landscape, and
-             the box reserves the space so nothing shifts as it loads. */
-          <div class="aspect-3/2 w-full max-w-[45rem]">
-            <img
-              src={alertPhotoSrc(larm.photoUrl, "960")}
-              srcset={alertPhotoSrcset(larm.photoUrl, "detail")}
-              sizes="(min-width: 48rem) 45rem, 100vw"
-              alt={`Foto av ${larm.species}`}
-              decoding="async"
-              class="h-full w-full rounded-[4px] object-contain"
-            />
-          </div>
-        )
-      }
-
-      <p class="text-muted-foreground max-w-prose text-sm md:ml-[7rem]">
-        Platsen är ungefärlig. Larmet skickades i klubbens app{" "}
-        <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
-      </p>
+      {/* The member's photo across the margin and the text, and the facts of the
+          sighting beside it in the outer margin (docs/design.md, "Uppslaget"):
+          when, where (ink, the fact a reader acts on), how rare, who. On a phone
+          the facts come first, then the photo. Without a photo the facts take
+          the text track, with nothing beside them. */}
+      <div class="spread gap-y-6">
+        {
+          larm.photoUrl && (
+            /* object-contain, not cover: the feed crops to keep its rhythm, but
+               here the member's photo is shown whole, portrait or landscape, and
+               the box reserves the space so nothing shifts as it loads. */
+            <div class="in-wide aspect-3/2 w-full lg:row-start-1">
+              <img
+                src={alertPhotoSrc(larm.photoUrl, "960")}
+                srcset={alertPhotoSrcset(larm.photoUrl, "detail")}
+                sizes="(min-width: 48rem) 45rem, 100vw"
+                alt={`Foto av ${larm.species}`}
+                decoding="async"
+                class="h-full w-full rounded-[4px] object-contain object-left-top"
+              />
+            </div>
+          )
+        }
+        <div class:list={["flex flex-col gap-5", larm.photoUrl ? "in-aside max-lg:-order-1 lg:row-start-1" : "in-text"]}>
+          <AsideNote label="Sett">
+            <time datetime={isoDateTime(observed)} class="leading-snug">
+              {formatDate(observed, "weekday")} {stockholmYear(observed)}, {formatDate(observed, "clock")}
+            </time>
+          </AsideNote>
+          <AsideNote label="Plats">
+            <p class="text-lg leading-snug font-medium">{larm.place}</p>
+          </AsideNote>
+          <AsideNote label="Rapporterat av">
+            <p>{larm.observer ?? ANONYMOUS_OBSERVER}</p>
+            <p class:list={["type-meta", isRare(larm.rarity) ? "text-rarity" : "text-muted-foreground"]}>{rarityLabel(larm.rarity)}</p>
+          </AsideNote>
+          <p class="text-muted-foreground text-sm leading-relaxed">
+            Platsen är ungefärlig. Larmet skickades i klubbens app{" "}
+            <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
+          </p>
+        </div>
+      </div>
     </article>
 
     {
       (prints.length > 0 || plain.length > 0) && (
-        <section aria-labelledby="fler" class="flex max-w-[45rem] flex-col gap-6">
-          {/* Over a list its heading starts where the text does; over the prints, with them. */}
-          <div class:list={[prints.length === 0 && "md:pl-[7rem]"]}>
-            <SectionHeading id="fler" href="/larm" link="Alla larm">
-              Fler larm
-            </SectionHeading>
+        <section aria-labelledby="fler" class="spread gap-y-6">
+          <div class="in-wide flex flex-col gap-6">
+            {/* Over a list its heading starts where the text does; over the prints, with them. */}
+            <div class:list={[prints.length === 0 && "at-text"]}>
+              <SectionHeading id="fler" href="/larm" link="Alla larm">
+                Fler larm
+              </SectionHeading>
+            </div>
+            {prints.length > 0 ? (
+              <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 64vw" />
+            ) : (
+              <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} />
+            )}
           </div>
-          {prints.length > 0 ? (
-            <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 64vw" />
-          ) : (
-            <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} />
-          )}
         </section>
       )
     }

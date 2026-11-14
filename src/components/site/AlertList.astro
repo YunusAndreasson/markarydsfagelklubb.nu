@@ -22,8 +22,9 @@ interface Props {
   /** "changes": print the year when it changes. "other-years": only when it isn't this one. */
   years?: "changes" | "other-years"
   /**
-   * Show the photos, as /larm does: in a column of their own on the right from
-   * `md` up, so the photos line up like a contact strip and the log stays
+   * Show the photos, as /larm does: from `md` up each at the start of the text
+   * track with the species and place beside it, a captioned print (docs/design.md,
+   * "Uppslaget"), so the photos line up like a contact strip and the log stays
    * scannable; full width under the row on a phone. Cropped to 3:2 to keep the
    * rhythm — a larm's own page shows the photo whole. `false` shows none, as
    * the lokal pages and the home page's "Övriga larm" do.
@@ -73,11 +74,13 @@ const yearLabel = (index: number): number | null => {
     alerts.map((alert, index) => {
       const year = yearLabel(index)
       const rare = isRare(alert.rarity)
+      const print = photos && alert.photoUrl ? alert.photoUrl : null
       return (
-        <li class:list={["grid gap-y-1", photos ? "md:grid-cols-[7rem_minmax(0,1fr)_18rem]" : "md:grid-cols-[7rem_minmax(0,38rem)]"]}>
+        <li class="margined gap-y-1">
           <p
             class:list={[
               "type-meta text-muted-foreground flex flex-wrap gap-x-2",
+              "md:in-margin",
               compact ? "md:pt-[0.125rem]" : "md:flex-col md:gap-x-0 md:pt-[0.25rem]",
             ]}
           >
@@ -87,11 +90,14 @@ const yearLabel = (index: number): number | null => {
               <span>{formatDate(alert.observedAt, "clock")}</span>
             </time>
           </p>
+          {/* A print sits beside its own caption, inside the text track, so
+              the species reads with the photo rather than across a gap. */}
+          <div class:list={["md:in-text", print && "flex flex-col md:grid md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:items-start md:gap-x-5"]}>
           <div
             class:list={[
               "flex min-w-0",
               compact ? "flex-wrap items-baseline gap-x-3" : "flex-col gap-1",
-              photos && "md:pr-6",
+              print && "md:col-start-2 md:row-start-1",
             ]}
           >
             <Heading
@@ -118,17 +124,18 @@ const yearLabel = (index: number): number | null => {
               {compact && alert.photoUrl && <span>Foto</span>}
             </p>
           </div>
-          {photos && alert.photoUrl && (
+          {print && (
             <img
-              src={alertPhotoSrc(alert.photoUrl, "480")}
-              srcset={alertPhotoSrcset(alert.photoUrl, "feed")}
-              sizes="(min-width: 48rem) 18rem, 100vw"
+              src={alertPhotoSrc(print, "480")}
+              srcset={alertPhotoSrcset(print, "feed")}
+              sizes="(min-width: 48rem) 15rem, 100vw"
               alt={`Foto av ${alert.species}`}
               loading="lazy"
               decoding="async"
-              class="bg-muted mt-2 aspect-3/2 w-full rounded-[4px] object-cover md:col-start-3 md:row-start-1 md:mt-0"
+              class="bg-muted mt-2 aspect-3/2 w-full rounded-[4px] object-cover md:col-start-1 md:row-start-1 md:mt-0"
             />
           )}
+          </div>
         </li>
       )
     })

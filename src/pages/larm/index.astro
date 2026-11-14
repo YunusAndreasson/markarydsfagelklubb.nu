@@ -3,6 +3,8 @@ export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
 import AppLinks from "@/components/site/AppLinks.astro"
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
 import LarmFold from "@/components/site/LarmFold.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { decodeAlertCursor, encodeAlertCursor } from "@/lib/alert-keyset"
@@ -46,22 +48,30 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-10">
-    <header class="flex flex-col gap-3 md:pl-[7rem]">
-      <h1 class="type-title">Larm</h1>
-      <p class="type-ingress text-muted-foreground max-w-prose">
-        Fynd som medlemmarna larmat om i klubbens app. Platsen är ungefärlig.
-      </p>
-      <AppLinks sentence={false} />
+    {/* Where the larm come from sits in the outer margin beside the title
+        (docs/design.md, "Uppslaget"); the photos take that track below it. */}
+    <header class="spread gap-y-4">
+      <div class="in-text flex flex-col gap-3">
+        <h1 class="type-title">Larm</h1>
+        <p class="type-ingress text-muted-foreground">
+          Fynd som medlemmarna larmat om i klubbens app. Platsen är ungefärlig.
+        </p>
+      </div>
+      <Aside label="Klubbens app" sticky={false} first={false} class="lg:pt-3">
+        <AsideNote label="Larma själv och få larmen i mobilen">
+          <AppLinks sentence={false} />
+        </AsideNote>
+      </Aside>
     </header>
 
     {
       alerts.length === 0 ? (
         params.has("fore") || params.has("efter") ? (
-          <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+          <p class="text-muted-foreground at-text">
             Det finns inga fler larm åt det hållet. <a href="/larm" class="link">Till de senaste larmen</a>
           </p>
         ) : (
-          <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+          <p class="text-muted-foreground at-text">
             Inga larm ännu. Larmen skickas från klubbens app och syns sedan här.
           </p>
         )
@@ -71,7 +81,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
           const count = speciesCount(day.items)
           return (
             <section aria-labelledby={`dag-${index}`} class="flex flex-col gap-6">
-              <div class="flex flex-wrap items-baseline gap-x-3 md:pl-[7rem]">
+              <div class="at-text flex flex-wrap items-baseline gap-x-3">
                 <h2 id={`dag-${index}`} class="type-section">{dayHeading(day.day, now)}</h2>
                 {rest.length > 0 && (
                   <p class="type-meta text-muted-foreground">
@@ -93,7 +103,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
 
     {
       (older || newer) && (
-        <nav aria-label="Fler larm" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+        <nav aria-label="Fler larm" class="at-text flex flex-wrap gap-x-8 gap-y-2">
           {newer && (
             <a
               href={link("efter", newer)}

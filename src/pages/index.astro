@@ -4,6 +4,9 @@ export const prerender = false
 import AppLinks from "@/components/site/AppLinks.astro"
 import ArticleList from "@/components/site/ArticleList.astro"
 import ArticleTiles from "@/components/site/ArticleTiles.astro"
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
+import EventList from "@/components/site/EventList.astro"
 import LarmBand from "@/components/site/LarmBand.astro"
 import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
 import ObsarHome from "@/components/site/obsar/ObsarHome.astro"
@@ -11,7 +14,6 @@ import SectionHeading from "@/components/site/SectionHeading.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linkPhones } from "@/lib/article-body"
-import { eventStatus, eventStatusLabel } from "@/lib/event-status"
 import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { listPublicAlerts } from "@/lib/public-alerts"
@@ -19,11 +21,11 @@ import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib
 import { formatDate, isoDateTime, startOfStockholmDay, stockholmYear } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
 
-// The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften"): one
-// sentence and the newest larm photos on the spruce band, the page's one block of larm;
-// the newest article as the lead, on a wide photo when it has one, with the
-// programme beside it; then three more articles with their photos and the rest as a
-// dated list. front-page.ts decides what goes where; this file only lays it out.
+// The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften",
+// "Uppslaget"): one sentence and the newest larm photos on the spruce band, the
+// page's one block of larm; the newest article as the lead, beside its photo when it
+// has one; the programme as a section of its own; the kommun's birds; then three more
+// articles with their photos and the rest as a dated list. front-page.ts decides what goes where; this file only lays it out.
 
 // One read serves the day list and the rail. Far above the
 // busiest day so far (43 larm), and it reaches back past a day of photo-less
@@ -72,100 +74,125 @@ const events = upcoming ?? []
 
   {
     !lead && (
-      <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+      <p class="at-text text-muted-foreground">
         {page ? "Här kommer klubbens nyheter att synas." : "Nyheterna kunde inte hämtas just nu. Ladda om sidan om en stund."}
       </p>
     )
   }
 
-  <div class="flex flex-col gap-6 md:gap-8 lg:grid lg:grid-cols-[7rem_minmax(0,38rem)_minmax(0,1fr)] lg:gap-x-0 lg:gap-y-8">
-    {
-      lead && leadImage && (
-        /* The photo repeats the headline's link, so it is hidden from the
-           accessibility tree and kept out of the tab order. */
-        <a href={`/artiklar/${lead.slug}`} tabindex="-1" aria-hidden="true" class="-mx-4 block sm:mx-0 lg:col-span-3">
-          <img
-            src={leadImage.src}
-            srcset={leadImage.srcset || undefined}
-            sizes="(min-width: 64rem) 61rem, 100vw"
-            width={leadImage.width}
-            height={leadImage.height}
-            alt=""
-            fetchpriority="high"
-            class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-3/1"
-          />
-        </a>
-      )
-    }
-
-    {
-      lead && (
-        <article class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,38rem)] lg:col-span-2">
-          <p class="type-meta text-muted-foreground flex flex-wrap items-center gap-x-3 md:flex-col md:items-start md:gap-y-1.5 md:pt-[0.9rem]">
-            <time datetime={isoDateTime(lead.published_at)} class="flex flex-wrap gap-x-1 md:flex-col">
-              <span>{formatDate(lead.published_at, "weekdayName")}</span>
-              <span>{formatDate(lead.published_at, "dayMonth")}</span>
-            </time>
-            {lead.category && (
-              <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
-                {lead.category.name}
-              </a>
-            )}
-          </p>
-          <div class="flex flex-col gap-4">
-            <h2 class="type-display">
-              <a href={`/artiklar/${lead.slug}`} class="decoration-primary underline-offset-[0.12em] hover:underline hover:decoration-4">
-                {lead.title}
-              </a>
-            </h2>
-            {lead.excerpt && <p class="type-ingress text-muted-foreground max-w-[38rem]">{lead.excerpt}</p>}
-            {lead.opening.paragraphs.length > 0 && (
-              <div class="content" set:html={linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join(""))} />
-            )}
-            {lead.opening.more && (
-              <a href={`/artiklar/${lead.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
-                Läs hela artikeln
-              </a>
-            )}
-          </div>
-        </article>
-      )
-    }
-
-    {/* The rail beside the headline: what members use, quieter than what they read. */}
-    <div class="flex flex-col gap-8 md:pl-[7rem] lg:col-start-3 lg:pt-[0.9rem] lg:pl-10">
-      {
-        events.length > 0 && (
-          <section aria-labelledby="narmast" class="flex flex-col gap-3">
-            <h2 id="narmast" class="type-meta text-muted-foreground">Närmast i programmet</h2>
-            <ol class="flex flex-col gap-3">
-              {events.map((event) => {
-                const status = eventStatusLabel(eventStatus(event, now))
-                return (
-                  <li class="flex flex-col">
-                    <time datetime={isoDateTime(event.starts_at)} class:list={["type-meta", status ? "text-primary font-semibold" : "text-muted-foreground"]}>
-                      {status ?? formatDate(event.starts_at, "weekday")}
-                      {!status && !event.all_day && ` ${formatDate(event.starts_at, "clock")}`}
-                    </time>
-                    <a href={`/kalender/${event.slug}`} class="decoration-primary inline-block py-0.5 leading-snug font-medium text-pretty underline-offset-4 hover:underline">
-                      {event.title}
-                    </a>
-                  </li>
-                )
-              })}
-            </ol>
-            <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
-              Hela programmet
+  {/* The lead as a spread (docs/design.md, "Uppslaget"): from lg up the photo
+      at 3:2 on the left and the headline beside it, so neither the bird nor the
+      headline is cut by a 3:1 band. Without a hero photo it is type alone, on
+      the margin and the text track. On a phone the photo comes full-bleed first. */}
+  {
+    lead && (
+      <article
+        class:list={[
+          "flex flex-col gap-5",
+          leadImage ? "lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-x-10" : "spread gap-y-3",
+        ]}
+      >
+        {leadImage && (
+          /* The photo repeats the headline's link, so it is hidden from the
+             accessibility tree and kept out of the tab order. */
+          <a href={`/artiklar/${lead.slug}`} tabindex="-1" aria-hidden="true" class="-mx-4 block sm:mx-0">
+            <img
+              src={leadImage.src}
+              srcset={leadImage.srcset || undefined}
+              sizes="(min-width: 72rem) 40rem, (min-width: 64rem) 58vw, 100vw"
+              width={leadImage.width}
+              height={leadImage.height}
+              alt=""
+              fetchpriority="high"
+              class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px]"
+            />
+          </a>
+        )}
+        <p
+          class:list={[
+            "type-meta text-muted-foreground flex flex-wrap items-center gap-x-3",
+            !leadImage && "md:in-margin md:flex-col md:items-start md:gap-y-1.5 md:pt-[0.9rem]",
+            leadImage && "lg:hidden",
+          ]}
+        >
+          <time datetime={isoDateTime(lead.published_at)} class:list={["flex flex-wrap gap-x-1", !leadImage && "md:flex-col"]}>
+            <span>{formatDate(lead.published_at, "weekdayName")}</span>
+            <span>{formatDate(lead.published_at, "dayMonth")}</span>
+          </time>
+          {lead.category && (
+            <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
+              {lead.category.name}
             </a>
-          </section>
-        )
-      }
-      <section aria-labelledby="appen" class="flex flex-col gap-1">
+          )}
+        </p>
+        <div class:list={["flex flex-col gap-4", !leadImage && "in-text"]}>
+          {leadImage && (
+            <p class="type-meta text-muted-foreground hidden flex-wrap items-center gap-x-3 lg:flex">
+              <time datetime={isoDateTime(lead.published_at)}>
+                {formatDate(lead.published_at, "weekday")}
+              </time>
+              {lead.category && (
+                <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
+                  {lead.category.name}
+                </a>
+              )}
+            </p>
+          )}
+          <h2 class="type-display">
+            <a href={`/artiklar/${lead.slug}`} class="decoration-primary underline-offset-[0.12em] hover:underline hover:decoration-4">
+              {lead.title}
+            </a>
+          </h2>
+          {lead.excerpt && <p class="type-ingress text-muted-foreground measure">{lead.excerpt}</p>}
+          {lead.opening.paragraphs.length > 0 && (
+            <div class="content" set:html={linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join(""))} />
+          )}
+          {lead.opening.more && (
+            <a href={`/artiklar/${lead.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
+              Läs hela artikeln
+            </a>
+          )}
+        </div>
+      </article>
+    )
+  }
+
+  {/* The programme, the one invitation a newcomer can act on, as a section of
+      its own rather than three small lines in a rail. The ways to keep up with
+      the club sit beside it in the outer margin. */}
+  {
+    events.length > 0 && (
+      <section aria-labelledby="narmast" class="spread mt-16 gap-y-6 md:mt-20">
+        <div class="in-wide flex flex-col gap-6">
+          <div class="at-text">
+            <SectionHeading id="narmast" href="/kalender" link="Hela programmet">
+              Närmast i programmet
+            </SectionHeading>
+          </div>
+          <EventList events={events} headingLevel={3} />
+        </div>
+        <Aside label="Håll dig uppdaterad" sticky={false} first={false} class="lg:pt-[4.25rem]">
+          <AsideNote label="Programmet i din kalender">
+            <p class="text-muted-foreground leading-relaxed">
+              <a href="/kalender.ics" class="link font-medium">Prenumerera</a>, så kommer ändringar med automatiskt.
+            </p>
+          </AsideNote>
+          <AsideNote label="Få larmen direkt i mobilen">
+            <AppLinks sentence={false} />
+          </AsideNote>
+        </Aside>
+      </section>
+    )
+  }
+
+  {
+    events.length === 0 && (
+      <section aria-labelledby="appen" class="at-text mt-12 flex flex-col gap-1">
         <h2 id="appen" class="type-meta text-muted-foreground">Få larmen direkt i mobilen</h2>
         <AppLinks sentence={false} />
       </section>
-    </div>
-  </div>
+    )
+  }
 
   <Sponsors class="mt-12 md:hidden" />
 

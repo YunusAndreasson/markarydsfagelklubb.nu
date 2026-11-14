@@ -1,12 +1,12 @@
 ---
 export const prerender = false
 
-import ArticleList from "@/components/site/ArticleList.astro"
-import ArticleTiles from "@/components/site/ArticleTiles.astro"
 import ArticleView from "@/components/site/ArticleView.astro"
-import SectionHeading from "@/components/site/SectionHeading.astro"
+import Aside from "@/components/site/Aside.astro"
+import AsideArticles from "@/components/site/AsideArticles.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { splitFeatured, withoutPhoto } from "@/lib/front-page"
+import { withoutPhoto } from "@/lib/front-page"
 import { listPublishedArticles, loadNavigation, loadPublishedArticle } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
 import { pickTeaserImage, teaserText } from "@/lib/teaser"
@@ -22,16 +22,18 @@ const [navigation, article] = await Promise.all([
 if (article === "error") return new Response(null, { status: 500 })
 if (!article) return new Response(null, { status: 404 })
 
-// "Mer i <kategori>": the newest three others in the same category that have
-// a photo, as tiles; when none of the six has one, the newest three as a list.
+// "Mer i <kategori>" in the outer margin (docs/design.md, "Uppslaget"): the newest
+// three others in the same category, a print and a title each, beside the text on a
+// wide screen and after it on a phone.
 const related =
   article.category_id === null
     ? null
-    : await listPublishedArticles(db, { limit: 7, categoryId: article.category_id })
-const others = (related?.articles ?? []).filter((other) => other.id !== article.id)
+    : await listPublishedArticles(db, { limit: 4, categoryId: article.category_id })
 const ownPhoto = pickTeaserImage(article.cover, article.body_html)?.src
-const { tiles } = splitFeatured(withoutPhoto(others, ownPhoto), 3)
-const more = tiles.length > 0 ? [] : others.slice(0, 3)
+const more = withoutPhoto(
+  (related?.articles ?? []).filter((other) => other.id !== article.id),
+  ownPhoto
+).slice(0, 3)
 ---
 
 <SiteLayout
@@ -41,22 +43,20 @@ const more = tiles.length > 0 ? [] : others.slice(0, 3)
   type="article"
   menu={navigation.menu}
 >
-  <div class="flex flex-col gap-16">
-    <ArticleView article={article} />
-
+  <ArticleView article={article}>
     {
-      article.category && (tiles.length > 0 || more.length > 0) && (
-        <section aria-labelledby="mer" class="flex flex-col gap-8">
-          <SectionHeading id="mer" href={`/artiklar/kategori/${article.category.slug}`} link="Visa alla">
-            Mer i {article.category.name}
-          </SectionHeading>
-          {tiles.length > 0 ? (
-            <ArticleTiles articles={tiles} headingLevel={3} />
-          ) : (
-            <ArticleList articles={more} headingLevel={3} years="other-years" />
-          )}
-        </section>
+      article.category && more.length > 0 && (
+        <Aside slot="aside" label={`Mer i ${article.category.name}`} first={false}>
+          <AsideNote label={`Mer i ${article.category.name}`}>
+            <div class="mt-2 flex flex-col gap-3">
+              <AsideArticles articles={more} />
+              <a href={`/artiklar/kategori/${article.category.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
+                Alla i {article.category.name}
+              </a>
+            </div>
+          </AsideNote>
+        </Aside>
       )
     }
-  </div>
+  </ArticleView>
 </SiteLayout>

@@ -90,7 +90,7 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
       short page instead of halfway up it. */}
   <div class="flex min-h-svh flex-col">
     <header class="relative border-b">
-      <div class="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-6 px-4 py-3 sm:px-6">
+      <div class="mx-auto flex w-full max-w-page items-center justify-between gap-6 px-4 py-3 sm:px-6">
         <div class="flex items-center gap-3">
           <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
             <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12" />
@@ -174,13 +174,13 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
     <main id="innehall" class="flex flex-1 flex-col">
       {/* Full width above the container: the home page's day list. */}
       <slot name="band" />
-      <div class="mx-auto w-full max-w-[64rem] flex-1 px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
+      <div class="mx-auto w-full max-w-page flex-1 px-4 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
         <slot />
       </div>
     </main>
 
     <footer class="surface-gran">
-      <div class="mx-auto grid w-full max-w-[64rem] grid-cols-2 gap-x-6 gap-y-10 px-4 pt-12 pb-14 sm:gap-x-8 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-x-20 md:pt-14 md:pb-16">
+      <div class="mx-auto grid w-full max-w-page grid-cols-2 gap-x-6 gap-y-10 px-4 pt-12 pb-14 sm:gap-x-8 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-x-20 md:pt-14 md:pb-16">
         <div class="col-span-2 flex items-start gap-3 md:col-span-1">
           <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" class="size-10 shrink-0" />
           <div class="flex flex-col gap-1 text-sm">

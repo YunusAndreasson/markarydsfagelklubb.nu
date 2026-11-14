@@ -2,6 +2,8 @@
 export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
 import LarmFold from "@/components/site/LarmFold.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
 import LokalPoints from "@/components/site/LokalPoints.astro"
@@ -12,6 +14,7 @@ import { type MapPoint, splitForLokal } from "@/lib/lokal-points"
 import { loadPublicLokal } from "@/lib/public-alerts"
 import { listLokalPoints, loadNavigation } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
+import { dayLabel } from "@/lib/stockholm-time"
 
 /**
  * One lokal: where it is, what the club says about it, and the larm from it
@@ -65,6 +68,8 @@ const mapPoints = own.flatMap((point): MapPoint[] => {
   ]
 })
 const nearShown = near.slice(0, NEAR_LIMIT)
+const newestAt = at[0] ?? null
+const newestNear = near[0] ?? null
 /** The newest in full; the whole history stays here, a tap away. */
 const AT_SHOWN = 6
 // What the app holds on this lokal, or failing that what the club's map said of it.
@@ -85,33 +90,42 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
   menu={navigation.menu}
 >
   <article class="flex flex-col gap-10">
-    <header class="grid gap-y-4 md:grid-cols-[7rem_minmax(0,38rem)]">
-      <nav aria-label="Du är här" class="type-meta text-muted-foreground md:col-start-2">
-        <a href="/lokaler" class="crumb">Fågellokaler</a>
-        <span aria-hidden="true"> / </span>
-        {parent && (
-          <>
-            <a href={`/lokaler/${parent.slug}`} class="crumb">{parent.name}</a>
-            <span aria-hidden="true"> / </span>
-          </>
-        )}
-        <span>{lokal.name}</span>
-      </nav>
-      <h1 class="type-title md:col-start-2">{lokal.name}</h1>
-      {description && <p class="type-ingress text-muted-foreground md:col-start-2">{description}</p>}
+    <header class="spread gap-y-6">
+      <div class="in-text flex flex-col gap-4">
+        <nav aria-label="Du är här" class="type-meta text-muted-foreground">
+          <a href="/lokaler" class="crumb">Fågellokaler</a>
+          <span aria-hidden="true"> / </span>
+          {parent && (
+            <>
+              <a href={`/lokaler/${parent.slug}`} class="crumb">{parent.name}</a>
+              <span aria-hidden="true"> / </span>
+            </>
+          )}
+          <span>{lokal.name}</span>
+        </nav>
+        <h1 class="type-title">{lokal.name}</h1>
+        {description && <p class="type-ingress text-muted-foreground">{description}</p>}
+      </div>
+      {/* The map is the page's subject: across the whole spread when it has the
+          club's numbered places, else a still in the text track. */}
       {pin && (
         mapPoints.length > 0 ? (
-          <LokalMapFrame pins={[pin]} points={mapPoints} class="aspect-square sm:aspect-3/2 md:col-span-2" />
+          <LokalMapFrame pins={[pin]} points={mapPoints} class="in-full aspect-square sm:aspect-3/2 lg:aspect-[21/9]" />
         ) : (
-          <LokalMapFrame pins={[pin]} still class="aspect-2/1 md:col-start-2" />
+          <LokalMapFrame pins={[pin]} still class="in-text aspect-2/1" />
         )
       )}
     </header>
 
+    {/* The lokal's notes in the text, and what members have seen here in the
+        outer margin (docs/design.md, "Uppslaget"), with a jump to the larm. */}
+    <div class="spread gap-y-10">
+      <div class="in-wide flex flex-col gap-10">
+
     {
       practical.length > 0 && (
         <section aria-labelledby="bra-att-veta" class="flex flex-col gap-5">
-          <h2 id="bra-att-veta" class="type-section md:pl-[7rem]">Bra att veta</h2>
+          <h2 id="bra-att-veta" class="type-section at-text">Bra att veta</h2>
           <LokalPoints points={practical} slugs={slugs} />
         </section>
       )
@@ -120,7 +134,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
     {
       places.length > 0 && (
         <section aria-labelledby="platser" class="flex flex-col gap-5">
-          <h2 id="platser" class="type-section md:pl-[7rem]">Platser på lokalen</h2>
+          <h2 id="platser" class="type-section at-text">Platser på lokalen</h2>
           <LokalPoints points={places} slugs={slugs} />
         </section>
       )
@@ -128,7 +142,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
 
     {
       at.length === 0 && near.length === 0 ? (
-        <p class="text-muted-foreground max-w-prose md:pl-[7rem]">
+        <p class="text-muted-foreground measure at-text">
           Inga larm har skickats härifrån ännu.{" "}
           <a href="/larm" class="link">
             Se alla larm
@@ -141,7 +155,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
     {
       at.length > 0 && (
         <section aria-labelledby="pa-lokalen" class="flex flex-col gap-5">
-          <h2 id="pa-lokalen" class="type-section md:pl-[7rem]">Larm på lokalen</h2>
+          <h2 id="pa-lokalen" class="type-section at-text">Larm på lokalen</h2>
           <AlertList alerts={at.slice(0, AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} />
           {at.length > AT_SHOWN && (
             <LarmFold count={at.length - AT_SHOWN}>
@@ -155,7 +169,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
     {
       near.length > 0 && (
         <section aria-labelledby="i-narheten" class="flex flex-col gap-5">
-          <div class="flex flex-col gap-2 md:pl-[7rem]">
+          <div class="flex flex-col gap-2 at-text">
             <h2 id="i-narheten" class="type-section">I närheten</h2>
             <p class="text-muted-foreground max-w-prose">
               {
@@ -169,5 +183,42 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active })
         </section>
       )
     }
+      </div>
+
+      {(newestAt || newestNear || parent) && (
+        /* A summary with a way to the lists below, so from lg up only: on a
+           narrower screen the lists themselves follow the text. */
+        <Aside label="Om lokalen" class="max-lg:hidden">
+          {newestAt && (
+            <AsideNote label="Larmat här">
+              <p>
+                {at.length} larm, senast {newestAt.species.toLocaleLowerCase("sv")}{" "}
+                {dayLabel(newestAt.observedAt)}
+              </p>
+              <a href="#pa-lokalen" class="link flex min-h-11 w-fit items-center font-medium">
+                Larmen på lokalen
+              </a>
+            </AsideNote>
+          )}
+          {newestNear && (
+            <AsideNote label="Inom tre kilometer">
+              <p>
+                Senast {newestNear.species.toLocaleLowerCase("sv")} {dayLabel(newestNear.observedAt)}
+              </p>
+              <a href="#i-narheten" class="link flex min-h-11 w-fit items-center font-medium">
+                I närheten
+              </a>
+            </AsideNote>
+          )}
+          {parent && (
+            <AsideNote label="Del av">
+              <a href={`/lokaler/${parent.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
+                {parent.name}
+              </a>
+            </AsideNote>
+          )}
+        </Aside>
+      )}
+    </div>
   </article>
 </SiteLayout>

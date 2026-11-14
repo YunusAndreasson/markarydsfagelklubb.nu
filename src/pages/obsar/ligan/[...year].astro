@@ -75,7 +75,7 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
     {
       runners.length >= 3 && (
         <ObsarSection id="loppet" title="Året som ett lopp">
-          <p class="text-muted-foreground max-w-[38rem] leading-relaxed">
+          <p class="text-muted-foreground measure leading-relaxed">
             De tolv främsta och hur många arter de hade vecka för vecka. Tryck på knappen för att se året spelas upp.
           </p>
           <LeagueRace client:visible year={year} until={until} runners={runners} />

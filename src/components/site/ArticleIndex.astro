@@ -31,7 +31,7 @@ const tab = (active: boolean) => (active ? "page" : undefined)
 ---
 
 <div class="flex flex-col gap-10">
-  <header class="flex flex-col gap-5 md:pl-[7rem]">
+  <header class="flex flex-col gap-5 at-text">
     <h1 class="type-title">{heading}</h1>
     {
       categories.length > 0 && (
@@ -60,7 +60,7 @@ const tab = (active: boolean) => (active ? "page" : undefined)
 
   {
     page.articles.length === 0 ? (
-      <p class="text-muted-foreground max-w-prose md:pl-[7rem]">Här finns inga artiklar ännu.</p>
+      <p class="text-muted-foreground measure at-text">Här finns inga artiklar ännu.</p>
     ) : (
       <ArticleList articles={page.articles} headingLevel={2} years="changes" />
     )
@@ -68,7 +68,7 @@ const tab = (active: boolean) => (active ? "page" : undefined)
 
   {
     (page.older || page.newer) && (
-      <nav aria-label="Fler artiklar" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+      <nav aria-label="Fler artiklar" class="flex flex-wrap gap-x-8 gap-y-2 at-text">
         {page.newer && (
           <a href={link("efter", page.newer)} class="link flex min-h-11 items-center font-medium">
             Nyare artiklar
@@ -85,7 +85,7 @@ const tab = (active: boolean) => (active ? "page" : undefined)
 
   {
     years.length > 0 && (
-      <nav aria-labelledby="arkiv" class="flex flex-col gap-2 md:pl-[7rem]">
+      <nav aria-labelledby="arkiv" class="flex flex-col gap-2 at-text">
         <h2 id="arkiv" class="type-section">Arkiv</h2>
         <ul class="flex flex-wrap gap-x-5">
           {years.map((year) => (

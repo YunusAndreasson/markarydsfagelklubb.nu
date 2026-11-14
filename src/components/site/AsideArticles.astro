@@ -1,0 +1,54 @@
+---
+import type { ArticleTeaser } from "@/lib/public-content"
+import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * A few articles in the outer margin (docs/design.md, "Uppslaget"): a small
+ * print, the date and the title, one line each, so the aside stays shorter than
+ * a screen and can stay in view beside the text. Neighbours never share a photo,
+ * and an article without one is type across the whole width, never a grey box.
+ */
+interface Props {
+  articles: ArticleTeaser[]
+}
+
+const { articles } = Astro.props
+const thisYear = stockholmYear(new Date())
+---
+
+<ol class="flex flex-col gap-4">
+  {
+    articles.map((article, index) => {
+      const image = article.image?.src === articles[index - 1]?.image?.src ? null : article.image
+      const year = stockholmYear(article.published_at)
+      return (
+        <li class="grid grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-x-3">
+          {image ? (
+            <a href={`/artiklar/${article.slug}`} tabindex="-1" aria-hidden="true">
+              <img
+                src={image.src}
+                srcset={image.srcset || undefined}
+                sizes="5.5rem"
+                width={image.width || undefined}
+                height={image.height || undefined}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+              />
+            </a>
+          ) : null}
+          <div class:list={["flex flex-col", !image && "col-span-2"]}>
+            <time datetime={isoDateTime(article.published_at)} class="type-meta text-muted-foreground">
+              {formatDate(article.published_at, "short")}
+              {year !== thisYear && ` ${year}`}
+            </time>
+            <a href={`/artiklar/${article.slug}`} class="font-display decoration-primary text-[1.0625rem] leading-snug font-bold text-pretty underline-offset-4 hover:underline">
+              {article.title}
+            </a>
+          </div>
+        </li>
+      )
+    })
+  }
+</ol>

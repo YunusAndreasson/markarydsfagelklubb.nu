@@ -1,8 +1,9 @@
 # Design: the public site
 
-**Read [Dagslistan](#dagslistan-2026-10-31) first, with its "Larmbandet" correction.**
-It is the newest pass and overrides what it names below: the typeface, the tinted
-neutrals and the header.
+**Read [Uppslaget](#uppslaget-2026-11-14) first, then [Dagslistan](#dagslistan-2026-10-31)
+with its "Larmbandet" correction.** Uppslaget is the newest pass and sets the grid every
+page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
+and the header.
 
 The design plan for mafk-web's public pages, written in step 3 with the
 `frontend-design` process: plan, review against the brief, build, critique.
@@ -33,6 +34,87 @@ A birder's field notebook works the same way: each entry is dated in the
 margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
+
+## Uppslaget (2026-11-14)
+
+The fourth pass, asked for as a senior UI/UX review "with full freedom to make major
+changes". In the interview the user chose to **keep the identity** (Alegreya and Inter,
+white paper, Gran, green only for action, the date margin) and to cover the **whole
+public site**. Admin is untouched.
+
+**What was wrong was one thing, not a list.** Every page but the home page sat in a 7rem
+margin and a 38rem measure inside a 64rem container, so the right third of the desktop
+was blank paper, and the facts a reader acts on were buried in prose or missing: an
+event's place, last sign-up day and phone number; Klubben's fee; a larm's when and where.
+The layout was also hand-written per page (`7rem` about 80 times in 28 files).
+
+**The one memorable thing: the open notebook.** A birder's notebook has a margin for
+when, the page for what happened, and notes in the outer margin: where, whom to call,
+what to bring. Every page now has that outer margin, the **aside**: short facts about
+*this* page, set in type with no box, sticky beside the text from `lg`, and empty when
+there's nothing to say.
+
+**The grid** (`global.css`, `spread` and the `in-*` placement utilities on named lines):
+
+| | margin | text | gap | aside |
+|---|---|---|---|---|
+| phone | one track; everything stacks in reading order | | | |
+| `md` | 7rem | ≤38rem | | (notes flow in the text track) |
+| `lg` | 7rem | ≤38rem, gives way first | 3rem | ≥14rem, the rest |
+
+- `in-wide` is margin + text, `in-full` all of it. `margined` is a row with a date in
+  the margin (events, plain larm rows, Klubben's sections). `at-text` starts a block at
+  the text's edge outside a spread; `measure` is the 38rem reading measure.
+- The container went from 64rem to **72rem** (`max-w-page`), which gives the aside about
+  21rem at 1280 px without touching the measure.
+- `Aside.astro` comes **first in its section below `lg`**, so on a phone the facts
+  follow the title, before the body; `first={false}` keeps it after the text when it's
+  "more" rather than facts (an article's related list). `AsideNote.astro` is one note:
+  a meta-size label as a heading, then what it says.
+
+**Page by page:**
+
+- **Home:** the lead as a spread from `lg`: the photo at 3:2 on the left (no more 3:1
+  crop through the bird) and the headline and opening beside it, above the fold at
+  1280×900. **Närmast i programmet** is a section of its own instead of three lines in a
+  rail, with "Programmet i din kalender" and the store badges in its aside. Then Fynd,
+  Fler artiklar and the jubilee band, as before.
+- **Programme:** the day of the month is set large in Alegreya, weekday above and month
+  and time below: a calendar page's own device, used here only because this content is
+  dates. On a phone the date keeps a narrow column so the eye runs down the days.
+- **Event:** the aside is the fact sheet: Plats, Anmälan (last day, or that it closed),
+  Anmäl dig till (name and the number as a full-size `tel:` target). On a phone it comes
+  between the date and the text, where a member in a car park looks for the number.
+- **Article:** "Mer i <kategori>" moved from tiles at the foot into the aside: three
+  articles, a 5.5rem print and the title each, beside the cover and the text, after the
+  text on a phone.
+- **Larm log:** a larm with a photo is a **captioned print**: from `md` the photo at the
+  start of the text track with species, place and observer beside it. They used to sit
+  at opposite edges of 145 px rows. The store badges are in the header's aside.
+- **Larm:** the photo across margin and text; Sett, Plats, Rapporterat av and the
+  rarity in the aside beside it, first on a phone.
+- **Lokal:** a map with the club's places spans the whole spread (21:9 from `lg`). The
+  aside sums up "Larmat här" and "Inom tre kilometer", with links down to the lists,
+  from `lg` only, since narrower the lists follow anyway.
+- **Klubben:** the membership note (fees, Cinclus, "Så blir du medlem" as the page's one
+  button) sticks beside the text: "newcomers first", put into the layout. **Bli medlem:**
+  whom to ask, in the aside beside the steps.
+- **Lists:** article thumbnails line up on the aside track from `lg`.
+- **Everything else** (Obsar, sök, lokaler, the errors and the legal pages) moved onto
+  the utilities, with no visible change intended.
+
+**Review against the defaults.** "A sidebar" is the template. So the aside holds only facts
+about its own page, never "Populärt" or widgets; the home page has no global aside; and
+there's no box, border or tint. The big day number risked the "big number, small label"
+tell, so it's used only on the programme. No new colour, motion or typeface.
+
+**Considered and dropped:** lifting a body's first photo into an article hero (Tidskriften's
+"left for later"). Only one of the newest 40 bodies opens with a photo, so it would almost
+never apply. The archive years beside the article list: the thumbnails already use that
+track.
+
+**Content for the editor:** Säsongsavslutning's body gives the contact number as
+070-6224503 and the event's field as 0706-224503. One of them is wrong.
 
 ## Dagslistan (2026-10-31)
 

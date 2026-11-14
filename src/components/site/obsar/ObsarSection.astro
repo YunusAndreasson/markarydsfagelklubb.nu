@@ -21,8 +21,8 @@ interface Props {
 const { id, title, href, link, measure = false, nested = false } = Astro.props
 ---
 
-<section aria-labelledby={id} class:list={["flex min-w-0 flex-col gap-5", !nested && "md:pl-[7rem]"]}>
-  <div class:list={["flex flex-col gap-5", measure && "max-w-[38rem]"]}>
+<section aria-labelledby={id} class:list={["flex min-w-0 flex-col gap-5", !nested && "at-text"]}>
+  <div class:list={["flex flex-col gap-5", measure && "measure"]}>
     {
       title && id && (
         <SectionHeading id={id} href={href} link={link}>

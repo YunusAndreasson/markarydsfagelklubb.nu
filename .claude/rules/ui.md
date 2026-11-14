@@ -39,8 +39,11 @@ component.
 - **The public site follows `docs/design.md`.** Its layout is `site.astro`
   (menu as a prop; it queries nothing), its type scale is the `type-*`
   utilities in `global.css`, and article and page bodies are styled by
-  `src/styles/content.css` (`.content`), which the editor shares. Dates sit in
-  a 7rem margin column from `md` up.
+  `src/styles/content.css` (`.content`), which the editor shares. Pages lay
+  out on one grid, `spread` with `in-margin` / `in-text` / `in-aside` /
+  `in-wide` / `in-full` (and `margined`, `at-text`, `measure`), never on
+  hand-written `7rem`/`38rem` classes; facts about the page go in
+  `Aside.astro` (docs/design.md, "Uppslaget").
 - **Swedish copy**, written for club members: plain, warm, no jargon. Dates
   use `sv-SE`.
 - **Mobile first**: design at 360 px, touch targets ≥ 44 px, and no horizontal

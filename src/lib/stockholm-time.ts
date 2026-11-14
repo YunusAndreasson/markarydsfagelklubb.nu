@@ -138,6 +138,10 @@ const FORMATS = {
     day: "numeric",
     month: "long",
   }),
+  /** "19": the day of the month alone, set large on a calendar-page date. */
+  day: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric" }),
+  /** "sep.": the month beside it. */
+  monthShort: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, month: "short" }),
   /** "19 sep." */
   short: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric", month: "short" }),
   /** "oktober 2026" — the heading over a month of the program. */

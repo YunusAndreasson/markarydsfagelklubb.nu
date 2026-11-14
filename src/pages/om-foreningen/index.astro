@@ -1,11 +1,15 @@
 ---
 export const prerender = false
 
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
+import { buttonVariants } from "@/components/ui/button"
 import SiteLayout from "@/layouts/site.astro"
 import { renderBody } from "@/lib/article-body"
 import { loadMembership } from "@/lib/membership"
 import { resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
+import { cn } from "@/lib/utils"
 
 // Klubben, for someone who might join (docs/design.md, "Klubben"): who the
 // club is, what membership costs, how the club meets, then the section's other
@@ -36,9 +40,9 @@ const hrefOf = (child: (typeof children)[number]) =>
 
 <SiteLayout title={page.title} description={page.description || undefined} menu={navigation.menu}>
   <article class="flex flex-col gap-12">
-    <header class="flex flex-col gap-4 md:pl-[7rem]">
+    <header class="at-text flex flex-col gap-4">
       <h1 class="type-title">{page.title}</h1>
-      {page.description && <p class="type-ingress text-muted-foreground max-w-[38rem]">{page.description}</p>}
+      {page.description && <p class="type-ingress text-muted-foreground measure">{page.description}</p>}
     </header>
 
     {/* The club's emblem bird, in its own water: who the club is, before a word
@@ -47,43 +51,47 @@ const hrefOf = (child: (typeof children)[number]) =>
       <img
         src={`${DIPPER}/960.webp`}
         srcset={`${DIPPER}/480.webp 480w, ${DIPPER}/960.webp 960w, ${DIPPER}/1600.webp 1600w`}
-        sizes="(min-width: 64rem) 61rem, 100vw"
+        sizes="(min-width: 72rem) 69rem, 100vw"
         width="1657"
         height="1105"
         alt="En strömstare på en mossig sten vid forsande vatten."
         fetchpriority="high"
         class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-2/1"
       />
-      <figcaption class="type-meta text-muted-foreground px-4 sm:px-0 md:pl-[7rem]">
+      <figcaption class="type-meta text-muted-foreground at-text px-4 sm:px-0">
         Strömstaren, klubbens emblemfågel sedan 1986. Foto: Lars-Erik Andréasson.
       </figcaption>
     </figure>
 
-    {
-      membership && (
-        <section aria-labelledby="bli-medlem" class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
-          <h2 id="bli-medlem" class="type-meta text-muted-foreground md:pt-[0.3rem] md:pr-4">
-            Bli medlem
-          </h2>
-          <div class="flex flex-col gap-1">
-            <p class="text-lg leading-relaxed text-pretty">
-              Det kostar {membership.fee_adult} kr om året, och {membership.fee_youth} kr om du är{" "}
-              {membership.youth_max_age} år eller yngre. Som medlem får du programbladet Cinclus och
-              stöttar klubbens fågelskydd.
-            </p>
-            <a href={joinHref} class="link flex min-h-11 w-fit items-center font-medium">
-              Så blir du medlem
-            </a>
-          </div>
-        </section>
-      )
-    }
-
-    {page.body_html && <div class="content content-register" set:html={renderBody(page.body_html)} />}
+    {/* The text, with the membership note beside it in the outer margin
+        (docs/design.md, "Uppslaget"): in view while a newcomer reads about the
+        club, which is the "newcomers first" decision put into the layout. On a
+        phone the note comes first, under the photo, as the fee line did. */}
+    <div class="spread gap-y-10">
+      {page.body_html && <div class="in-wide content content-register" set:html={renderBody(page.body_html)} />}
+      {
+        membership && (
+          <Aside label="Bli medlem" class="max-md:pb-2">
+            <AsideNote label="Bli medlem">
+              <p class="text-lg leading-relaxed text-pretty">
+                {membership.fee_adult} kr om året, {membership.fee_youth} kr om du är {membership.youth_max_age} år
+                eller yngre.
+              </p>
+              <p class="text-muted-foreground leading-relaxed text-pretty">
+                Som medlem får du programbladet Cinclus och stöttar klubbens fågelskydd.
+              </p>
+              <a href={joinHref} class={cn(buttonVariants(), "focus-strong mt-3 h-11 w-fit px-5 text-base")}>
+                Så blir du medlem
+              </a>
+            </AsideNote>
+          </Aside>
+        )
+      }
+    </div>
 
     {
       children.length > 0 && (
-        <section aria-labelledby="mer" class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,38rem)]">
+        <section aria-labelledby="mer" class="margined gap-y-3">
           <h2 id="mer" class="type-meta text-muted-foreground md:pt-[0.35rem] md:pr-4">
             Mer om klubben
           </h2>

@@ -24,10 +24,10 @@ interface Props {
 const { title, current, crumb = true, ingress } = Astro.props
 ---
 
-<header class="flex flex-col gap-5 md:pl-[7rem]">
+<header class="flex flex-col gap-5 at-text">
   {
     (title || ingress) && (
-      <div class="flex max-w-[38rem] flex-col gap-4">
+      <div class="flex measure flex-col gap-4">
         {crumb && (
           <p class="type-meta">
             <a href="/obsar" class="crumb">Obsar</a>

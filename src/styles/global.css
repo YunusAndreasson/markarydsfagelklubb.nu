@@ -17,6 +17,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    /* The page's container (docs/design.md, "Uppslaget"): wide enough that the
+       outer margin beside the 38rem measure can hold a print or a fact list. */
+    --container-page: 72rem;
     --font-heading: var(--font-sans);
     --font-display: 'Alegreya Variable', Georgia, serif;
     --color-gran: var(--gran);
@@ -248,4 +251,77 @@
   &:hover {
     text-decoration-thickness: 2px;
   }
+}
+
+/* Uppslaget, the open notebook (docs/design.md, "Uppslaget"): the site's one grid.
+   A margin for when, the measure for what, and an outer margin (the aside) for
+   where, who and the next step. Pages say where a thing goes with the `in-*`
+   utilities and never how wide it is.
+
+   phone        one track: everything stacks in reading order
+   md           margin 7rem | text (the aside's notes flow in the text track)
+   lg           margin 7rem | text ≤38rem | 3rem | aside ≥14rem, the rest
+
+   The text track gives way before the aside's minimum, so a 1024 px window keeps
+   both. Rows are not shared across sections: each section is its own spread. */
+@utility spread {
+  display: grid;
+  grid-template-columns: [full-start wide-start margin-start text-start aside-start] minmax(0, 1fr) [margin-end text-end aside-end wide-end full-end];
+  @media (width >= 48rem) {
+    grid-template-columns:
+      [full-start wide-start margin-start] 7rem
+      [margin-end text-start aside-start] minmax(0, 38rem)
+      [text-end aside-end wide-end] minmax(0, 1fr)
+      [full-end];
+  }
+  @media (width >= 64rem) {
+    grid-template-columns:
+      [full-start wide-start margin-start] 7rem
+      [margin-end text-start] minmax(0, 38rem)
+      [text-end wide-end] 3rem
+      [aside-start] minmax(14rem, 1fr)
+      [aside-end full-end];
+  }
+}
+/* A row with a date in the margin, inside a block that is already on the text's
+   left edge (`in-wide`) or alone in the container: margin 7rem | text ≤38rem.
+   The same two tracks as a spread's, without the outer margin. */
+@utility margined {
+  display: grid;
+  grid-template-columns: [margin-start text-start] minmax(0, 1fr) [margin-end text-end];
+  @media (width >= 48rem) {
+    grid-template-columns: [margin-start] 7rem [margin-end text-start] minmax(0, 38rem) [text-end];
+  }
+}
+@utility in-margin {
+  grid-column: margin;
+  min-width: 0;
+}
+@utility in-text {
+  grid-column: text;
+  min-width: 0;
+}
+@utility in-wide {
+  grid-column: wide;
+  min-width: 0;
+}
+@utility in-aside {
+  grid-column: aside;
+  min-width: 0;
+}
+@utility in-full {
+  grid-column: full;
+  min-width: 0;
+}
+/* From md up, start a block at the text track's edge outside a spread: a
+   section heading over text, a link under a list. A margin, not padding, so a
+   block that also sets `measure` keeps the whole measure. */
+@utility at-text {
+  @media (width >= 48rem) {
+    margin-left: 7rem;
+  }
+}
+/* The reading measure. */
+@utility measure {
+  max-width: 38rem;
 }

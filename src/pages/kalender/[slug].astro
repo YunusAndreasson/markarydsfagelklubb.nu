@@ -1,6 +1,8 @@
 ---
 export const prerender = false
 
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
 import EventList from "@/components/site/EventList.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { renderBody } from "@/lib/article-body"
@@ -97,8 +99,6 @@ const deadlineLabel = event?.signup_deadline
   : null
 const phoneHref = event?.contact_phone ? telHref(event.contact_phone) : null
 const hasContact = Boolean(event?.contact_name || event?.contact_phone)
-// Who the name is to the reader: while a sign-up is open, who takes it.
-const contactLead = deadlineLabel && open ? `Anmälan senast ${deadlineLabel} till` : "Kontakt:"
 
 const title = month ? `${monthTitle} · Program` : `${event?.title} · Program`
 const description = month
@@ -110,7 +110,7 @@ const description = month
   {
     month && (
       <div class="flex flex-col gap-10">
-        <header class="flex flex-col gap-5 md:pl-[7rem]">
+        <header class="at-text flex flex-col gap-5">
           <nav aria-label="Du är här" class="type-meta text-muted-foreground">
             <a href="/kalender" class="crumb">Program</a>
           </nav>
@@ -118,7 +118,7 @@ const description = month
         </header>
 
         {events.length === 0 ? (
-          <p class="text-muted-foreground max-w-[38rem] md:pl-[7rem]">
+          <p class="at-text text-muted-foreground">
             Inga aktiviteter den här månaden.
           </p>
         ) : (
@@ -126,8 +126,8 @@ const description = month
         )}
 
         {/* Side by side in the reading column, like the article paging: pushed
-            to the edges of the 64rem container they read as unrelated. */}
-        <nav aria-label="Fler månader" class="flex flex-wrap gap-x-8 gap-y-2 md:pl-[7rem]">
+            to the edges of the container they read as unrelated. */}
+        <nav aria-label="Fler månader" class="at-text flex flex-wrap gap-x-8 gap-y-2">
           <a href={`/kalender/${previous}`} class="link flex min-h-11 items-center font-medium">
             {monthLabel(previous)}
           </a>
@@ -141,64 +141,80 @@ const description = month
 
   {
     event && (
-      /* One grid, as on an article: the title and its ingress, then the date
-         in the margin beside the place and the text, never in a row of its
-         own. */
-      <article class="grid gap-y-8 md:grid-cols-[7rem_minmax(0,38rem)]">
-        <header class="flex flex-col gap-4 md:col-start-2">
-          <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-            <a href="/kalender" class="crumb">Program</a>
-            <span aria-hidden="true"> / </span>
-            <a href={`/kalender/${eventMonth}`} class="crumb">
-              {monthLabel(eventMonth)}
-            </a>
-          </nav>
-          <h1 class="type-title">{event.title}</h1>
-          {event.summary && <p class="type-ingress text-muted-foreground">{event.summary}</p>}
+      /* The notebook's spread (docs/design.md, "Uppslaget"): the date in the
+         margin, the club's own words in the text, and the facts a member acts
+         on in the outer margin: where, until when, and whom to call. On a
+         phone those facts follow the date, before the text, which is where a
+         member standing in a car park looks for the number. */
+      <article class="flex flex-col gap-8">
+        <header class="spread">
+          <div class="in-text flex flex-col gap-4">
+            <nav aria-label="Du är här" class="type-meta text-muted-foreground">
+              <a href="/kalender" class="crumb">Program</a>
+              <span aria-hidden="true"> / </span>
+              <a href={`/kalender/${eventMonth}`} class="crumb">
+                {monthLabel(eventMonth)}
+              </a>
+            </nav>
+            <h1 class="type-title">{event.title}</h1>
+            {event.summary && <p class="type-ingress text-muted-foreground">{event.summary}</p>}
+          </div>
         </header>
 
-        <div class="type-meta text-muted-foreground -mt-4 flex flex-col md:col-start-1 md:row-start-2 md:mt-0 md:pt-1">
-          <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-1 md:flex-col">
-            <span>{formatDate(event.starts_at, "weekdayName")}</span>
-            <span>{formatDate(event.starts_at, "dayMonth")}</span>
-            <span>{stockholmYear(event.starts_at)}</span>
-            {clockLabel && <span>{clockLabel}</span>}
-          </time>
-          {untilLabel && <span class="mt-1">till {untilLabel}</span>}
-          {statusLabel && <span class="text-primary mt-1 font-semibold">{statusLabel}</span>}
-          {kind && <span class="mt-1">{kind}</span>}
-        </div>
-
-        {/* When and where, together: the place, the fact a member acts on (as
-            on a larm), sits level with the date. On a phone it follows the
-            date closely rather than at the grid's gap. */}
-        {(event.place || event.body_html || hasContact) && (
-          <div class:list={["flex flex-col gap-6 md:col-start-2 md:row-start-2", event.place && "-mt-7 md:mt-0"]}>
-            {event.place && <p class="text-lg font-medium">{event.place}</p>}
-            {hasContact && (
-              <p class="leading-relaxed">
-                {contactLead} {event.contact_name}
-                {event.contact_name && event.contact_phone && ", "}
-                {phoneHref ? <a href={phoneHref} class="link font-medium">{event.contact_phone}</a> : event.contact_phone}
-              </p>
-            )}
-            {deadlineLabel && !open && eventStatus(event, now) !== "past" && (
-              <p class="text-muted-foreground">Sista anmälningsdag var {deadlineLabel}.</p>
-            )}
-            {event.body_html && <div class="content" set:html={renderBody(event.body_html)} />}
+        <div class="spread gap-y-8">
+          <div class="in-margin type-meta text-muted-foreground flex flex-col max-lg:-order-1 md:pt-1">
+            <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-1 md:flex-col">
+              <span>{formatDate(event.starts_at, "weekdayName")}</span>
+              <span>{formatDate(event.starts_at, "dayMonth")}</span>
+              <span>{stockholmYear(event.starts_at)}</span>
+              {clockLabel && <span>{clockLabel}</span>}
+            </time>
+            {untilLabel && <span class="mt-1">till {untilLabel}</span>}
+            {statusLabel && <span class="text-primary mt-1 font-semibold">{statusLabel}</span>}
+            {kind && <span class="mt-1">{kind}</span>}
           </div>
-        )}
 
-        <nav aria-label="Mer i programmet" class="flex flex-wrap gap-x-8 md:col-start-2">
-          {event.registration_url && open && (
-            <a href={event.registration_url} class="link flex min-h-11 w-fit items-center font-medium">
-              Anmäl dig
+          <div class="in-text flex flex-col gap-6">
+            {event.body_html && <div class="content" set:html={renderBody(event.body_html)} />}
+            <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
+              Hela programmet
             </a>
+          </div>
+
+          {(event.place || hasContact || deadlineLabel || (event.registration_url && open)) && (
+            <Aside label="Kort om dagen" class="max-md:-mt-2">
+              {event.place && (
+                <AsideNote label="Plats">
+                  <p class="text-lg leading-snug font-medium">{event.place}</p>
+                </AsideNote>
+              )}
+              {(deadlineLabel || (event.registration_url && open)) && eventStatus(event, now) !== "past" && (
+                <AsideNote label="Anmälan">
+                  {deadlineLabel && open && <p>Senast {deadlineLabel}</p>}
+                  {deadlineLabel && !open && <p class="text-muted-foreground">Sista anmälningsdag var {deadlineLabel}.</p>}
+                  {event.registration_url && open && (
+                    <a href={event.registration_url} class="link flex min-h-11 w-fit items-center font-medium">
+                      Anmäl dig
+                    </a>
+                  )}
+                </AsideNote>
+              )}
+              {hasContact && (
+                <AsideNote label={deadlineLabel && open ? "Anmäl dig till" : "Kontakt"}>
+                  {event.contact_name && <p>{event.contact_name}</p>}
+                  {event.contact_phone &&
+                    (phoneHref ? (
+                      <a href={phoneHref} class="link flex min-h-11 w-fit items-center font-medium tabular-nums">
+                        {event.contact_phone}
+                      </a>
+                    ) : (
+                      <p class="tabular-nums">{event.contact_phone}</p>
+                    ))}
+                </AsideNote>
+              )}
+            </Aside>
           )}
-          <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
-            Hela programmet
-          </a>
-        </nav>
+        </div>
       </article>
     )
   }

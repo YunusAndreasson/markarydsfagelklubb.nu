@@ -34,7 +34,7 @@ const { chart, fallback, box, height, inset = "0", class: className } = Astro.pr
     {fallback && <div class="chart-fallback absolute" style={{ inset }} set:html={fallback} />}
     <ObsarChart client:visible chart={chart} />
   </div>
-  <figcaption class="text-muted-foreground max-w-[38rem] leading-relaxed text-pretty">
+  <figcaption class="text-muted-foreground measure leading-relaxed text-pretty">
     <slot />
   </figcaption>
 </figure>

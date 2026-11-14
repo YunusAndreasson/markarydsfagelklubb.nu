@@ -15,7 +15,10 @@ import { formatDate, isoDateTime } from "@/lib/stockholm-time"
  * list already carries it, so repeating it in the margin would be noise.
  *
  * The date is what a member scans for here, so unlike every other list it is set
- * in ink, with "I dag" or "Pågår" under it when that is the answer.
+ * in ink, with "I dag" or "Pågår" under it when that is the answer. Since
+ * Uppslaget (2026-11-14) the day of the month is set large in Alegreya, as on a
+ * calendar page: the one list on the site whose content really is dates. On a
+ * phone the date keeps a narrow column of its own, so the eye runs down the days.
  */
 
 interface Props {
@@ -36,16 +39,21 @@ const now = new Date()
       const status = eventStatusLabel(eventStatus(event, now))
       const deadline = event.signup_deadline && signupOpen(event, now) ? event.signup_deadline : null
       return (
-        <li class="grid gap-y-1 md:grid-cols-[7rem_minmax(0,38rem)]">
-          <p class="type-meta text-muted-foreground flex flex-wrap gap-x-2 md:flex-col md:gap-x-0 md:pt-[0.25rem]">
-            <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-2 md:flex-col">
+        <li class="margined gap-x-3 max-md:grid-cols-[4.25rem_minmax(0,1fr)] md:gap-x-0">
+          <p class="type-meta text-muted-foreground flex flex-col md:in-margin">
+            <time datetime={isoDateTime(event.starts_at)} class="flex flex-col">
               <span>{formatDate(event.starts_at, "weekdayName")}</span>
-              <span class="text-foreground font-semibold">{formatDate(event.starts_at, "short")}</span>
-              {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
+              <span class="font-display text-foreground text-[2.25rem] leading-[1.05] font-bold tabular-nums lining-nums">
+                {formatDate(event.starts_at, "day")}
+              </span>
+              <span>
+                {formatDate(event.starts_at, "monthShort")}
+                {!event.all_day && ` ${formatDate(event.starts_at, "clock")}`}
+              </span>
             </time>
-            {status && <span class="text-primary font-semibold">{status}</span>}
+            {status && <span class="text-primary mt-0.5 font-semibold">{status}</span>}
           </p>
-          <div class="flex flex-col gap-1">
+          <div class="measure flex flex-col gap-1 pt-[1.15rem] md:in-text">
             <Heading class="type-item">
               <a href={`/kalender/${event.slug}`} class="decoration-primary underline-offset-4 hover:underline">
                 {event.title}

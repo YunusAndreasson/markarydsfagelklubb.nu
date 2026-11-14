@@ -35,16 +35,16 @@ const children = node.children as (typeof node & Pick<PublicPageRow, "descriptio
 ---
 
 <SiteLayout title={page.title} description={page.description || undefined} menu={navigation.menu}>
-  <article class="flex flex-col gap-8 md:pl-[7rem]">
+  <article class="flex flex-col gap-8 at-text">
     <header class="flex flex-col gap-4">
       <h1 class="type-title">{page.title}</h1>
-      {page.description && <p class="type-ingress text-muted-foreground max-w-[38rem]">{page.description}</p>}
+      {page.description && <p class="type-ingress text-muted-foreground measure">{page.description}</p>}
     </header>
     {page.body_html && <div class="content" set:html={renderBody(page.body_html)} />}
 
     {
       children.length > 0 && (
-        <section aria-labelledby="avsnitt" class="flex max-w-[38rem] flex-col gap-4">
+        <section aria-labelledby="avsnitt" class="flex measure flex-col gap-4">
           <h2 id="avsnitt" class="type-meta text-muted-foreground">Här hittar du</h2>
           {/* The list Klubben uses for its pages (src/pages/om-foreningen/index.astro):
               each title in ink, green only on hover, its description under it.

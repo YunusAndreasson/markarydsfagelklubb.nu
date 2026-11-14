@@ -15,8 +15,8 @@ const { title, description } = Astro.props
 ---
 
 <SiteLayout title={title} description={description} menu={[]}>
-  <article class="flex flex-col gap-8 md:pl-[7rem]">
-    <h1 class="type-title max-w-[38rem]">{title}</h1>
+  <article class="flex flex-col gap-8 at-text">
+    <h1 class="type-title measure">{title}</h1>
     <div class="content">
       <slot />
     </div>

@@ -1,0 +1,22 @@
+---
+/**
+ * The notebook's outer margin (docs/design.md, "Uppslaget"): facts about this
+ * page's subject, set in type with no box. From lg up it sits in the aside
+ * track and stays in view while the text beside it scrolls; below lg it comes
+ * first in its section, so on a phone the notes follow the page's title, before
+ * the body. Place it last in a `spread` section, after the margin and the text.
+ */
+interface Props {
+  label: string
+  class?: string
+  sticky?: boolean
+  /** Below lg, come first in the section. Off when the aside already follows the title in source order. */
+  first?: boolean
+}
+
+const { label, class: className, sticky = true, first = true } = Astro.props
+---
+
+<aside aria-label={label} class:list={["in-aside flex flex-col gap-6 self-start", first && "max-lg:-order-1", sticky && "lg:sticky lg:top-8", className]}>
+  <slot />
+</aside>
