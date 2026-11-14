@@ -1,0 +1,22 @@
+---
+import { type RarityLevel, rarityLabel } from "@/lib/rarity"
+
+/**
+ * The club's rarity number, 0 (rarest) to 5 (Allmän), as the app shows it: a
+ * digit on its level's colour (docs/design.md, "Larm"). Members read the
+ * number at a glance; the word is its hover title, and what a screen reader
+ * hears, since a bare coloured digit tells a newcomer nothing.
+ */
+
+interface Props {
+  level: RarityLevel
+}
+
+const { level } = Astro.props
+const label = rarityLabel(level)
+---
+
+<span class="rarity-chip shrink-0 self-center" data-level={level} title={`Raritet ${level}: ${label}`}>
+  <span aria-hidden="true">{level}</span>
+  <span class="sr-only">Raritet {level}, {label.toLocaleLowerCase("sv")}</span>
+</span>

@@ -1,4 +1,5 @@
 ---
+import RarityChip from "@/components/site/RarityChip.astro"
 import type { PublicAlert } from "@/lib/alert-dto"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
 import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
@@ -83,6 +84,7 @@ const taken = Astro.locals.transitionNames
                 {alert.count !== null && alert.count > 1 && (
                   <span class="text-muted-foreground font-sans text-base font-normal">{alert.count} ex.</span>
                 )}
+                <RarityChip level={alert.rarity} />
               </h3>
               {alert.rarity <= RARITY_WORTH_SAYING && (
                 <p class:list={["type-meta", isRare(alert.rarity) ? "text-rarity" : "text-muted-foreground"]}>

@@ -181,8 +181,10 @@ there's nothing to say.
 - **Larm log:** a larm with a photo is a **captioned print**: from `md` the photo at the
   start of the text track with species, place and observer beside it. They used to sit
   at opposite edges of 145 px rows. The store badges are in the header's aside.
-- **Larm:** the photo across margin and text; Sett, Plats, Rapporterat av and the
-  rarity in the aside beside it, first on a phone.
+- **Larm:** the photo across margin and text; Sett, Raritet, Plats with its map, and
+  Rapporterat av in the aside beside it. On a phone the photo comes first (since
+  2026-11-14): it is why a reader opened the larm, and stacking the facts and the
+  map above it pushed it two screens down.
 - **Lokal:** a map with the club's places spans the whole spread (21:9 from `lg`). The
   aside sums up "Larmat här" and "Inom tre kilometer", with links down to the lists,
   from `lg` only, since narrower the lists follow anyway.
@@ -275,8 +277,8 @@ leads under it (the 2026-10-28 decision stands).
 **Larmbandet, the correction (same evening).** Running every species name at display
 size was the wrong call, and the user caught it twice: "alldeles för många larm", "nu
 har vi det dubbelt". Forty names are noise, they filled the first screen, the programme
-appeared twice, and six yellow links competed. The band is now one sentence ("40 arter
-larmade i dag, bland dem mandarinand."), one "Alla larm" and five photos with species
+appeared twice, and six yellow links competed. The band is now one sentence ("Larmat i
+dag: 40 arter, bland dem mandarinand."), one "Alla larm" and five photos with species
 and time (`LarmBand.astro`). It is the page's **only** block of larm. Every species
 stays on `/larm`, and today's event is marked in "Närmast i programmet", not repeated.
 The lead photo went to 3:1 so its headline reaches the first screen at 1280×900.
@@ -288,10 +290,12 @@ appears only when there is more: this reverses "no Läs mer" for that one case, 
 headline alone doesn't say the text stopped.
 
 **It has to hold on a quiet day too** (the user's note: some days there will be one larm
-or very few). Up to three species the sentence names them all ("I dag har medlemmarna
-larmat kungsfiskare."), because "1 art" says less than the bird's name. With nothing
+or very few). Up to three species the sentence names them all ("Larmat i dag:
+kungsfiskare."), because "1 art" says less than the bird's name. With nothing
 today it says when the last one was ("Senast larmat i går: …", "Senast larmat 3 juli:
-…") and never claims there were none, since "Övrigt (ej fågel)" isn't counted. Photos
+…") and never claims there were none, since "Övrigt (ej fågel)" isn't counted.
+Since 2026-11-14 today takes the same shape ("Larmat i dag: …"); the first wording,
+"I dag har medlemmarna larmat …", read stiffly to the user. Photos
 older than a month stay off the band (`latestPrints`): a dated bird from months back
 makes the page look abandoned. One or two prints stand beside the sentence; none, and the
 band is the sentence alone, 108 px. With no larm at all there is no band.
@@ -921,13 +925,19 @@ desktop
   Not a `·` string — the same reason the article meta is split into lines.
 - **`N ex.` only when N > 1.** "1 ex." is noise, and "ex." is how a birder
   writes it.
-- **Rarity is a word, and only when it means something.** It prints from
-  "Ovanlig" (level 2) up and is silent below, so its presence is the
-  information. It takes the `--rarity` colour only at levels 0–1. Nothing in the
-  first 238 larm was level 0 or 1 and 191 were level 4–5, so a coloured badge on
-  every row — which is what the app does, correctly, in a dense phone feed —
-  would have been decoration here. The word itself comes from the app
-  (`Mycket sällsynt` … `Allmän`), so a bird reads the same in both places.
+- **Rarity is the club's number, as a chip** (since 2026-11-14; the members
+  asked for it). Every larm carries its 0–5 prefix in a small chip after the
+  species, the app's `RarityBadge` idiom: solid larmrött and orange at 0–1,
+  quiet but stepped from 2 (amber) through 3 (tan) and 4 (blue-grey) to 5 (Is).
+  The hues are the app's; each foreground is a step deeper so the digit clears
+  4.5:1 (`--rarity-0` … `--rarity-5` in `global.css`, `RarityChip.astro`). The
+  chip keeps its colours on the Gran band. The **word** still prints beside it
+  from "Ovanlig" (level 2) up, which explains the number to a newcomer, and is
+  the chip's hover title and screen-reader text at every level. A larm's own
+  page gives rarity its own note, "Raritet", right after "Sett". *Superseded:*
+  the first build printed only the word, reasoning that 191 of 238 larm are
+  level 4–5 so a badge would be noise; the members read the number, so it
+  goes on every row.
 - **Photos.** Member uploads carry no stored dimensions, so both pages reserve a
   3:2 box and nothing shifts as they load. The feed **crops** (`object-cover`)
   to keep the list's rhythm; the detail page shows the photo **whole**
@@ -1087,7 +1097,7 @@ På lokalen
 
 I närheten
               De 12 senaste larmen inom tre kilometer från lokalen.
-              Platsen står som närmaste lokal; kartan finns på varje larm.
+              Varje larm har en karta som visar var fågeln sågs.
  2 sep.       Kungsfiskare
 06:28         Nära Klintbadet   Per Persson
 ```
@@ -1117,21 +1127,26 @@ I närheten
 Since 2026-11-14 a larm's exact position is published (roadmap D1, revised), and
 its own page draws it. **The map is the facts' picture**: it sits under "Plats" in
 the facts column, square beside the photo, a 2:1 still in the text track when there
-is no photo. On a phone it follows the facts, as they do.
+is no photo. On a phone it follows the photo, with the rest of the facts.
 
 ```
 Plats
 Nära Fjärholma                     ← links to the lokal's page
-[ stillbild: fyndet, och lokalen som en ring med sitt namn ]
+[ stillbild: fyndet, och lokalen som en ring ]
 Öppna platsen i OpenStreetMap      ← the exact point, for a phone in the field
 ```
 
 - **The fynd is a disc, not a dot**: 14 px, Gran, with the paper halo the lokal
   dots wear, so the two marks never read as each other. Larmrött for "Ovanlig" and
   rarer, the colour the text already uses for them.
-- **The lokal the label names is a hollow ink ring with its name set beside it**,
-  like an atlas label: ink with a paper halo, no box, no arrow. It answers "near
-  what?" without a legend. The frame fits both, never closer than zoom 15.
+- **The lokal the label names is a hollow ink ring**, unlabelled: "Plats" right
+  above the map already names it, and OpenStreetMap usually prints the name on the
+  tiles too, so a label of our own doubled it. The frame fits both, never closer
+  than zoom 15, with extra room at the bottom for the attribution.
+- **The tiles are toned down** (`map.css`: desaturated, a little lighter) on both
+  maps, so OpenStreetMap's lime and pink sit under the site's palette instead of
+  competing with Markaryd green. Only the tile pane is filtered; the marks stay
+  crisp.
 - **A still**: no dragging, zooming or tooltips; the OpenStreetMap link is the
   way to explore, and the no-JavaScript fallback.
 - **A protected species gets no map at all**, and no lokal name either.

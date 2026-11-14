@@ -7,12 +7,11 @@
  * given a prefix. Those fall back to 5, the same "safe default" the app uses:
  * an unlisted bird is treated as ordinary rather than announced as a rarity.
  *
- * The site shows the **word**, not the number. A coloured digit is the app's
- * idiom, where it sits in a dense feed; here, 191 of the 238 larm are level
- * 4–5 and none has ever been 0 or 1, so a badge on every row would be noise
- * that never means anything. Colour is spent only on {@link isRare} — which
- * keeps docs/design.md's rule that colour marks action and status, and leaves
- * the page quiet until something genuinely rare turns up.
+ * Since 2026-11-14 the site shows the **number**, as the app does: members
+ * asked for it, and read the club's prefix at a glance. Every larm carries a
+ * chip (`RarityChip.astro`, the app's colours in global.css's `--rarity-N`
+ * tokens), and the word still prints beside it from "Ovanlig" up, where it
+ * explains the number to a newcomer. Text colour stays on {@link isRare}.
  */
 
 export type RarityLevel = 0 | 1 | 2 | 3 | 4 | 5

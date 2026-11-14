@@ -9,8 +9,8 @@ import { dayLabel } from "@/lib/stockholm-time"
  * saying how things stand, the link to all of it, and the newest photos. It has to
  * read as well with one larm as with fifty, and on a quiet winter week:
  *
- *   40 arter larmade i dag, bland dem mandarinand.
- *   I dag har medlemmarna larmat kungsfiskare.
+ *   Larmat i dag: 40 arter, bland dem mandarinand.
+ *   Larmat i dag: kungsfiskare.
  *   Senast larmat i går: 5 arter, bland dem kungsfiskare.
  *   Senast larmat 3 juli: skata och blåmes.
  *
@@ -41,10 +41,10 @@ const few = prints.length <= 2
       <div class:list={["mx-auto flex w-full max-w-page flex-col gap-5 px-4 py-6 sm:px-6 md:py-8", few && "md:flex-row md:items-start md:justify-between md:gap-10"]}>
         <div class:list={["flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1", few && prints.length > 0 && "md:flex-col md:justify-start"]}>
           <h2 id="larmbandet" class="type-section text-pretty">
-            {list.isToday && allNamed && "I dag har medlemmarna larmat "}
-            {list.isToday && !allNamed && `${arter} larmade i dag`}
-            {!list.isToday && `Senast larmat ${when}: `}
-            {!list.isToday && !allNamed && arter}
+            {/* One shape for every day, so the band reads the same today as in a
+                quiet week: "Larmat i dag: …", "Senast larmat i går: …". */}
+            {list.isToday ? "Larmat i dag: " : `Senast larmat ${when}: `}
+            {!allNamed && arter}
             {!allNamed && named.length > 0 && ", bland dem "}
             {named.map((one, index) => (
               <>

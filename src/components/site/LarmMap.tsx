@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react"
 
 import type { LarmPin } from "@/lib/larm-map"
 
-import { createSiteMap, loadLeaflet, tooltipText, untabLinks } from "./map-setup"
+import { createSiteMap, loadLeaflet, untabLinks } from "./map-setup"
 
 /**
  * A larm where it was reported, on the larm's own page (docs/design.md, "Larm
@@ -18,8 +18,8 @@ import { createSiteMap, loadLeaflet, tooltipText, untabLinks } from "./map-setup
  * It never imports the larm read path; `secret-key-scope.test.ts` fails any
  * `.tsx` that does.
  *
- * It is a still: the fynd, and the lokal its place label names as a ring with
- * the name set beside it, like an atlas. No gestures. Like the lokal map it is
+ * It is a still: the fynd, and the lokal its place label names as a ring. No
+ * gestures. Like the lokal map it is
  * `aria-hidden` with its links out of the tab order; the page's "Plats" says
  * the same thing in text, and links to the exact point on OpenStreetMap.
  */
@@ -55,21 +55,15 @@ export default function LarmMap({ pins, lokal = null }: Props) {
 
       map = createSiteMap(L, element, { still: true }).map
 
-      // The lokal under the fynd, so it draws first: a hollow ring with its
-      // name as a permanent label. It answers "near what?" at a glance.
+      // The lokal under the fynd, so it draws first: a hollow ring. Unlabelled,
+      // since "Plats" right above the map names it and the tiles often print
+      // the same name — a label of our own doubled it.
       if (lokal) {
         L.circleMarker([lokal.latitude, lokal.longitude], {
           className: "lokal-ref",
           radius: 9,
           interactive: false,
-        })
-          .bindTooltip(tooltipText(lokal.name), {
-            permanent: true,
-            direction: "right",
-            offset: [10, 0],
-            className: "map-label",
-          })
-          .addTo(map)
+        }).addTo(map)
       }
 
       for (const pin of pins) {
@@ -87,7 +81,13 @@ export default function LarmMap({ pins, lokal = null }: Props) {
             [first.latitude, first.longitude],
             [lokal.latitude, lokal.longitude],
           ]),
-          { padding: [40, 40], maxZoom: MAX_ZOOM, animate: false }
+          // More room at the bottom: the attribution strip sits there.
+          {
+            paddingTopLeft: [48, 48],
+            paddingBottomRight: [48, 64],
+            maxZoom: MAX_ZOOM,
+            animate: false,
+          }
         )
       } else if (first) {
         map.setView([first.latitude, first.longitude], STILL_ZOOM, { animate: false })

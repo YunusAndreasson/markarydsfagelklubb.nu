@@ -1,4 +1,5 @@
 ---
+import RarityChip from "@/components/site/RarityChip.astro"
 import type { PublicAlert } from "@/lib/alert-dto"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
@@ -10,10 +11,9 @@ import { transitionName } from "@/lib/view-transition"
  * One larm per row, in the shape of a field-notebook entry: when it was seen
  * in the margin, then what was seen, then where, then who (docs/design.md).
  *
- * The rarity word appears only when a bird is unusual, and takes colour only
- * when it is genuinely rare — 191 of the first 238 larm were "Allmän" or
- * "Ganska allmän", so printing that on every row would be noise that never
- * means anything. This way the page stays quiet and a rarity announces itself.
+ * Every row carries the club's rarity number as a chip, the way the app does
+ * (`RarityChip.astro`). The word beside it appears only from "Ovanlig" up, and
+ * takes colour only when the bird is genuinely rare.
  */
 
 interface Props {
@@ -117,6 +117,7 @@ const taken = Astro.locals.transitionNames
               {alert.count !== null && alert.count > 1 && (
                 <span class="text-muted-foreground font-sans text-base font-normal">{alert.count} ex.</span>
               )}
+              <RarityChip level={alert.rarity} />
               {alert.rarity <= RARITY_WORTH_SAYING && (
                 <span class:list={["type-meta font-sans", rare ? "text-rarity" : "text-muted-foreground"]}>
                   {rarityLabel(alert.rarity)}

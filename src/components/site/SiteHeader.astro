@@ -66,8 +66,13 @@ const shortcuts = [
             menu.map((entry) =>
               hasPanel(entry) ? (
                 <li>
+                  {/* The chevron is here too, so the link and the button that the
+                      script swaps in after the first paint are the same width:
+                      without it the whole row jumped ~60 px left on every page
+                      load, which Gecko (no view transitions) shows plainly. */}
                   <a href={entry.href} aria-current={current(entry)} class={item} data-panel-link>
                     {entry.title}
+                    <ChevronDown aria-hidden="true" className={chevron} />
                   </a>
                   <button
                     type="button"

@@ -6,6 +6,7 @@ import AsideNote from "@/components/site/AsideNote.astro"
 import LarmMapFrame from "@/components/site/LarmMapFrame.astro"
 import LarmRail from "@/components/site/LarmRail.astro"
 import PhotoViewer from "@/components/site/PhotoViewer.astro"
+import RarityChip from "@/components/site/RarityChip.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
@@ -94,8 +95,9 @@ const photoTransition = transitionName(Astro.locals.transitionNames, "larm", lar
 
       {/* The member's photo across the margin and the text, and the facts of the
           sighting beside it in the outer margin (docs/design.md, "Uppslaget"):
-          when, where (ink, the fact a reader acts on), how rare, who. On a phone
-          the facts come first, then the photo. Without a photo the facts take
+          when, how rare, where (ink, the fact a reader acts on), who. On a phone
+          the photo comes first, since it is why a reader opened the larm, and
+          the facts and the map follow it. Without a photo the facts take
           the text track, with nothing beside them. */}
       <div class="spread gap-y-6">
         {
@@ -120,11 +122,17 @@ const photoTransition = transitionName(Astro.locals.transitionNames, "larm", lar
             </div>
           )
         }
-        <div class:list={["flex flex-col gap-5", larm.photoUrl ? "in-aside max-lg:-order-1 lg:row-start-1" : "in-text"]}>
+        <div class:list={["flex flex-col gap-5", larm.photoUrl ? "in-aside lg:row-start-1" : "in-text"]}>
           <AsideNote label="Sett">
             <time datetime={isoDateTime(observed)} class="leading-snug">
               {formatDate(observed, "weekday")} {stockholmYear(observed)}, {formatDate(observed, "clock")}
             </time>
+          </AsideNote>
+          <AsideNote label="Raritet">
+            <p class="flex items-center gap-2">
+              <RarityChip level={larm.rarity} />
+              <span class:list={[isRare(larm.rarity) && "text-rarity font-medium"]} aria-hidden="true">{rarityLabel(larm.rarity)}</span>
+            </p>
           </AsideNote>
           <AsideNote label="Plats">
             {larm.lokal ? (
@@ -154,7 +162,6 @@ const photoTransition = transitionName(Astro.locals.transitionNames, "larm", lar
           )}
           <AsideNote label="Rapporterat av">
             <p>{larm.observer ?? ANONYMOUS_OBSERVER}</p>
-            <p class:list={["type-meta", isRare(larm.rarity) ? "text-rarity" : "text-muted-foreground"]}>{rarityLabel(larm.rarity)}</p>
           </AsideNote>
           <p class="text-muted-foreground text-sm leading-relaxed">
             {larm.position && "Kartan visar platsen som angavs i larmet. "}Larmet skickades i klubbens app{" "}

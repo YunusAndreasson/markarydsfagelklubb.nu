@@ -99,11 +99,28 @@
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   /* "Larmrött": the top of the app's rarity ramp (RarityScale 0 and 1 in
-     ../mafk-mobie/src/constants/theme.ts, #C42A20). The app tints a chip with
-     it on every row; the site spends it on the two rarest levels only, as
-     text, so a page of common birds stays quiet. Distinct from --destructive,
-     which means "this will break something". */
+     ../mafk-mobie/src/constants/theme.ts, #C42A20): the rarity word's colour
+     at the two rarest levels. The chip has its own scale below. Distinct from
+     --destructive, which means "this will break something". */
   --rarity: oklch(0.536 0.191 29);
+  /* The rarity chip's scale, 0 (rarest) to 5 (Allmän): the app's RarityScale
+     (../mafk-mobie/src/constants/theme.ts), so a bird reads the same in both
+     places. The hues are the app's; each foreground is a step deeper so the
+     digit clears 4.5:1, and level 5 is the site's own Is and Blyerts. Named
+     apart from --rarity on purpose: surface-gran remaps that one to Reflex,
+     and a chip must keep its colour on any surface. */
+  --rarity-0: #c42a20;
+  --rarity-0-foreground: #fff;
+  --rarity-1: #b0540a;
+  --rarity-1-foreground: #fff;
+  --rarity-2: #f2e1ae;
+  --rarity-2-foreground: #765604;
+  --rarity-3: #e9e2c8;
+  --rarity-3-foreground: #6b5c2e;
+  --rarity-4: #e1e8ed;
+  --rarity-4-foreground: #4f5b66;
+  --rarity-5: #eef3f1;
+  --rarity-5-foreground: #53605b;
   --border: #dde5e1;
   --input: #dde5e1;
   --ring: oklch(0.52 0.13 152);
@@ -261,6 +278,37 @@
   line-height: 1.4;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+/* The club's rarity number as a chip, the app's idiom (RarityBadge): a digit on
+   its level's colour, solid at 0–1 so a rarity shows from across the page, and
+   quiet but stepped from 2 to 5. Inter and tabular figures whatever the heading
+   it sits in is set in. The level comes from `data-level`. */
+@utility rarity-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  padding-inline: 0.3125rem;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background-color: var(--chip-bg, var(--rarity-5));
+  color: var(--chip-fg, var(--rarity-5-foreground));
+  &[data-level="0"] { --chip-bg: var(--rarity-0); --chip-fg: var(--rarity-0-foreground); }
+  &[data-level="1"] { --chip-bg: var(--rarity-1); --chip-fg: var(--rarity-1-foreground); }
+  &[data-level="2"] { --chip-bg: var(--rarity-2); --chip-fg: var(--rarity-2-foreground); }
+  &[data-level="3"] { --chip-bg: var(--rarity-3); --chip-fg: var(--rarity-3-foreground); }
+  &[data-level="4"] { --chip-bg: var(--rarity-4); --chip-fg: var(--rarity-4-foreground); }
+  /* The pale levels barely differ from white paper, so they get a hairline in
+     their own ink: the chip keeps its shape where the fill can't give it one. */
+  &:not([data-level="0"], [data-level="1"]) {
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, currentColor 24%, transparent);
+  }
 }
 
 /* The tokens on a Gran band: green links and the green focus ring would vanish

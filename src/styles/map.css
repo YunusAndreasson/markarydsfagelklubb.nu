@@ -20,6 +20,12 @@
   --map-ink: oklch(0.36 0.012 155);
   --map-halo: oklch(0.99 0 0 / 0.92);
 }
+/* OpenStreetMap's standard tiles are louder than anything else on the site —
+   lime fields, pink built-up areas — and close to clashing with Markaryd green.
+   Toned down here, the tile pane only, so the marks drawn over it stay crisp. */
+.leaflet-tile-pane {
+  filter: saturate(0.5) brightness(1.04) contrast(0.94);
+}
 .lokal-pin {
   display: flex;
   align-items: center;
@@ -114,24 +120,6 @@
   stroke-opacity: 0.85;
 }
 
-/* The lokal's name beside its ring, set like an atlas label rather than in a
-   box: ink with a paper halo, no border, no arrow. */
-.map-label.leaflet-tooltip {
-  background: none;
-  border: 0;
-  box-shadow: none;
-  padding: 0;
-  color: var(--map-ink);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-shadow:
-    0 0 2px var(--map-halo),
-    0 0 4px var(--map-halo),
-    0 0 6px var(--map-halo);
-}
-.map-label.leaflet-tooltip::before {
-  display: none;
-}
 
 /* Dashed, the way an atlas draws an administrative border: it reads as a
    boundary rather than as a river or a road, and it stays legible over the

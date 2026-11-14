@@ -177,7 +177,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
                 near.length > NEAR_LIMIT
                   ? `De ${NEAR_LIMIT} senaste larmen inom tre kilometer från lokalen.`
                   : "Larm inom tre kilometer från lokalen."
-              } Platsen står som närmaste lokal; kartan finns på varje larm.
+              } Varje larm har en karta som visar var fågeln sågs.
             </p>
           </div>
           <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} compact />
