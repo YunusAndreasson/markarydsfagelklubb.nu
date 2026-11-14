@@ -140,9 +140,9 @@ const FORMATS = {
   }),
   /** "19": the day of the month alone, set large on a calendar-page date. */
   day: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric" }),
-  /** "sep.": the month beside it. */
+  /** "sep": the month beside it. */
   monthShort: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, month: "short" }),
-  /** "19 sep." */
+  /** "19 sep" */
   short: new Intl.DateTimeFormat("sv-SE", { timeZone: TIME_ZONE, day: "numeric", month: "short" }),
   /** "oktober 2026" — the heading over a month of the program. */
   month: new Intl.DateTimeFormat("sv-SE", {
@@ -157,7 +157,7 @@ const FORMATS = {
     minute: "2-digit",
     hourCycle: "h23",
   }),
-  /** "19 sep. 2026 10:05" */
+  /** "19 sep 2026 10:05" */
   dateTime: new Intl.DateTimeFormat("sv-SE", {
     timeZone: TIME_ZONE,
     dateStyle: "medium",
@@ -167,8 +167,16 @@ const FORMATS = {
 
 export type DateFormat = keyof typeof FORMATS
 
+/**
+ * Intl abbreviates a month with a full stop ("19 sep."). The site writes every
+ * short month without one, as Obsar's narrow registers already did, so a date
+ * reads the same in a list, the programme and a larm (docs/design.md, "Startsidan").
+ */
+const ABBREVIATED = new Set<DateFormat>(["monthShort", "short", "dateTime"])
+
 export function formatDate(value: Date | string, format: DateFormat): string {
-  return FORMATS[format].format(toDate(value))
+  const text = FORMATS[format].format(toDate(value))
+  return ABBREVIATED.has(format) ? text.replace(/(\p{L})\.(?=\s|$)/u, "$1") : text
 }
 
 /**

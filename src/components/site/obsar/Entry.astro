@@ -22,7 +22,7 @@ const { when = "", datetime, title, href, count, sci, notes = [] } = Astro.props
 const lines = notes.filter((note): note is string => Boolean(note))
 ---
 
-<li class="mb-3.5 grid break-inside-avoid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-2">
+<li class="mb-3.5 grid break-inside-avoid grid-cols-[4.25rem_minmax(0,1fr)] gap-x-3">
   <time datetime={datetime} class="type-meta text-muted-foreground pt-1 tabular-nums">{when}</time>
   <div class="flex min-w-0 flex-col">
     <p class="flex flex-wrap items-baseline gap-x-1.5">

@@ -288,6 +288,34 @@ The site reads as the club's shared field notebook.
 - **Photos are the members' own work,** shown large, uncropped where the
   layout allows (never a forced square), and always with alt text.
 
+## Startsidan (2026-11-14)
+
+A second pass on the home page alone, asked for as "perfectly consistent and modern".
+Every section was built its own way: the programme's heading sat on the text track with
+its link stranded mid-page, Fynd i kommunen and Fler artiklar started at the container's
+edge with their links at the far right, Fynd was three equal columns ignoring the grid,
+the gaps between sections were 80 px in one place and 96 in the others, and a date read
+"11 sep.", "nov." or "11 nov" depending on the section.
+
+**One rule for every section** (`HomeSection.astro`):
+
+- the heading starts where the text does; its one "all of it" link sits at the far edge
+  of the container;
+- text goes on the text track with dates in the margin; next steps (subscribe, the app,
+  Obsar's lists) go in the aside; only pictures (the lead photo, the article tiles, the
+  jubilee chart) take the full width;
+- 96 px between sections from `md`, 64 on a phone, set by the component, never the page.
+
+**Fynd i kommunen** follows it: the year in one sentence on the text track, *Nya för
+året* beside *Senaste fynden* under it (four each), and Årslistan, the month's sightings
+and Ligan in the aside. A register entry's date column is 4.25rem, the programme's, so
+titles line up from section to section on a phone. The list under the article tiles is
+four long; the archive is one click away. The aside's notes are `h3` under the
+section's `h2`.
+
+**Dates:** a short month never has a full stop: "11 sep", "27 nov 18:30". `formatDate`
+strips Intl's, so the rule holds wherever a short format is used.
+
 ## Tidskriften (2026-10-24)
 
 The second pass, asked for as "more like a magazine, with better use of images

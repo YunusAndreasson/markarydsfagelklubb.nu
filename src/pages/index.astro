@@ -7,10 +7,10 @@ import ArticleTiles from "@/components/site/ArticleTiles.astro"
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import EventList from "@/components/site/EventList.astro"
+import HomeSection from "@/components/site/HomeSection.astro"
 import LarmBand from "@/components/site/LarmBand.astro"
 import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
 import ObsarHome from "@/components/site/obsar/ObsarHome.astro"
-import SectionHeading from "@/components/site/SectionHeading.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linkPhones } from "@/lib/article-body"
@@ -162,51 +162,47 @@ const events = upcoming ?? []
       the club sit beside it in the outer margin. */}
   {
     events.length > 0 && (
-      <section aria-labelledby="narmast" class="spread mt-16 gap-y-6 md:mt-20">
-        <div class="in-wide flex flex-col gap-6">
-          <div class="at-text">
-            <SectionHeading id="narmast" href="/kalender" link="Hela programmet">
-              Närmast i programmet
-            </SectionHeading>
-          </div>
+      <HomeSection id="narmast" title="Närmast i programmet" href="/kalender" link="Hela programmet">
+        <div class="in-wide">
           <EventList events={events} headingLevel={3} />
         </div>
-        <Aside label="Håll dig uppdaterad" sticky={false} first={false} class="lg:pt-[4.25rem]">
-          <AsideNote label="Programmet i din kalender">
+        <Aside label="Håll dig uppdaterad" sticky={false} first={false}>
+          <AsideNote label="Programmet i din kalender" headingLevel={3}>
             <p class="text-muted-foreground leading-relaxed">
               <a href="/kalender.ics" class="link font-medium">Prenumerera</a>, så kommer ändringar med automatiskt.
             </p>
           </AsideNote>
-          <AsideNote label="Få larmen direkt i mobilen">
+          <AsideNote label="Få larmen direkt i mobilen" headingLevel={3}>
             <AppLinks sentence={false} />
           </AsideNote>
         </Aside>
-      </section>
+      </HomeSection>
     )
   }
 
   {
     events.length === 0 && (
-      <section aria-labelledby="appen" class="at-text mt-12 flex flex-col gap-1">
+      <section aria-labelledby="appen" class="at-text mt-16 flex flex-col gap-1 md:mt-24">
         <h2 id="appen" class="type-meta text-muted-foreground">Få larmen direkt i mobilen</h2>
         <AppLinks sentence={false} />
       </section>
     )
   }
 
-  <Sponsors class="mt-12 md:hidden" />
+  <Sponsors class="mt-16 md:hidden" />
 
   <ObsarHome stats={yearStats} recent={recent} now={now} />
 
+  {/* Photos may take the whole width; the dated list keeps its dates in the
+      margin. Four in the list: the archive is one click away. */}
   {
     (tiles.length > 0 || list.length > 0) && (
-      <section aria-labelledby="artiklar" class="mt-16 flex flex-col gap-10 md:mt-24">
-        <SectionHeading id="artiklar" href="/artiklar" link="Alla artiklar">
-          Fler artiklar
-        </SectionHeading>
-        {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
-        {list.length > 0 && <ArticleList articles={list.slice(0, 6)} headingLevel={3} years="other-years" />}
-      </section>
+      <HomeSection id="artiklar" title="Fler artiklar" href="/artiklar" link="Alla artiklar">
+        <div class="in-full flex flex-col gap-12">
+          {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
+          {list.length > 0 && <ArticleList articles={list.slice(0, 4)} headingLevel={3} years="other-years" />}
+        </div>
+      </HomeSection>
     )
   }
 
