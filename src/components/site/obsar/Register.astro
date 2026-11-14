@@ -1,0 +1,26 @@
+---
+/**
+ * A long list set in columns, top to bottom then across, as the lokal register
+ * is (docs/design.md, "Obsar och statistik", "Grid"). Its items are `Entry`s,
+ * which keep themselves whole across a column break.
+ */
+interface Props {
+  /** The most columns at full width; 1 inside a half-width section. */
+  columns?: 1 | 2 | 3
+  /** On a phone, show only this many; the rest appear from `sm` up. */
+  phoneLimit?: 4
+}
+
+const { columns = 3, phoneLimit } = Astro.props
+---
+
+<ol
+  class:list={[
+    "gap-x-10",
+    columns >= 2 && "sm:columns-2",
+    columns === 3 && "lg:columns-3",
+    phoneLimit === 4 && "max-sm:[&>li:nth-child(n+5)]:hidden",
+  ]}
+>
+  <slot />
+</ol>

@@ -5,15 +5,18 @@ import AppLinks from "@/components/site/AppLinks.astro"
 import ArticleList from "@/components/site/ArticleList.astro"
 import ArticleTiles from "@/components/site/ArticleTiles.astro"
 import LarmBand from "@/components/site/LarmBand.astro"
+import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
+import ObsarHome from "@/components/site/obsar/ObsarHome.astro"
 import SectionHeading from "@/components/site/SectionHeading.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linkPhones } from "@/lib/article-body"
 import { eventStatus, eventStatusLabel } from "@/lib/event-status"
 import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
+import { obsarStore, store } from "@/lib/obsar-data"
 import { listPublicAlerts } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
-import { formatDate, isoDateTime, startOfStockholmDay } from "@/lib/stockholm-time"
+import { formatDate, isoDateTime, startOfStockholmDay, stockholmYear } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
 
 // The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften"): one
@@ -30,11 +33,20 @@ const { db } = Astro.locals
 if (!db) return new Response(null, { status: 500 })
 
 const now = new Date()
-const [navigation, page, larm, upcoming] = await Promise.all([
+// The kommun's birds and the jubilee band read the statistics store
+// (docs/design.md, "Obsar och statistik"); like larm, a failure costs the
+// section, never the page.
+const kv = obsarStore()
+const thisYear = stockholmYear(now)
+const [navigation, page, larm, upcoming, history, allTime, yearStats, recent] = await Promise.all([
   loadNavigation(db),
   listPublishedArticles(db, { limit: 10 }),
   listPublicAlerts({ limit: LARM_WINDOW }),
   listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
+  kv ? store.readHistory(kv).catch(() => null) : null,
+  kv ? store.readAllTime(kv).catch(() => null) : null,
+  kv ? store.readYear(kv, thisYear).catch(() => null) : null,
+  kv ? store.readRecent(kv).catch(() => null) : null,
 ])
 const { lead, rest } = pickLead(page?.articles ?? [])
 const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
@@ -157,6 +169,8 @@ const events = upcoming ?? []
 
   <Sponsors class="mt-12 md:hidden" />
 
+  <ObsarHome stats={yearStats} recent={recent} now={now} />
+
   {
     (tiles.length > 0 || list.length > 0) && (
       <section aria-labelledby="artiklar" class="mt-16 flex flex-col gap-10 md:mt-24">
@@ -166,6 +180,14 @@ const events = upcoming ?? []
         {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
         {list.length > 0 && <ArticleList articles={list.slice(0, 6)} headingLevel={3} years="other-years" />}
       </section>
+    )
+  }
+
+  {
+    history && history.years.length > 10 && (
+      <div class="mt-16 md:mt-24">
+        <JubileeBand history={history} allTime={allTime} thisYear={thisYear} contained />
+      </div>
     )
   }
 </SiteLayout>

@@ -11,3 +11,8 @@
 # The SECRET key bypasses RLS on a database the live mobile app shares. It
 # must never reach a client island or a prerendered page.
 # SUPABASE_SECRET_KEY=sb_secret_xxxxxxxxxxxxxxxxxxxxxxxx
+
+# The personal subscription key for SLU's Species Observation System
+# (Artportalen's open data), from https://api-portal.artdatabanken.se/. Only the
+# scheduled jobs in src/worker.ts read it; pages read what they wrote to KV.
+# ARTPORTALEN_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

@@ -1,0 +1,37 @@
+---
+import type { Sighting } from "@/lib/artportalen/types"
+import { dayLabel, formatDate } from "@/lib/stockholm-time"
+import Entry from "./Entry.astro"
+
+/**
+ * Sightings as register entries. `brief` (the hub, the home page): the day in
+ * the narrow column and the place under the species. Full (Senaste fynden, under
+ * a day already named in the margin): the time, and the count as written, the
+ * activity and the observers too.
+ */
+interface Props {
+  sightings: Sighting[]
+  brief?: boolean
+  now?: Date
+}
+
+const { sightings, brief = false, now = new Date() } = Astro.props
+const place = (one: Sighting) => one.locality?.replace(/, Sm$/, "")
+---
+
+{
+  sightings.map((one) => (
+    <Entry
+      when={brief ? dayLabel(one.start, now).replace(".", "") : one.timed ? formatDate(one.start, "clock") : ""}
+      datetime={one.start}
+      title={one.name}
+      href={one.url}
+      count={one.count}
+      notes={
+        brief
+          ? [place(one)]
+          : [[one.countText, one.activity].filter(Boolean).join(", "), place(one), one.observers]
+      }
+    />
+  ))
+}

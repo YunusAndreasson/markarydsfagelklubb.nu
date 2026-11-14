@@ -1,0 +1,19 @@
+---
+/**
+ * Before the first scheduled run has written anything, or if the store can't
+ * be read: say so plainly and point to Artportalen, where the same lists live.
+ */
+interface Props {
+  /** Where on Artportalen the same thing can be seen meanwhile. */
+  href?: string
+}
+
+const { href = "https://www.artportalen.se/search/sightings/area/77" } = Astro.props
+---
+
+<div class="flex max-w-[38rem] flex-col gap-2 md:ml-[7rem]">
+  <p class="type-item">Statistiken hämtas från Artportalen och är inte på plats än.</p>
+  <p class="text-muted-foreground leading-relaxed">
+    Den uppdateras automatiskt var halvtimme. Under tiden finns fynden på <a href={href} class="link">Artportalen</a>.
+  </p>
+</div>

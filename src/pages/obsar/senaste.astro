@@ -1,0 +1,72 @@
+---
+export const prerender = false
+
+import MarginGroup from "@/components/site/obsar/MarginGroup.astro"
+import NotReady from "@/components/site/obsar/NotReady.astro"
+import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
+import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
+import Register from "@/components/site/obsar/Register.astro"
+import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
+import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { obsarStore, store } from "@/lib/obsar-data"
+import { arter } from "@/lib/obsar-stats"
+import { loadNavigation } from "@/lib/public-content"
+import { dayHeading, groupByDay } from "@/lib/stockholm-time"
+
+/**
+ * Senaste fynden: every bird reported in the kommun in the last month, newest
+ * first, a day to a group with the day in the margin (docs/design.md, "Obsar
+ * och statistik", "Grid").
+ * Replaces Artportalen's "Kommunobservationer" link. Each species links to the
+ * report on Artportalen, where its comments and photos are.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+const navigation = await loadNavigation(db)
+const kv = obsarStore()
+const recent = kv ? await store.readRecent(kv) : null
+const now = new Date()
+const days = recent ? groupByDay(recent.sightings, (one) => one.start) : []
+const species = recent ? new Set(recent.sightings.map((one) => one.speciesId)).size : 0
+const fynd = (count: number) => `${count} fynd`
+---
+
+<SiteLayout
+  title="Senaste fynden"
+  description="Alla fåglar som rapporterats i Markaryds kommun den senaste månaden, från Artportalen."
+  menu={navigation.menu}
+>
+  <article class="flex flex-col gap-12">
+    <ObsarHeader
+      title="Senaste fynden"
+      current="/obsar/senaste"
+      ingress={recent
+        ? `${recent.sightings.length.toLocaleString("sv-SE")} rapporter om ${arter(species)} i kommunen de senaste ${recent.days} dagarna, de nyaste först.`
+        : "Allt som rapporteras i kommunen, de nyaste först."}
+    />
+
+    {!recent && <NotReady />}
+
+    {
+      days.map((day) => (
+        <MarginGroup id={`dag-${day.day.slice(0, 10)}`} label={dayHeading(day.items[0]?.start ?? day.day, now)} note={fynd(day.items.length)}>
+          <Register>
+            <SightingEntries sightings={day.items} now={now} />
+          </Register>
+        </MarginGroup>
+      ))
+    }
+
+    {
+      recent && recent.sightings.length === 0 && (
+        <ObsarSection measure>
+          <p class="text-muted-foreground">Inga fåglar har rapporterats i kommunen de senaste {recent.days} dagarna.</p>
+        </ObsarSection>
+      )
+    }
+
+    <SourceNote fetchedAt={recent?.fetchedAt} />
+  </article>
+</SiteLayout>

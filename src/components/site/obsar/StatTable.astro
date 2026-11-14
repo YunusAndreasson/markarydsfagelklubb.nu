@@ -1,0 +1,64 @@
+---
+/**
+ * A plain figures table at the reading measure (docs/design.md, "Obsar och
+ * statistik", "Grid"): a rule under the head and between rows, figures
+ * right-aligned in tabular numerals. Used by the league and the decades.
+ */
+type Column = {
+  label: string
+  /** Read by screen readers only, e.g. the rank column. */
+  hidden?: boolean
+  numeric?: boolean
+  /** The column that names the row (a `th` with scope="row"). */
+  rowHeader?: boolean
+  /** Bold figures: the column the table is sorted by. */
+  strong?: boolean
+  muted?: boolean
+}
+
+interface Props {
+  columns: Column[]
+  rows: (string | number)[][]
+}
+
+const { columns, rows } = Astro.props
+const cell = (column: Column) => [
+  "py-2",
+  column.numeric && "pl-4 text-right tabular-nums",
+  column.strong && "font-semibold",
+  column.muted && "text-muted-foreground",
+]
+---
+
+<table class="w-full border-collapse text-left">
+  <thead>
+    <tr class="type-meta text-muted-foreground border-border border-b">
+      {
+        columns.map((column) => (
+          <th scope="col" class:list={["py-2 font-medium", column.numeric && "pl-4 text-right"]}>
+            {column.hidden ? <span class="sr-only">{column.label}</span> : column.label}
+          </th>
+        ))
+      }
+    </tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr class="border-border border-b last:border-0">
+          {row.map((value, index) => {
+            const column = columns[index] ?? { label: "" }
+            const text = typeof value === "number" ? value.toLocaleString("sv-SE") : value
+            return column.rowHeader ? (
+              <th scope="row" class:list={[...cell(column), "font-medium"]}>
+                {text}
+              </th>
+            ) : (
+              <td class:list={cell(column)}>{text}</td>
+            )
+          })}
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

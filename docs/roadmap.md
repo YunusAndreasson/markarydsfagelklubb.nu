@@ -781,6 +781,32 @@ What that changes:
 
 ### F7 — Årslista and Kommunlista (Artportalen)
 
+**Built 2026-11-14 as step 10, pulled ahead of launch at the user's request, with
+F6's league and a 40-year history for the jubilee.** The spike settled it: SOS
+matches Artportalen's own lists exactly once the filter keeps species rank only
+(`taxonCategories: [17]`) — 153 species this year and 230 all time, against 158
+and 272 with subspecies and hybrids. A kommun-year is at most 4 420 records, so a
+year is scanned whole and the league counted from it. What was built differs from
+the phase B sketch below in three ways, each measured:
+
+- **Cron Trigger → KV, not a request-time call with the Cache API.** SOS allows
+  about 50–60 calls a minute and answers 429; one TaxonAggregation takes 2–4 s.
+  `src/worker.ts` adds a `scheduled` handler to Astro's: every half hour the newest
+  sightings and this year, every night the all-time list and eight past years
+  (`src/lib/artportalen/jobs.ts`). A 429 stops the run and the cursor carries on.
+  Pages read KV only. `pnpm obsar:seed` fills local KV in about four minutes.
+- **Names come from the year scans,** each species being seen in some year, with a
+  per-taxon lookup for any left over; no Dyntaxa map in the repo.
+- **Charts are ECharts in islands over a server-drawn SVG,** because ECharts' own
+  SSR cost 35–220 ms of CPU per chart (`docs/design.md`, "Obsar och statistik").
+
+Pages: `/obsar` (the year so far), `/obsar/senaste`, `/obsar/arslista[/<år>]`,
+`/obsar/markarydslistan`, `/obsar/ligan[/<år>]`, `/obsar/40-ar`, and the jubilee
+band on the home page. The key is the Worker secret `ARTPORTALEN_API_KEY`, which
+`artportalen-key-scope.test.ts` keeps away from pages and islands.
+
+**Phase B as first planned (2026-09-20), kept for the record:**
+
 These are today's redirects: this year's species list for the kommun, and
 *Markarydslistan* (every species ever recorded in the kommun, with the first
 date).
@@ -836,8 +862,8 @@ Proposed order. Each step is one plan and ends shipped with `pnpm ship`.
 | 6 | ~~**Lokaler** map (F5)~~ — shipped 2026-09-20 | F5 answered 2026-09-20 | no |
 | 7 | ~~**Larmligan** (F6)~~ — **folded into step 9** as an Artportalen link, decided 2026-09-20 | — | no |
 | 8 | **WordPress import** and the redirect map; dummy articles deleted (F2) | F2 open questions | writes new tables only |
-| 9 | **Lansering:** the domain cutover (see below). Artportalen lists as links (F7 phase A) | — | auth `site_url` changes |
-| 10 | **Årslista & Kommunlista native** (F7 phase B), after the SOS spike | spike results | no |
+| 9 | **Lansering:** the domain cutover (see below). ~~Artportalen lists as links (F7 phase A)~~ — the lists are native since step 10 | — | auth `site_url` changes |
+| 10 | ~~**Årslista & Kommunlista native** (F7 phase B), after the SOS spike~~ — built 2026-11-14, before launch, with the league (F6) and the 40-year history | spike results, 2026-11-14 | no |
 
 Why this order:
 
@@ -901,3 +927,4 @@ time.
 | F5 | Lokaler | **All 61 lokaler pinned**, active ones marked (the app's 14-day rule), **no clustering, never a larm pin**; a page per lokal at `/lokaler/<slug>` listing larm as **"På lokalen" (300 m, the app's rule) and "I närheten" (3 km, `NEAR_KM`)**; the **9 WP lokal pages 301 there** and their text becomes `locations.description`, carried over by hand; **Leaflet + OpenStreetMap** raster tiles | 2026-09-20 |
 | F6 | Larmligan | **From Artportalen, not from the club's larm.** It is Artportalen's Observatörsligan for Markaryds kommun — the list the WP site already links to — so it touches no member data and drops out of the shared-database work entirely. Folded into step 9 as a **link** for now. A table on the site is possible — `occurrence.recordedBy` is in the data — but there is no aggregation by observer (only GeoGrid and Taxon), so it means scanning a kommun-year under a 10 000-record cap, and it would be our ranking rather than Artportalen's. **F7's spike decides it** | 2026-09-20 |
 | F3, D4 | The third design pass ("Dagslistan", `docs/design.md`) | **Free hands from the user.** The day's species lead the home page, the newest article under them; Alegreya for headings; larm sort on `observed_at`; `/sok` and `/artiklar/ar/<år>`, added to the agenda here (the old site had both); `events` gets a contact and a last sign-up day, filled from the Årsprogram for upcoming events; public read failures answer 500 with the site's page, not 503 as plain text | 2026-10-31 |
+| F6, F7 | Artportalen on the site (step 10) | **Built native, before launch** (the user, 2026-11-14): the spike matched Artportalen's lists exactly. **Observers named** in the league and the sightings, as Artportalen names them; the page says it is our count of the open data. **Cron Trigger → KV**, never a call per request. **ECharts** in `client:visible` islands over our own SVG first paint. Pages: the year so far, senaste fynden, årslistan and ligan for every year, Markarydslistan, 40 år; a jubilee band on the home page. Artsidor and lokal statistics are later | 2026-11-14 |

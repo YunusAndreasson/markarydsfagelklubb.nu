@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { parseAlertsEnv, parseServerEnv } from "./env"
+import { parseAlertsEnv, parseArtportalenEnv, parseServerEnv } from "./env"
 
 const URL_OK = "https://zgnmajovyqibgxlcomvb.supabase.co"
 const KEY_OK = "sb_publishable_example"
@@ -72,5 +72,22 @@ describe("parseAlertsEnv", () => {
   it("treats blank and non-string values as missing", () => {
     expect(parseAlertsEnv({ SUPABASE_URL: URL_OK, SUPABASE_SECRET_KEY: "   " }).ok).toBe(false)
     expect(parseAlertsEnv({ SUPABASE_URL: URL_OK, SUPABASE_SECRET_KEY: 42 }).ok).toBe(false)
+  })
+})
+
+describe("parseArtportalenEnv", () => {
+  it("reads the key, trimmed", () => {
+    expect(parseArtportalenEnv({ ARTPORTALEN_API_KEY: " abc123\n" })).toEqual({
+      ok: true,
+      env: { apiKey: "abc123" },
+    })
+  })
+
+  it("reports a missing key instead of defaulting it", () => {
+    expect(parseArtportalenEnv({})).toEqual({
+      ok: false,
+      problems: ["ARTPORTALEN_API_KEY is missing"],
+    })
+    expect(parseArtportalenEnv({ ARTPORTALEN_API_KEY: "  " }).ok).toBe(false)
   })
 })

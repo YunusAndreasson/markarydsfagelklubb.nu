@@ -1,0 +1,35 @@
+---
+import SectionHeading from "@/components/site/SectionHeading.astro"
+
+/**
+ * A section on the grid's content track (docs/design.md, "Obsar och
+ * statistik", "Grid"). `measure` keeps the whole section to the 38rem reading
+ * measure, for running text and tables; without it, figures and registers take
+ * the full track. `nested` drops the margin offset, for a section inside
+ * another that already sits on the track (the hub's paired lists).
+ */
+interface Props {
+  /** The id of the section's heading: the `title` one, or a heading in the slot. */
+  id?: string
+  title?: string
+  href?: string
+  link?: string
+  measure?: boolean
+  nested?: boolean
+}
+
+const { id, title, href, link, measure = false, nested = false } = Astro.props
+---
+
+<section aria-labelledby={id} class:list={["flex min-w-0 flex-col gap-5", !nested && "md:pl-[7rem]"]}>
+  <div class:list={["flex flex-col gap-5", measure && "max-w-[38rem]"]}>
+    {
+      title && id && (
+        <SectionHeading id={id} href={href} link={link}>
+          {title}
+        </SectionHeading>
+      )
+    }
+    <slot />
+  </div>
+</section>

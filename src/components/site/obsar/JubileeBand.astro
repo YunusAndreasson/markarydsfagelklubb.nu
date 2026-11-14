@@ -1,0 +1,89 @@
+---
+import ChartFigure from "@/components/site/charts/ChartFigure.astro"
+import type { AllTime, History } from "@/lib/artportalen/types"
+import { barsSvg } from "@/lib/charts/svg"
+import { ink } from "@/lib/charts/theme"
+import { continuousYears, FOUNDED, jubilee } from "@/lib/obsar-stats"
+
+/**
+ * The jubilee band (docs/design.md, "Obsar och statistik"): every year's
+ * reports as a bar on Gran, the founding year and this year in Reflex, and the
+ * sentence that sums them. The home page shows the drawing only, with no chart
+ * script; the 40-year page makes it interactive.
+ */
+interface Props {
+  history: History
+  allTime: AllTime | null
+  thisYear: number
+  /** Hydrate the chart (the 40-year page); otherwise a plain drawing and a link. */
+  interactive?: boolean
+  headingLevel?: 1 | 2
+  /** Inside the page's column (the home page) rather than full width under the header. */
+  contained?: boolean
+}
+
+const {
+  history,
+  allTime,
+  thisYear,
+  interactive = false,
+  headingLevel = 2,
+  contained = false,
+} = Astro.props
+const FROM = 1970
+const years = continuousYears(history, FROM, thisYear)
+const facts = jubilee(history, allTime)
+const marks = [FOUNDED, thisYear]
+const Heading = headingLevel === 1 ? "h1" : "h2"
+const svg = barsSvg({
+  bars: years.map((one) => ({ value: one.reports, mark: marks.includes(one.year) })),
+  width: 600,
+  height: 160,
+  color: "rgba(255,255,255,0.55)",
+  markColor: ink.reflex,
+  gap: 0.22,
+})
+const founded = years.find((one) => one.year === FOUNDED)
+const sentence = `Sedan klubben bildades ${FOUNDED} har ${facts.reportsSinceFounding.toLocaleString("sv-SE")} fynd av ${facts.speciesSinceFounding} fågelarter rapporterats i kommunen.`
+---
+
+<section aria-labelledby="jubileum" class:list={["surface-gran", contained && "-mx-4 sm:mx-0 sm:rounded-[4px]"]}>
+  <div class:list={["flex w-full flex-col gap-6 py-8 md:py-10", contained ? "px-4 sm:px-6 md:px-8" : "mx-auto max-w-[64rem] px-4 sm:px-6"]}>
+    <div class="flex max-w-[44rem] flex-col gap-3">
+      <Heading id="jubileum" class:list={[headingLevel === 1 ? "type-title" : "type-section", "text-pretty"]}>
+        {headingLevel === 1 ? "40 år av fynd" : sentence}
+      </Heading>
+      {headingLevel === 1 && <p class="type-ingress text-pretty">{sentence}</p>}
+    </div>
+
+    {
+      interactive ? (
+        <ChartFigure
+          chart={{ kind: "history", data: { years: years.map(({ year, reports, species, observers }) => ({ year, reports, species, observers })), marks, onGran: true } }}
+          fallback={svg}
+          box="aspect-[2/1] sm:aspect-[3/1]"
+          inset="12px 8px 24px 8px"
+        >
+          Rapporter per år sedan {FROM}. Gult är {FOUNDED}, året klubben bildades, med {founded?.reports ?? 0} rapporter, och {thisYear}.
+          Peka på en stapel för året.
+        </ChartFigure>
+      ) : (
+        <figure class="flex flex-col gap-2">
+          <div class="aspect-[5/2] w-full sm:aspect-[4/1]" set:html={svg} />
+          <figcaption class="type-meta text-muted-foreground flex justify-between tabular-nums">
+            <span>{FROM}</span>
+            <span>{thisYear}</span>
+          </figcaption>
+        </figure>
+      )
+    }
+
+    {
+      !interactive && (
+        <a href="/obsar/40-ar" class="link text-reflex flex min-h-11 w-fit items-center font-medium">
+          Klubbens 40 år i siffror
+        </a>
+      )
+    }
+  </div>
+</section>

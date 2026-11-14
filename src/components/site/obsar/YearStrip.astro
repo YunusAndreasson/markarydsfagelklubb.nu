@@ -1,0 +1,45 @@
+---
+/**
+ * Every year with reports, as the article archive's year strip: plain links,
+ * the current one underlined. Behind a disclosure, since 68 years would bury
+ * the list; the two neighbours sit outside it.
+ */
+interface Props {
+  years: number[]
+  current: number
+  /** "/obsar/arslista" → "/obsar/arslista/1993". */
+  base: string
+  latest: number
+  /** The list's name, so a neighbour reads "Ligan 2025" rather than a bare year. */
+  label: string
+}
+
+const { years, current, base, latest, label } = Astro.props
+const sorted = [...years].sort((a, b) => b - a)
+const hrefOf = (year: number) => (year === latest ? base : `${base}/${year}`)
+const newer = sorted.filter((year) => year > current).at(-1)
+const older = sorted.find((year) => year < current)
+---
+
+<nav aria-label="År" class="flex flex-wrap items-start gap-x-6">
+  {older && <a href={hrefOf(older)} class="link flex min-h-11 items-center font-medium tabular-nums">{label} {older}</a>}
+  {newer && <a href={hrefOf(newer)} class="link flex min-h-11 items-center font-medium tabular-nums">{label} {newer}</a>}
+  <details class="open:basis-full">
+    <summary class="text-muted-foreground hover:text-foreground flex min-h-11 w-fit cursor-pointer items-center">Alla år</summary>
+    <ul class="flex flex-wrap gap-x-4 pb-2">
+      {
+        sorted.map((year) => (
+          <li>
+            <a
+              href={hrefOf(year)}
+              aria-current={year === current ? "page" : undefined}
+              class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center tabular-nums underline-offset-[0.5em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+            >
+              {year}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </details>
+</nav>

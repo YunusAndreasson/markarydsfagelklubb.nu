@@ -1,0 +1,188 @@
+---
+export const prerender = false
+
+import ChartFigure from "@/components/site/charts/ChartFigure.astro"
+import Entry from "@/components/site/obsar/Entry.astro"
+import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
+import NotReady from "@/components/site/obsar/NotReady.astro"
+import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
+import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
+import Register from "@/components/site/obsar/Register.astro"
+import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import StatTable from "@/components/site/obsar/StatTable.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { linesSvg } from "@/lib/charts/svg"
+import { ink, sequence } from "@/lib/charts/theme"
+import { obsarStore, store } from "@/lib/obsar-data"
+import {
+  arter,
+  continuousYears,
+  decades,
+  FOUNDED,
+  monthName,
+  monthShares,
+  recordYear,
+  shortDay,
+} from "@/lib/obsar-stats"
+import { loadNavigation } from "@/lib/public-content"
+import { stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * 40 år av fynd (docs/design.md, "Obsar och statistik"): the club's jubilee,
+ * told through the kommun's reports since 1970. The band is the page's one bold
+ * thing; the rest is figures with captions that say what to see, and the
+ * record years in words.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+const thisYear = stockholmYear(new Date())
+const kv = obsarStore()
+const [navigation, history, allTime, names] = await Promise.all([
+  loadNavigation(db),
+  kv ? store.readHistory(kv) : null,
+  kv ? store.readAllTime(kv) : null,
+  kv ? store.readNames(kv) : null,
+])
+
+const since = history ? continuousYears(history, FOUNDED, thisYear) : []
+const complete = since.filter((one) => one.year < thisYear)
+const mostReports = recordYear(history?.years ?? [], "reports")
+const mostSpecies = recordYear(history?.years ?? [], "species")
+const mostObservers = recordYear(history?.years ?? [], "observers")
+const tens = history ? decades(history).filter((one) => one.decade >= 1970) : []
+const first = since[0]
+const newcomers = (allTime?.taxa ?? [])
+  .filter((one) => one.first >= `${FOUNDED}-01-01`)
+  .sort((a, b) => b.first.localeCompare(a.first))
+/**
+ * The seasons start in 2000, when Artportalen began: before it a year holds a
+ * few dozen back-filled reports, and a month's share of them is noise. Only
+ * complete years, since a year in progress is all spring in March.
+ */
+const SEASONS_FROM = 2000
+const seasonRows = history ? continuousYears(history, SEASONS_FROM, thisYear - 1) : []
+const shares = monthShares(seasonRows)
+/** Which month carried the most reports, early and late in the club's years. */
+const peakMonth = (rows: typeof since) => {
+  const sums = new Array(12).fill(0)
+  for (const one of rows) {
+    one.months.forEach((value, month) => {
+      sums[month] += value
+    })
+  }
+  return sums.indexOf(Math.max(...sums))
+}
+const earlyPeak = peakMonth(seasonRows.filter((one) => one.year < SEASONS_FROM + 10))
+const latePeak = peakMonth(seasonRows.filter((one) => one.year >= thisYear - 10))
+const lastComplete = thisYear - 1
+const seasonsSentence =
+  earlyPeak === latePeak
+    ? `Både på 2000-talets första tio år och de senaste tio har ${monthName(latePeak)} varit månaden med flest rapporter.`
+    : `${SEASONS_FROM}–${SEASONS_FROM + 9} kom flest rapporter i ${monthName(earlyPeak)}, de senaste tio åren i ${monthName(latePeak)}.`
+
+const peopleSvg =
+  since.length > 1 &&
+  linesSvg({
+    width: 600,
+    height: 240,
+    lines: [
+      { values: since.map((one) => one.species || null), color: ink.gran, width: 2.5 },
+      { values: since.map((one) => one.observers || null), color: sequence[2] },
+    ],
+  })
+---
+
+<SiteLayout
+  title="40 år av fynd"
+  description="Markaryds Fågelklubb fyller 40. Fågellivet och rapporterandet i Markaryds kommun sedan 1986, i siffror."
+  menu={navigation.menu}
+>
+  {history && <JubileeBand slot="band" history={history} allTime={allTime} thisYear={thisYear} interactive headingLevel={1} />}
+
+  <article class="flex flex-col gap-12 md:gap-16">
+    <ObsarHeader title={history ? undefined : "40 år av fynd"} current="/obsar/40-ar" crumb={!history} />
+
+    {!history && <NotReady />}
+
+    {
+      history && first && (
+        <>
+          <ObsarSection id="bildades" title="Året klubben bildades" measure>
+            <p class="leading-relaxed">
+              {FOUNDED} rapporterades {arter(first.species)} i kommunen, i {first.reports.toLocaleString("sv-SE")} rapporter från{" "}
+              {first.observers} rapportörer. Artportalen kom först kring år 2000, så från de tidiga åren finns bara de fynd som
+              förts in i efterhand, och fågellivet var rikare än siffrorna visar.
+              {mostReports && ` Det år som har flest rapporter är ${mostReports.year}, med ${mostReports.value.toLocaleString("sv-SE")}.`}
+            </p>
+          </ObsarSection>
+
+          {peopleSvg && (
+            <ObsarSection id="arter-folk" title="Arter och rapportörer">
+              <ChartFigure
+                chart={{ kind: "people", data: { years: since.map(({ year, reports, species, observers }) => ({ year, reports, species, observers })), marks: [] } }}
+                fallback={peopleSvg}
+                box="aspect-[4/3] sm:aspect-[16/7]"
+                inset="16px 96px 28px 36px"
+              >
+                Hur många arter som rapporterades varje år, och av hur många.
+                {mostSpecies && ` Flest arter kom ${mostSpecies.year}, ${mostSpecies.value} stycken`}
+                {mostObservers && `, och flest rapportörer ${mostObservers.year}, ${mostObservers.value} personer`}.
+              </ChartFigure>
+            </ObsarSection>
+          )}
+
+          <ObsarSection id="decennier" title="Decennierna" measure>
+            <StatTable
+              columns={[
+                { label: "Decennium", rowHeader: true },
+                { label: "Rapporter", numeric: true },
+                { label: "Flest arter ett år", numeric: true },
+              ]}
+              rows={tens.map((one) => [`${one.decade}-talet`, one.reports, one.bestSpecies])}
+            />
+          </ObsarSection>
+
+          <ObsarSection id="arstider" title="Årstiderna">
+            <ChartFigure
+              chart={{ kind: "seasons", data: { years: seasonRows.map((one) => one.year), shares } }}
+              height={`${seasonRows.length * 18 + 32}px`}
+            >
+              Varje rad är ett år från {SEASONS_FROM}, när Artportalen kom, till {lastComplete}, och varje ruta en månad,
+              mörkare ju större del av årets rapporter som kom då. {seasonsSentence}
+            </ChartFigure>
+          </ObsarSection>
+
+          {newcomers.length > 0 && (
+            <ObsarSection id="nykomlingar" title="Nya arter under klubbens tid" href="/obsar/markarydslistan" link="Hela Markarydslistan">
+              <p class="text-muted-foreground max-w-[38rem] leading-relaxed">
+                {arter(newcomers.length)} har rapporterats i kommunen för första gången sedan {FOUNDED}. Här är de tolv senaste.
+              </p>
+              <Register>
+                {newcomers.slice(0, 12).map((one) => (
+                  <Entry
+                    when={one.first.slice(0, 4)}
+                    datetime={one.first}
+                    title={names?.[one.id]?.name ?? "Okänd art"}
+                    sci={names?.[one.id]?.sci}
+                    notes={[`Först sedd ${shortDay(one.first)}`]}
+                  />
+                ))}
+              </Register>
+            </ObsarSection>
+          )}
+
+          {complete.length > 0 && (
+            <ObsarSection measure>
+              <p class="text-muted-foreground leading-relaxed">
+                Siffrorna för {thisYear} växer fortfarande. Äldre år kan också få fler rapporter när gamla anteckningar förs in.
+              </p>
+            </ObsarSection>
+          )}
+        </>
+      )
+    }
+
+    <SourceNote fetchedAt={history?.fetchedAt} />
+  </article>
+</SiteLayout>

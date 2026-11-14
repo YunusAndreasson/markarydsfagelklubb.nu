@@ -1,0 +1,43 @@
+---
+/**
+ * One line of a register: a short date or time in its own narrow column, the
+ * species in Alegreya, then quieter lines under it (docs/design.md, "Obsar och
+ * statistik"). The same entry serves the årslista, Markarydslistan, Senaste
+ * fynden and the hub, so they read as one notebook.
+ */
+interface Props {
+  /** "2 jan", "08:15", "1974"; empty for a report without a time. */
+  when?: string
+  datetime?: string
+  title: string
+  /** Links the species, e.g. to the report on Artportalen. */
+  href?: string | null
+  /** A reported count, set before the name. */
+  count?: number | null
+  sci?: string
+  notes?: (string | null | undefined | false)[]
+}
+
+const { when = "", datetime, title, href, count, sci, notes = [] } = Astro.props
+const lines = notes.filter((note): note is string => Boolean(note))
+---
+
+<li class="mb-3.5 grid break-inside-avoid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-2">
+  <time datetime={datetime} class="type-meta text-muted-foreground pt-1 tabular-nums">{when}</time>
+  <div class="flex min-w-0 flex-col">
+    <p class="flex flex-wrap items-baseline gap-x-1.5">
+      {count !== null && count !== undefined && <span class="font-semibold tabular-nums">{count}</span>}
+      {
+        href ? (
+          <a href={href} class="type-item decoration-primary underline-offset-4 hover:underline">
+            {title}
+          </a>
+        ) : (
+          <span class="type-item">{title}</span>
+        )
+      }
+    </p>
+    {sci && <i class="font-display text-muted-foreground text-sm">{sci}</i>}
+    {lines.map((line) => <p class="text-muted-foreground text-sm leading-snug">{line}</p>)}
+  </div>
+</li>

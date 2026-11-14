@@ -1,0 +1,62 @@
+---
+import SectionHeading from "@/components/site/SectionHeading.astro"
+import type { Recent, YearStats } from "@/lib/artportalen/types"
+import { arter, yearHeadline } from "@/lib/obsar-stats"
+import ArrivalEntries from "./ArrivalEntries.astro"
+import Register from "./Register.astro"
+import SightingEntries from "./SightingEntries.astro"
+
+/**
+ * The kommun's birds on the home page (docs/design.md, "Obsar och statistik"):
+ * the year so far beside the newest sightings, both read from Artportalen, so
+ * the home page shows what the whole kommun reports and not only the app's larm.
+ * Full container width like "Fler artiklar": a third for the year, two thirds
+ * for the sightings in two columns.
+ */
+interface Props {
+  stats: YearStats | null
+  recent: Recent | null
+  now: Date
+}
+
+const { stats, recent, now } = Astro.props
+const sightings = recent?.sightings.slice(0, 8) ?? []
+---
+
+{
+  (stats || sightings.length > 0) && (
+    <section aria-labelledby="fynd" class="mt-16 flex flex-col gap-8 md:mt-24">
+      <SectionHeading id="fynd" href="/obsar" link="Allt om obsar">
+        Fynd i kommunen
+      </SectionHeading>
+      <div class="grid gap-10 lg:grid-cols-3 lg:gap-x-10">
+        {stats && (
+          <section aria-labelledby="fynd-aret" class="flex flex-col gap-4">
+            <h3 id="fynd-aret" class="type-meta text-muted-foreground">Året hittills</h3>
+            <p class="type-item text-pretty">{yearHeadline(stats)}</p>
+            <p class="text-muted-foreground text-sm leading-relaxed">
+              {stats.reports.toLocaleString("sv-SE")} rapporter från {stats.observerCount} rapportörer.
+            </p>
+            <Register columns={1} phoneLimit={4}>
+              <ArrivalEntries species={stats.species} count={4} />
+            </Register>
+            <a href="/obsar/arslista" class="link flex min-h-11 w-fit items-center font-medium">
+              Årslistan, {arter(stats.speciesCount)}
+            </a>
+          </section>
+        )}
+        {sightings.length > 0 && (
+          <section aria-labelledby="fynd-senaste" class="flex flex-col gap-4 lg:col-span-2">
+            <h3 id="fynd-senaste" class="type-meta text-muted-foreground">Senaste fynden på Artportalen</h3>
+            <Register columns={2} phoneLimit={4}>
+              <SightingEntries sightings={sightings} now={now} brief />
+            </Register>
+            <a href="/obsar/senaste" class="link flex min-h-11 w-fit items-center font-medium">
+              Alla fynd den senaste månaden
+            </a>
+          </section>
+        )}
+      </div>
+    </section>
+  )
+}

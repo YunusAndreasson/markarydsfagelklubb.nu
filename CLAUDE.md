@@ -14,7 +14,12 @@ event content is dummy (`exempel-` slugs) until the WordPress import in step 8.
 **Step 4 added the public larm feed** (`/larm`), which publishes the live app's
 alert log — real member data, read with the site's first Worker secret.
 **Step 5 added the kalender**: `/kalender` and `/kalender.ics`, the club's own
-programme, with no member data in it. Don't build features ahead of the step
+programme, with no member data in it. **Step 10 (2026-11-14) added the Obsar
+statistics**: `/obsar/*` and the home page's jubilee band, read from Artportalen's
+API by Cron Triggers into the `OBSAR` KV namespace (`src/worker.ts`,
+`src/lib/artportalen/`). The key is the Worker secret `ARTPORTALEN_API_KEY`;
+`artportalen-key-scope.test.ts` keeps it out of pages and islands. `pnpm
+obsar:seed` fills local KV. Don't build features ahead of the step
 you've been asked for. The full agenda, the
 decisions and the step order are in `docs/roadmap.md`; plan a step from its
 section there. The public site's design is in `docs/design.md`.

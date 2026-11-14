@@ -1,0 +1,32 @@
+---
+import { OBSAR_PAGES } from "@/lib/obsar-data"
+
+/**
+ * The Obsar section's pages as tabs, the same tabs as the article categories
+ * (docs/design.md, "Links"): one row that scrolls sideways on a phone.
+ */
+interface Props {
+  current: (typeof OBSAR_PAGES)[number]["href"]
+}
+
+const { current } = Astro.props
+const pages = OBSAR_PAGES
+---
+
+<nav aria-label="Obsar" class="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:overflow-visible md:px-0">
+  <ul class="flex w-max gap-x-5 md:w-auto md:flex-wrap">
+    {
+      pages.map((page) => (
+        <li>
+          <a
+            href={page.href}
+            aria-current={page.href === current ? "page" : undefined}
+            class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center whitespace-nowrap underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2"
+          >
+            {page.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>

@@ -71,17 +71,18 @@ export const PAGE_TREE: TreeEntry[] = [
       {
         kind: "link",
         slug: "kommunobservationer",
-        title: "Kommunobservationer",
-        url: `${ARTPORTALEN}/search/sightings/area/77`,
+        title: "Senaste fynden",
+        url: "/obsar/senaste",
         showInMenu: true,
         from: ["/svalan/kommunobsar"],
       },
-      // "Årslista {year}": the year is fixed by hand each New Year (design.md).
+      // The kommun's lists are the site's own pages since step 10 (roadmap F7), read
+      // from Artportalen by the cron jobs; the current year needs no New Year edit.
       {
         kind: "link",
         slug: "arslista",
-        title: "Årslista 2026",
-        url: `${ARTPORTALEN}/List/Top/Species/F%C3%A5glar/2026/Kommun/Markaryd/AnySite/OrderByDate/Desc`,
+        title: "Årslistan",
+        url: "/obsar/arslista",
         showInMenu: true,
         from: ["/listor/arslista-2015"],
       },
@@ -89,15 +90,15 @@ export const PAGE_TREE: TreeEntry[] = [
         kind: "link",
         slug: "markarydslistan",
         title: "Markarydslistan",
-        url: `${ARTPORTALEN}/List/Top/Species/F%C3%A5glar/Total/Kommun/Markaryd/AnySite/OrderByDate/Desc`,
+        url: "/obsar/markarydslistan",
         showInMenu: true,
         from: ["/listor/markarydslistan-2"],
       },
       {
         kind: "link",
         slug: "observatorsligan",
-        title: "Observatörsligan 2026",
-        url: `${ARTPORTALEN}/List/Top/User/F%C3%A5glar/2026/Kommun/Markaryd`,
+        title: "Ligan",
+        url: "/obsar/ligan",
         showInMenu: true,
         from: ["/listor/observatorsligan-2015"],
       },

@@ -1,0 +1,43 @@
+---
+import ObsarNav from "./ObsarNav.astro"
+
+/**
+ * The head of every Obsar page, on the grid's content track (docs/design.md,
+ * "Obsar och statistik", "Grid"): the crumb, the title and the ingress at the
+ * measure, then the section's tabs, then anything page-specific (a year strip).
+ * The 40-year page has its title in the band, so `title` is optional.
+ */
+interface Props {
+  title?: string
+  current:
+    | "/obsar"
+    | "/obsar/senaste"
+    | "/obsar/arslista"
+    | "/obsar/markarydslistan"
+    | "/obsar/ligan"
+    | "/obsar/40-ar"
+  /** The crumb back to /obsar; off on /obsar itself. */
+  crumb?: boolean
+  ingress?: string | null | false
+}
+
+const { title, current, crumb = true, ingress } = Astro.props
+---
+
+<header class="flex flex-col gap-5 md:pl-[7rem]">
+  {
+    (title || ingress) && (
+      <div class="flex max-w-[38rem] flex-col gap-4">
+        {crumb && (
+          <p class="type-meta">
+            <a href="/obsar" class="crumb">Obsar</a>
+          </p>
+        )}
+        {title && <h1 class="type-title">{title}</h1>}
+        {ingress && <p class="type-ingress text-muted-foreground">{ingress}</p>}
+      </div>
+    )
+  }
+  <ObsarNav current={current} />
+  <slot name="after" />
+</header>

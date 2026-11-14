@@ -1,0 +1,27 @@
+---
+/**
+ * A short ranked list for the hub: a name and its figure on one line, the
+ * figure right-aligned in tabular numerals so the column reads down.
+ */
+interface Props {
+  items: { name: string; value: string; note?: string }[]
+  numbered?: boolean
+}
+
+const { items, numbered = false } = Astro.props
+---
+
+<ol class="flex flex-col gap-2">
+  {
+    items.map((item, index) => (
+      <li class:list={["grid items-baseline gap-x-3", numbered ? "grid-cols-[1.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"]}>
+        {numbered && <span class="type-meta text-muted-foreground tabular-nums">{index + 1}</span>}
+        <span class="min-w-0 truncate font-medium">{item.name}</span>
+        <span class="tabular-nums">
+          {item.value}
+          {item.note && <span class="text-muted-foreground text-sm"> {item.note}</span>}
+        </span>
+      </li>
+    ))
+  }
+</ol>

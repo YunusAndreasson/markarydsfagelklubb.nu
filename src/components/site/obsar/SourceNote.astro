@@ -1,0 +1,20 @@
+---
+import { formatDate } from "@/lib/stockholm-time"
+
+/**
+ * The credit every Obsar page carries (docs/design.md, "Obsar och statistik"),
+ * at the foot of the content track.
+ * Artportalen's data is CC0; the credit is courtesy and tells the reader what
+ * the numbers leave out.
+ */
+interface Props {
+  fetchedAt?: string | null
+}
+
+const { fetchedAt } = Astro.props
+---
+
+<p class="type-meta text-muted-foreground max-w-[38rem] leading-relaxed md:ml-[7rem]">
+  Källa: <a href="https://www.artportalen.se/" class="link">Artportalen</a>, SLU Artdatabanken. Skyddsklassade fynd ingår
+  inte, och nya rapporter kan komma in i efterhand.{fetchedAt && ` Uppdaterad ${formatDate(fetchedAt, "dateTime")}.`}
+</p>

@@ -93,3 +93,23 @@ export function parseAlertsEnv(source: Record<string, unknown>): AlertsEnvResult
   }
   return { ok: true, env: { supabaseUrl, supabaseSecretKey } }
 }
+
+export type ArtportalenEnv = {
+  /**
+   * The personal subscription key for SLU's Species Observation System. Only
+   * the scheduled jobs use it, through `artportalen/client.ts`; no page or
+   * island can reach it (`artportalen-key-scope.test.ts`).
+   */
+  apiKey: string
+}
+
+export type ArtportalenEnvResult =
+  | { ok: true; env: ArtportalenEnv }
+  | { ok: false; problems: string[] }
+
+/** Parsed apart from the rest, so a missing key stops the statistics jobs and nothing else. */
+export function parseArtportalenEnv(source: Record<string, unknown>): ArtportalenEnvResult {
+  const apiKey = readString(source, "ARTPORTALEN_API_KEY")
+  if (!apiKey) return { ok: false, problems: ["ARTPORTALEN_API_KEY is missing"] }
+  return { ok: true, env: { apiKey } }
+}

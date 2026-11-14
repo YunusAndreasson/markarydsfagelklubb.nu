@@ -1056,6 +1056,84 @@ a club's news to Facebook. It lives at `/feed` because WordPress had it at
 page links it for discovery (`rel="alternate"`), and the footer's Klubben group
 lists it as "Artiklar som RSS-flöde". An hour's cache, as for the calendar.
 
+## Obsar och statistik (2026-11-14)
+
+The kommun's lists and history, read from Artportalen (roadmap F6/F7, step 10)
+and drawn on the site instead of linking to Svalan. Reporting stays on Artportalen.
+
+**Brief.** Same audience as the rest of the site, plus the jubilee: the club was
+founded in 1986, and 2026 is its 40th year. The job: answer "what has been seen
+here, when, and by whom" as well as Artportalen's own lists do, and tell the
+kommun's 57 years of reports as a story.
+
+**The one memorable thing: the jubilee band.** A Gran band with every year from
+1970 as a bar of reports, in a pale tint of white, with **1986 and 2026 in Reflex**
+and a sentence that states the totals ("Sedan klubben bildades 1986 har 77 000
+fynd av 230 arter rapporterats i kommunen."). It is the home page's only figure,
+between the lead and the articles, and it opens `/obsar/40-ar`. Reflex keeps its one
+meaning on Gran, a mark to look at; here it marks the two years the club counts from.
+
+**Everything else is the notebook, quiet:**
+
+- **Numbers go in sentences, not tiles.** "I år har 153 arter rapporterats, den
+  senaste prutgås den 11 november." The big-number tile was rejected in Dagslistan
+  for the same reason: the names are the content.
+- **The årslista is a dated list.** Date in the margin, species in Alegreya, in the
+  order they arrived. Markarydslistan is the same, with the year in the margin.
+- **Charts are figures in the reading flow**, with a caption sentence that says what
+  to see in them, so they read with no script and to a screen reader (the caption
+  holds the finding, and the data is in the list beside it).
+- **Colour in charts:** marks in Gran on white; a sequence from Is to Gran for
+  heatmaps (cool water tones, one hue); Markarydsgrön only for what the pointer is
+  on, since green means "you can act on this"; Blyerts for axes and labels, Inter
+  13 px, tabular figures, Swedish months. No legends where a label can sit on the line.
+- **Interaction answers the reader:** tooltips, a year switcher, zoom on the
+  40-year bars, a play button on the league's race. Nothing moves on load except
+  the chart drawing itself in once, and not under `prefers-reduced-motion`.
+- **Names:** observers are named, as Artportalen names them (the user's call,
+  2026-11-14). The league says it is counted from Artportalen's open data, so it can
+  differ from Observatörsligan by protected sightings.
+- **Source on every page:** "Källa: Artportalen, SLU Artdatabanken. Skyddsklassade
+  fynd ingår inte." and when it was read.
+
+**Grid (the user, same day: "unnecessarily tight for desktop… consistent… DRY").**
+The first build held every list to the 38rem measure and left a third of the
+container empty, with `md:pl-[7rem]` written out 39 times and four ad hoc widths.
+The Obsar pages now use the site's own grid, and only through components
+(`src/components/site/obsar/`), so a page carries no layout classes:
+
+| Track | Width (from `md`) | Holds |
+|---|---|---|
+| Margin | 7rem | a date; a group's label (month, decade, day), sticky beside its register (`MarginGroup`) |
+| Content | the rest of the 64rem container | figures, registers, paired sections (`ObsarSection`, `ObsarPair`) |
+| Measure | 38rem, inside content | running text, ingresses, captions, tables (`ObsarSection measure`, `StatTable`) |
+
+- **Registers** (`Register` + `Entry`) are long lists in columns, top to bottom then
+  across, as the lokal register is: one on a phone, two from `sm`, three from `lg`.
+  An entry is a short date or time, the species in Alegreya, then quieter lines.
+- **Tables stay at the measure**: across 57rem a reader loses the row between a name
+  and its number.
+- **The home page's "Fynd i kommunen"** (`ObsarHome`) sits on the container like
+  "Fler artiklar", in the same thirds as the article tiles: the year so far in one,
+  the newest sightings in two columns across the other two. A phone shows four of
+  each. The jubilee band moved to the foot of the page, as its closing figure.
+
+**How it is built.** Each figure's first paint is a plain SVG drawn by our own code
+(`lib/charts/svg.ts`, a few hundred bytes, well under a millisecond). Apache ECharts
+then draws over it on canvas from a `client:visible` island (`ObsarChart.tsx`,
+`LeagueRace.tsx`) for tooltips, zoom and the race. ECharts' own server rendering was
+measured and rejected: 35–220 ms of CPU per chart and 1.4 MB of SVG for a heatmap,
+on every request. The heatmaps have no SVG first paint; their caption carries the
+finding. The home page ships the SVG only, no chart script. Below 480 px wide the
+charts thin their labels and tighten their margins, and the boxes are 4:3 instead of
+16:7.
+
+**Reviewed in the browser (2026-11-14).** The two lines' end labels on the artkurva
+collided where the curves converge, so only this year is labelled and the caption
+names the other two. The heatmap's scale tops out at the 90th percentile, because one
+record week left every other cell pale. A bare "2025" beside the year disclosure read
+as a stray link, so neighbours read "Ligan 2025".
+
 ## Notes for later passes
 
 - ~~Larm (step 4) brings the first colour beyond green: rarity.~~ Done: a

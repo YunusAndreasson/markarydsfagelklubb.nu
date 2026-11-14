@@ -1,15 +1,37 @@
 ---
 export const prerender = false
 
+import ChartFigure from "@/components/site/charts/ChartFigure.astro"
+import ArrivalEntries from "@/components/site/obsar/ArrivalEntries.astro"
+import NotReady from "@/components/site/obsar/NotReady.astro"
+import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
+import ObsarPair from "@/components/site/obsar/ObsarPair.astro"
+import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
+import RankList from "@/components/site/obsar/RankList.astro"
+import Register from "@/components/site/obsar/Register.astro"
+import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
+import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { renderBody } from "@/lib/article-body"
+import { linesSvg } from "@/lib/charts/svg"
+import { ink, sequence } from "@/lib/charts/theme"
 import { groupObsar, obsarDescription } from "@/lib/obsar"
+import { obsarStore, store } from "@/lib/obsar-data"
+import {
+  arter,
+  bestSince,
+  paceAgainstAverage,
+  speciesCurves,
+  yearHeadline,
+} from "@/lib/obsar-stats"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
+import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
 
 /**
- * Obsar (docs/design.md, "Obsar"), with a route of its own as Klubben has. The
- * links stay in the page tree; this page orders them by what a member came to
- * do, with reporting first, where the old menu's first entry had it.
+ * Obsar (docs/design.md, "Obsar och statistik"): the kommun's year so far, read
+ * from Artportalen by the scheduled jobs. The page tree still owns the title,
+ * the ingress, the reporting link and the neighbouring landskap; the kommun's
+ * own lists are this site's pages now, not links to Artportalen.
  */
 
 const { db } = Astro.locals
@@ -23,64 +45,187 @@ if (page === "error") return new Response(null, { status: 500 })
 if (!page) return new Response(null, { status: 404 })
 
 type Child = typeof node & Pick<PublicPageRow, "description">
-const { report, kommun, regions } = groupObsar(node.children as Child[])
+const { report, regions } = groupObsar(node.children as Child[])
 const hrefOf = (child: Child) => (child.kind === "link" ? (child.link_url ?? "/") : child.path)
+
+const now = new Date()
+const today = toStockholmInputValue(now).slice(0, 10)
+const year = stockholmYear(now)
+const kv = obsarStore()
+const [history, stats, recent] = kv
+  ? await Promise.all([store.readHistory(kv), store.readYear(kv, year), store.readRecent(kv)])
+  : [null, null, null]
+
+const curves = history ? speciesCurves(history, year, today) : null
+const pace = curves ? paceAgainstAverage(curves) : null
+const since = history ? bestSince(history.years, year, "reports") : null
+const leaders = stats?.league.slice(0, 5) ?? []
+const places = stats?.localities.slice(0, 5) ?? []
+const sightings = recent?.sightings.slice(0, 6) ?? []
+
+const curveSvg =
+  curves &&
+  linesSvg({
+    width: 600,
+    height: 240,
+    max:
+      Math.max(
+        ...[
+          ...(curves.previous ?? []),
+          ...(curves.average ?? []),
+          ...curves.current.map((v) => v ?? 0),
+        ]
+      ) * 1.05,
+    lines: [
+      ...(curves.average
+        ? [{ values: curves.average, color: ink.pencil, width: 1.5, dashed: true }]
+        : []),
+      ...(curves.previous ? [{ values: curves.previous, color: sequence[2] }] : []),
+      { values: curves.current, color: ink.gran, width: 3 },
+    ],
+  })
+
+const reportSentence = stats
+  ? `${stats.reports.toLocaleString("sv-SE")} rapporter från ${stats.observerCount} rapportörer${since === null && (history?.years.length ?? 0) > 1 ? ", fler än något år tidigare" : since !== null && since <= year - 2 ? `, flest sedan ${since}` : ""}.`
+  : ""
+
+const headline = stats ? yearHeadline(stats) : ""
+
+const paceSentence =
+  pace === null || !curves
+    ? null
+    : pace === 0
+      ? `Det är precis som ett vanligt år vid den här tiden, räknat på de senaste ${curves.averageYears} åren.`
+      : `Det är ${arter(Math.abs(pace))} ${pace > 0 ? "fler" : "färre"} än ett vanligt år vid den här tiden, räknat på de senaste ${curves.averageYears} åren.`
 ---
 
-<SiteLayout title={page.title} description={page.description || "Rapportera fåglar och se vad som observerats i Markaryds kommun."} menu={navigation.menu}>
-  <article class="flex flex-col gap-10 md:pl-[7rem]">
-    <header class="flex max-w-[38rem] flex-col gap-4">
-      <h1 class="type-title">{page.title}</h1>
-      <p class="type-ingress text-muted-foreground">
-        {page.description || "Klubbens medlemmar rapporterar sina fynd på Artportalen. Länkarna här går dit."}
-      </p>
-    </header>
+<SiteLayout
+  title={page.title}
+  description={page.description ||
+    "Vad som rapporteras i Markaryds kommun: årets arter, de senaste fynden, listorna och 40 år av obsar."}
+  menu={navigation.menu}
+>
+  <article class="flex flex-col gap-12 md:gap-16">
+    <ObsarHeader
+      title={page.title}
+      current="/obsar"
+      crumb={false}
+      ingress={page.description || "Det klubbens medlemmar och andra rapporterar i Markaryds kommun, hämtat från Artportalen."}
+    />
 
-    {page.body_html && <div class="content" set:html={renderBody(page.body_html)} />}
+    {
+      page.body_html && (
+        <ObsarSection measure>
+          <div class="content" set:html={renderBody(page.body_html)} />
+        </ObsarSection>
+      )
+    }
+
+    {!stats && <NotReady />}
+
+    {
+      stats && (
+        <>
+          <ObsarSection id="aret">
+            <div class="flex max-w-[38rem] flex-col gap-4">
+              <h2 id="aret" class="type-section text-pretty">{headline}</h2>
+              <p class="text-muted-foreground leading-relaxed">
+                {reportSentence} {paceSentence}
+              </p>
+            </div>
+            {curves && curveSvg && (
+              <ChartFigure
+                chart={{ kind: "artkurva", data: curves }}
+                fallback={curveSvg}
+                box="aspect-[4/3] sm:aspect-[16/7]"
+                inset="16px 96px 28px 32px"
+              >
+                Artkurvan: hur många arter som setts i kommunen vecka för vecka. Den mörka linjen är i år, den ljusa {year - 1}
+                och den streckade ett genomsnitt av de {curves.averageYears} åren före. Den stiger brant i april och maj, när
+                flyttfåglarna kommer.
+              </ChartFigure>
+            )}
+          </ObsarSection>
+
+          {/* The year's four short lists, paired on the content track. */}
+          <ObsarPair>
+            <ObsarSection id="nya" title="Nya för året" href="/obsar/arslista" link="Hela årslistan" nested>
+              <Register columns={1}>
+                <ArrivalEntries species={stats.species} count={6} />
+              </Register>
+            </ObsarSection>
+
+            <ObsarSection id="senaste" title="Senaste fynden" href="/obsar/senaste" link="Alla senaste fynd" nested>
+              {sightings.length === 0 ? (
+                <p class="text-muted-foreground">Inga fynd rapporterade de senaste {recent?.days ?? 30} dagarna.</p>
+              ) : (
+                <Register columns={1}>
+                  <SightingEntries sightings={sightings} now={now} brief />
+                </Register>
+              )}
+            </ObsarSection>
+
+            <ObsarSection id="ligan" title="Flest arter i år" href="/obsar/ligan" link="Hela ligan" nested>
+              <RankList numbered items={leaders.map((one) => ({ name: one.name, value: arter(one.species) }))} />
+            </ObsarSection>
+
+            <ObsarSection id="platser" title="Mest rapporterat från" nested>
+              <RankList
+                items={places.map((one) => ({
+                  name: one.name.replace(/, Sm$/, ""),
+                  value: one.reports.toLocaleString("sv-SE"),
+                  note: one.reports === 1 ? "rapport" : "rapporter",
+                }))}
+              />
+            </ObsarSection>
+          </ObsarPair>
+
+          <ObsarSection measure>
+            <a href="/obsar/40-ar" class="surface-gran group flex flex-col gap-1 rounded-[4px] px-5 py-5">
+              <span class="type-section text-reflex underline decoration-1 underline-offset-4 group-hover:decoration-2">
+                40 år av fynd
+              </span>
+              <span class="text-muted-foreground leading-relaxed">
+                Klubben fyller 40. Så har fågellivet och rapporterandet i kommunen förändrats sedan 1986.
+              </span>
+            </a>
+          </ObsarSection>
+        </>
+      )
+    }
 
     {
       report.map((child) => (
-        <div class="surface-gran flex max-w-[38rem] flex-col gap-1 rounded-[4px] px-5 py-5">
-          <a href={hrefOf(child)} class="type-section text-reflex w-fit underline decoration-1 underline-offset-4 hover:decoration-2">
-            {child.title}
-          </a>
-          <p class="text-muted-foreground leading-relaxed">{obsarDescription(child)}</p>
-        </div>
+        <ObsarSection id="rapportera" title="Har du sett något?" measure>
+          <p class="text-muted-foreground leading-relaxed">
+            {obsarDescription(child)}{" "}
+            <a href={hrefOf(child)} class="link font-medium">
+              {child.title}
+            </a>
+          </p>
+        </ObsarSection>
       ))
     }
 
     {
-      kommun.length > 0 && (
-        <section aria-labelledby="obsar-kommunen" class="flex max-w-[38rem] flex-col gap-5">
-          <h2 id="obsar-kommunen" class="type-section">Markaryds kommun</h2>
-          <ul class="flex flex-col gap-5">
-            {kommun.map((child) => (
-              <li class="flex flex-col gap-0.5">
-                <a href={hrefOf(child)} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
-                  {child.title}
-                </a>
-                {obsarDescription(child) && <p class="text-muted-foreground leading-relaxed">{obsarDescription(child)}</p>}
-              </li>
-            ))}
-          </ul>
-        </section>
+      regions.length > 0 && (
+        <ObsarSection id="obsar-grannar" title="Runt omkring" measure>
+          <div class="flex flex-col gap-2">
+            <p class="text-muted-foreground">Vad som rapporteras i landskapen i närheten, på Artportalen.</p>
+            <ul class="flex flex-wrap gap-x-6">
+              {regions.map((child) => (
+                <li>
+                  <a href={hrefOf(child)} class="link flex min-h-11 items-center font-medium">
+                    {child.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </ObsarSection>
       )
     }
 
-    {
-      regions.length > 0 && (
-        <section aria-labelledby="obsar-grannar" class="flex max-w-[38rem] flex-col gap-2">
-          <h2 id="obsar-grannar" class="type-section">Runt omkring</h2>
-          <p class="text-muted-foreground">Vad som rapporteras i landskapen i närheten.</p>
-          <ul class="flex flex-wrap gap-x-6">
-            {regions.map((child) => (
-              <li>
-                <a href={hrefOf(child)} class="link flex min-h-11 items-center font-medium">{child.title}</a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )
-    }
+    <SourceNote fetchedAt={stats?.fetchedAt} />
   </article>
 </SiteLayout>

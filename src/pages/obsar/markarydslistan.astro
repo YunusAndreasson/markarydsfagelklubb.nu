@@ -1,0 +1,134 @@
+---
+export const prerender = false
+
+import ChartFigure from "@/components/site/charts/ChartFigure.astro"
+import Entry from "@/components/site/obsar/Entry.astro"
+import MarginGroup from "@/components/site/obsar/MarginGroup.astro"
+import NotReady from "@/components/site/obsar/NotReady.astro"
+import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
+import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
+import Register from "@/components/site/obsar/Register.astro"
+import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { linesSvg } from "@/lib/charts/svg"
+import { ink } from "@/lib/charts/theme"
+import { obsarStore, store } from "@/lib/obsar-data"
+import { accumulation, arter, FOUNDED, shortDay } from "@/lib/obsar-stats"
+import { loadNavigation } from "@/lib/public-content"
+import { stockholmYear } from "@/lib/stockholm-time"
+
+/**
+ * Markarydslistan (docs/design.md, "Obsar och statistik"): every species ever
+ * reported in the kommun, with the date it was first seen, grouped by the
+ * decade it joined the list. The newest additions come first, because that is
+ * what a member checks.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+const kv = obsarStore()
+const [navigation, allTime, names] = await Promise.all([
+  loadNavigation(db),
+  kv ? store.readAllTime(kv) : null,
+  kv ? store.readNames(kv) : null,
+])
+const thisYear = stockholmYear(new Date())
+
+const taxa = (allTime?.taxa ?? [])
+  .map((one) => ({
+    ...one,
+    name: names?.[one.id]?.name ?? "Okänd art",
+    sci: names?.[one.id]?.sci ?? "",
+  }))
+  .sort((a, b) => a.first.localeCompare(b.first) || a.name.localeCompare(b.name, "sv"))
+const newest = taxa.slice(-6).reverse()
+const firstYear = taxa[0] ? Number(taxa[0].first.slice(0, 4)) : thisYear
+const grown = allTime ? accumulation(allTime, firstYear, thisYear) : []
+const atFounding = grown.find((one) => one.year === FOUNDED - 1)?.total ?? 0
+const decadesOf = new Map<number, typeof taxa>()
+for (const one of taxa) {
+  const decade = Math.floor(Number(one.first.slice(0, 4)) / 10) * 10
+  decadesOf.set(decade, [...(decadesOf.get(decade) ?? []), one])
+}
+const reports = (count: number) =>
+  count === 1 ? "1 rapport" : `${count.toLocaleString("sv-SE")} rapporter`
+const notSeenSince = taxa.filter((one) => Number(one.last.slice(0, 4)) < thisYear - 20).length
+
+const fallback =
+  grown.length > 1 &&
+  linesSvg({
+    width: 600,
+    height: 240,
+    step: true,
+    lines: [{ values: grown.map((one) => one.total), color: ink.gran, width: 2.5 }],
+  })
+---
+
+<SiteLayout
+  title="Markarydslistan"
+  description="Alla fågelarter som någonsin rapporterats i Markaryds kommun, med datum när de först sågs."
+  menu={navigation.menu}
+>
+  <article class="flex flex-col gap-12">
+    <ObsarHeader
+      title="Markarydslistan"
+      current="/obsar/markarydslistan"
+      ingress={allTime &&
+        `${arter(taxa.length)} har rapporterats i Markaryds kommun sedan ${firstYear}. När klubben bildades ${FOUNDED} var listan ${atFounding} arter lång.`}
+    />
+
+    {!allTime && <NotReady href="https://www.artportalen.se/List/Top/Species/F%C3%A5glar/Total/Kommun/Markaryd/AnySite/OrderByDate/Desc" />}
+
+    {
+      allTime && (
+        <>
+          <ObsarSection id="nyast" title="Senast på listan">
+            <Register>
+              {newest.map((one) => (
+                <Entry
+                  when={one.first.slice(0, 4)}
+                  datetime={one.first}
+                  title={one.name}
+                  sci={one.sci}
+                  notes={[`Först sedd ${shortDay(one.first)}, ${reports(one.reports)}`]}
+                />
+              ))}
+            </Register>
+          </ObsarSection>
+
+          {fallback && (
+            <ObsarSection id="vaxer" title="Så har listan vuxit">
+              <ChartFigure
+                chart={{ kind: "accumulation", data: { points: grown, founded: FOUNDED } }}
+                fallback={fallback}
+                box="aspect-[4/3] sm:aspect-[16/7]"
+                inset="16px 16px 28px 40px"
+              >
+                Antal kända arter i kommunen vid varje års slut. Varje trappsteg är en ny art.
+                {notSeenSince > 0 && ` ${arter(notSeenSince)} på listan har inte rapporterats på över 20 år.`}
+              </ChartFigure>
+            </ObsarSection>
+          )}
+
+          {[...decadesOf].map(([decade, list]) => (
+            <MarginGroup id={`d-${decade}`} label={`${decade}-talet`} note={`${list.length} nya`}>
+              <Register>
+                {list.map((one) => (
+                  <Entry
+                    when={one.first.slice(0, 4)}
+                    datetime={one.first}
+                    title={one.name}
+                    sci={one.sci}
+                    notes={[one.reports > 1 ? `${reports(one.reports)}, senast ${one.last.slice(0, 4)}` : reports(one.reports)]}
+                  />
+                ))}
+              </Register>
+            </MarginGroup>
+          ))}
+        </>
+      )
+    }
+
+    <SourceNote fetchedAt={allTime?.fetchedAt} />
+  </article>
+</SiteLayout>

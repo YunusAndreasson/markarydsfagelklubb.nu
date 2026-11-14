@@ -1,0 +1,112 @@
+---
+export const prerender = false
+
+import LeagueRace from "@/components/site/charts/LeagueRace"
+import NotReady from "@/components/site/obsar/NotReady.astro"
+import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
+import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
+import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import StatTable from "@/components/site/obsar/StatTable.astro"
+import YearStrip from "@/components/site/obsar/YearStrip.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { obsarStore, store } from "@/lib/obsar-data"
+import { arter, parseYearParam } from "@/lib/obsar-stats"
+import { loadNavigation } from "@/lib/public-content"
+import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
+
+/**
+ * Ligan (roadmap F6): who has seen the most species in the kommun in a year,
+ * named as Artportalen names them (the user's call, 2026-11-14). It is our
+ * count of Artportalen's open data, so it can differ from Artportalen's own
+ * Observatörsligan by protected sightings; the page says so.
+ */
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+const now = new Date()
+const thisYear = stockholmYear(now)
+const kv = obsarStore()
+const [navigation, history] = await Promise.all([
+  loadNavigation(db),
+  kv ? store.readHistory(kv) : null,
+])
+const years = history?.years.map((one) => one.year) ?? []
+const year = parseYearParam(Astro.params.year, years, thisYear)
+if (year === null) return new Response(null, { status: 404 })
+// This year lives at the plain URL; its own year URL would be a second copy.
+if (year === thisYear && Astro.params.year) return Astro.redirect("/obsar/ligan", 301)
+const stats = kv ? await store.readYear(kv, year) : null
+
+const isCurrent = year === thisYear
+const until = isCurrent ? toStockholmInputValue(now).slice(0, 10) : `${year}-12-31`
+const runners = (stats?.league ?? [])
+  .filter((one) => one.curve && one.curve.length > 0)
+  .slice(0, 12)
+  .map((one) => ({ name: one.name, curve: one.curve ?? [] }))
+const leader = stats?.league[0]
+const title = `Ligan ${year}`
+/** Shared places print the rank once, as sports tables do. */
+const rows = (stats?.league ?? []).map((one, index, all) => [
+  index > 0 && all[index - 1].species === one.species ? "" : index + 1,
+  one.name,
+  one.species,
+  one.reports,
+])
+---
+
+<SiteLayout
+  title={title}
+  description={`Vem som har sett flest fågelarter i Markaryds kommun ${year}, räknat från Artportalen.`}
+  menu={navigation.menu}
+>
+  <article class="flex flex-col gap-12">
+    <ObsarHeader
+      title={title}
+      current="/obsar/ligan"
+      ingress={stats &&
+        leader &&
+        `${stats.observerCount} personer har rapporterat fåglar i kommunen ${isCurrent ? "i år" : `under ${year}`}. ${leader.name} ${isCurrent ? "leder" : "vann"} med ${arter(leader.species)}.`}
+    >
+      {years.length > 1 && <YearStrip slot="after" years={years} current={year} base="/obsar/ligan" latest={thisYear} label="Ligan" />}
+    </ObsarHeader>
+
+    {!stats && <NotReady href="https://www.artportalen.se/List/Top/User/F%C3%A5glar/2026/Kommun/Markaryd" />}
+
+    {
+      runners.length >= 3 && (
+        <ObsarSection id="loppet" title="Året som ett lopp">
+          <p class="text-muted-foreground max-w-[38rem] leading-relaxed">
+            De tolv främsta och hur många arter de hade vecka för vecka. Tryck på knappen för att se året spelas upp.
+          </p>
+          <LeagueRace client:visible year={year} until={until} runners={runners} />
+        </ObsarSection>
+      )
+    }
+
+    {
+      rows.length > 0 && (
+        <ObsarSection id="tabell" title="Alla rapportörer" measure>
+          <StatTable
+            columns={[
+              { label: "Plats", hidden: true, muted: true },
+              { label: "Namn", rowHeader: true },
+              { label: "Arter", numeric: true, strong: true },
+              { label: "Rapporter", numeric: true, muted: true },
+            ]}
+            rows={rows}
+          />
+          <p class="type-meta text-muted-foreground leading-relaxed">
+            Räknat från Artportalens öppna data: en art räknas för alla som står med på fyndet. Skyddsklassade fynd ingår inte,
+            så siffrorna kan skilja sig något från{" "}
+            <a href={`https://www.artportalen.se/List/Top/User/F%C3%A5glar/${year}/Kommun/Markaryd`} class="link">
+              Artportalens observatörsliga
+            </a>
+            .
+          </p>
+        </ObsarSection>
+      )
+    }
+
+    <SourceNote fetchedAt={stats?.fetchedAt} />
+  </article>
+</SiteLayout>

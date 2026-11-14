@@ -6,9 +6,10 @@
   // auth `site_url`, so keeping the name keeps that setting valid.
   "name": "mafk-web",
 
-  // The adapter's Worker entrypoint. Astro builds the SSR bundle into ./dist
-  // and this module dispatches to it.
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  // Our own entry (src/worker.ts): the adapter's request handler plus the
+  // `scheduled` handler that reads Artportalen into KV. It replaced the
+  // adapter's `@astrojs/cloudflare/entrypoints/server` in step 10.
+  "main": "./src/worker.ts",
 
   // Pinned to the installed workerd build (1.20260918). Must be >= 2025-04-01
   // so navigation requests can skip the Worker when a static asset matches.
@@ -62,6 +63,17 @@
     ]
   },
 
+  // The kommun's bird statistics from Artportalen (docs/roadmap.md, step 10).
+  // Written only by the cron jobs below, read by the /obsar pages and the home
+  // page. No id: wrangler creates the namespace on the first deploy and keeps it.
+  "kv_namespaces": [{ "binding": "OBSAR" }],
+
+  // Must match FAST_CRON and NIGHTLY_CRON in src/lib/artportalen/jobs.ts.
+  // Every half hour: the newest sightings and this year (about six SOS calls).
+  // 03:17 UTC: the all-time list and eight past years, so all of history
+  // refreshes about once a week within SOS's rate limit.
+  "triggers": { "crons": ["*/30 * * * *", "17 3 * * *"] },
+
   // Both values are public by design: the publishable key ships to the browser
   // and Postgres RLS is the security boundary. Keeping them here (not as
   // secrets) means a build-time prerender needs no CI secret, and there is one
@@ -75,5 +87,6 @@
   // NOTE: once this file exists it is the SOURCE OF TRUTH for bindings.
   // Anything configured in the Cloudflare dashboard stops applying on the next
   // deploy. Secrets are NOT declared here — set them with `wrangler secret put`
-  // and locally in .dev.vars (see .dev.vars.example). Step 1 needs none.
+  // and locally in .dev.vars (see .dev.vars.example): SUPABASE_SECRET_KEY
+  // (larm) and ARTPORTALEN_API_KEY (the statistics jobs).
 }

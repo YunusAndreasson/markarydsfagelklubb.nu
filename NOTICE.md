@@ -19,3 +19,8 @@ isn't the author's to give; all rights stay with its owners.
 
 src/data/markaryd-boundary.json is OpenStreetMap data, © OpenStreetMap
 contributors, available under the Open Database License 1.0.
+
+The bird statistics on the Obsar pages are read at run time from Artportalen,
+SLU Artdatabanken, through its Species Observation System API. Artportalen's
+open dataset is published under CC0; the site credits it on every page. None of
+that data is stored in this repository.

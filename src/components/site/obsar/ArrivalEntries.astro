@@ -1,0 +1,26 @@
+---
+import type { SpeciesYear } from "@/lib/artportalen/types"
+import { ordinal, shortDay } from "@/lib/obsar-stats"
+import Entry from "./Entry.astro"
+
+/** The year's newest species, newest first, each with its place in the year's list. */
+interface Props {
+  /** The whole year, in order of arrival. */
+  species: SpeciesYear[]
+  count: number
+}
+
+const { species, count } = Astro.props
+const newest = species.slice(-count).reverse()
+---
+
+{
+  newest.map((one) => (
+    <Entry
+      when={shortDay(one.first)}
+      datetime={one.first}
+      title={one.name}
+      notes={[`Årets ${ordinal(species.indexOf(one) + 1)} art`]}
+    />
+  ))
+}

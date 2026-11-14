@@ -1,0 +1,24 @@
+---
+/**
+ * A group of entries with its label in the margin column (docs/design.md,
+ * "Obsar och statistik", "Grid"): a month in the årslista, a decade in
+ * Markarydslistan, a day in Senaste fynden. The label stays in view while its
+ * register scrolls past it; on a phone it sits above the register.
+ */
+interface Props {
+  id: string
+  label: string
+  /** A count under the label, e.g. "61 nya". */
+  note?: string
+}
+
+const { id, label, note } = Astro.props
+---
+
+<section aria-labelledby={id} class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,1fr)]">
+  <div class="flex items-baseline gap-x-3 md:sticky md:top-6 md:flex-col md:self-start md:pr-4">
+    <h2 id={id} class="type-item">{label}</h2>
+    {note && <p class="type-meta text-muted-foreground">{note}</p>}
+  </div>
+  <slot />
+</section>

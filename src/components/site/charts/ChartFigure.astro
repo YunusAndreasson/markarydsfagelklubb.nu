@@ -1,0 +1,54 @@
+---
+import ObsarChart from "@/components/site/charts/ObsarChart"
+import type { ChartData } from "@/lib/charts/options"
+
+/**
+ * A figure in the reading flow (docs/design.md, "Obsar och statistik"): the
+ * server's SVG first, the interactive chart over it when it scrolls into view,
+ * and a caption that says in words what to see, so the figure reads with no
+ * script and to a screen reader.
+ *
+ * `inset` pads the SVG to where the chart's plot area will be, so the canvas
+ * lands on top of it rather than beside it.
+ */
+interface Props {
+  chart: ChartData
+  /** Server-drawn SVG; omit for figures whose first paint is the caption alone. */
+  fallback?: string
+  /** Classes that size the box, e.g. "aspect-[4/3] sm:aspect-[16/7]"; or a fixed height. */
+  box?: string
+  height?: string
+  inset?: string
+  class?: string
+}
+
+const { chart, fallback, box, height, inset = "0", class: className } = Astro.props
+---
+
+<figure class:list={["chart-figure flex flex-col gap-3", className]}>
+  <div
+    data-chart
+    class:list={["relative w-full", box]}
+    style={{ height }}
+  >
+    {fallback && <div class="chart-fallback absolute" style={{ inset }} set:html={fallback} />}
+    <ObsarChart client:visible chart={chart} />
+  </div>
+  <figcaption class="text-muted-foreground max-w-[38rem] leading-relaxed text-pretty">
+    <slot />
+  </figcaption>
+</figure>
+
+<style is:global>
+  .chart-fallback {
+    transition: opacity 200ms ease-out;
+  }
+  [data-chart][data-ready] .chart-fallback {
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chart-fallback {
+      transition: none;
+    }
+  }
+</style>

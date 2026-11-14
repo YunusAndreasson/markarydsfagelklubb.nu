@@ -1,5 +1,13 @@
 import { env } from "cloudflare:workers"
-import { type AlertsEnvResult, parseAlertsEnv, parseServerEnv, type ServerEnvResult } from "./env"
+import type { Kv } from "./artportalen/store"
+import {
+  type AlertsEnvResult,
+  type ArtportalenEnvResult,
+  parseAlertsEnv,
+  parseArtportalenEnv,
+  parseServerEnv,
+  type ServerEnvResult,
+} from "./env"
 
 /**
  * Bindings and vars come from the Workers module directly —
@@ -17,4 +25,18 @@ export function readServerEnv(): ServerEnvResult {
  */
 export function readAlertsEnv(): AlertsEnvResult {
   return parseAlertsEnv(env as unknown as Record<string, unknown>)
+}
+
+/**
+ * The Artportalen key. Only `src/worker.ts`'s scheduled handler calls this;
+ * `artportalen-key-scope.test.ts` keeps it that way.
+ */
+export function readArtportalenEnv(): ArtportalenEnvResult {
+  return parseArtportalenEnv(env as unknown as Record<string, unknown>)
+}
+
+/** The statistics store, or null when the binding is missing (reported by the caller). */
+export function readObsarKv(): Kv | null {
+  const kv = (env as unknown as Record<string, unknown>).OBSAR
+  return kv && typeof kv === "object" && "get" in kv ? (kv as Kv) : null
 }
