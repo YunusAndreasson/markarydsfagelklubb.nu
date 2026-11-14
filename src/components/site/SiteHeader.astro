@@ -16,6 +16,11 @@ import { cn } from "@/lib/utils"
  * it, so without the script the header is the plain row of links it used to be.
  * Below lg, "Meny" is a `<details>` with the whole menu, and search is one tap
  * away in the bar.
+ *
+ * The header's `view-transition-name` makes it a stacking context, so the
+ * panels' own z-index only counts inside it. The header itself is `z-20`, or
+ * anything later on the page that is also a stacking context (the photos, which
+ * carry view-transition names) paints over an open panel.
  */
 interface Props {
   siteName: string
@@ -45,7 +50,7 @@ const shortcuts = [
 ]
 ---
 
-<header class="relative border-b [view-transition-name:site-header]" data-site-header>
+<header class="relative z-20 border-b [view-transition-name:site-header]" data-site-header>
   <div class="mx-auto flex w-full max-w-page items-center justify-between gap-6 px-4 py-3 sm:px-6">
     <div class="flex items-center gap-3">
       <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
