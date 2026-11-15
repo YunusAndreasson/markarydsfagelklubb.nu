@@ -1,4 +1,4 @@
-import { arrivals, type Typical } from "./artportalen/taxa"
+import { arrivals, SEASON_WINDOW, type Typical } from "./artportalen/taxa"
 import type { TaxonEntry } from "./artportalen/types"
 import { MONTHS_SHORT } from "./charts/theme"
 
@@ -128,16 +128,26 @@ export function offsetPhrase(diff: number): string {
   return diff < 0 ? `${dayWord(-diff)} tidigare än vanligt` : `${dayWord(diff)} senare än vanligt`
 }
 
+/** The years of the bird's first and last report in the kommun, from the all-time list. */
+export type Ever = { first: number; last: number }
+
 /**
  * The species page's ingress: what kind of bird it is here, in one sentence,
  * so the page says it once at the top instead of under each figure.
  * "En flyttfågel som brukar komma till kommunen kring 7 maj."
+ *
+ * `windowYears` is how many past years the index holds of the twenty. The
+ * sentences that count years ("tre av de senaste tjugo åren", "varje år") wait
+ * for all twenty: while the nightly job is still filling the index, a bird seen
+ * every year would read as missing from every one of them. Null says nothing.
  */
 export function leadSentence(
   typical: Typical,
-  lastYear: number | null,
+  windowYears: number,
+  ever: Ever | null,
+  thisYear: number,
   weeks: readonly number[]
-): string {
+): string | null {
   const { arrival, departure, kind, years } = typical
   // Only the coming: a summer bird's last report is when it goes quiet (a
   // gök's is early July), not when it leaves, and "Över året" shows the rest.
@@ -147,9 +157,13 @@ export function leadSentence(
   if (kind === "winter" && arrival !== null && departure !== null) {
     return `En vintergäst som brukar komma till kommunen kring ${dayMonth(arrival)} och stanna till kring ${dayMonth(departure)}.`
   }
+  if (windowYears < SEASON_WINDOW) return null
   if (years === 0) {
-    return lastYear
-      ? `Inte rapporterad i kommunen de senaste tjugo åren. Senast sedd ${lastYear}.`
+    // None of the twenty past years, so a report this year is the first in them.
+    if (ever?.first === thisYear) return "Ny för kommunen i år."
+    if (ever?.last === thisYear) return "Sedd i kommunen i år, för första gången på över tjugo år."
+    return ever
+      ? `Inte rapporterad i kommunen de senaste tjugo åren. Senast sedd ${ever.last}.`
       : "Inte rapporterad i kommunen de senaste tjugo åren."
   }
   const when = seasonsPhrase(weeks)

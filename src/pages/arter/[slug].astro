@@ -78,7 +78,12 @@ const figure =
     : null
 const weeks = entry ? weeksTotal(entry) : null
 const yearsSeen = entry ? Object.keys(entry.years).length : 0
-const firstYearOfData = index?.years[0] ?? null
+// The index fills from this year backwards, a few years a night, so the count
+// of years only holds once it reaches back to the bird's first report.
+const historyComplete =
+  ever !== undefined &&
+  index?.years[0] !== undefined &&
+  index.years[0] <= Number(ever.first.slice(0, 4))
 
 const larm = bird.appId !== null ? await listSpeciesAlerts(bird.appId) : null
 const alerts = larm?.ok ? larm.value : []
@@ -94,9 +99,10 @@ const unusual =
     : null
 const capital = (text: string) => text.charAt(0).toLocaleUpperCase("sv") + text.slice(1)
 
-const lead = typical
-  ? leadSentence(typical, ever ? Number(ever.last.slice(0, 4)) : null, weeks ?? [])
+const everYears = ever
+  ? { first: Number(ever.first.slice(0, 4)), last: Number(ever.last.slice(0, 4)) }
   : null
+const lead = typical ? leadSentence(typical, window.length, everYears, thisYear, weeks ?? []) : null
 const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
 ---
 
@@ -145,7 +151,7 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
               <AsideNote label="Rapporter i Artportalen">
                 <p>
                   {ever.reports.toLocaleString("sv-SE")}
-                  {firstYearOfData && yearsSeen > 0 && (
+                  {historyComplete && yearsSeen > 0 && (
                     <span class="text-muted-foreground"> under {yearsSeen === 1 ? "ett år" : `${yearsSeen} år`}</span>
                   )}
                 </p>

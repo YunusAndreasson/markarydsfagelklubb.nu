@@ -45,32 +45,58 @@ describe("arrivalSentence", () => {
 describe("leadSentence", () => {
   it("names a summer bird's coming, not its last report", () => {
     expect(
-      leadSentence({ arrival: 127, departure: 185, kind: "summer", years: 20 }, 2026, [])
+      leadSentence({ arrival: 127, departure: 185, kind: "summer", years: 20 }, 20, null, 2026, [])
     ).toBe("En flyttfågel som brukar komma till kommunen kring 7 maj.")
   })
 
   it("tells a winter guest by its autumn return", () => {
-    expect(leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 2026, [])).toBe(
-      "En vintergäst som brukar komma till kommunen kring 18 okt och stanna till kring 5 apr."
-    )
+    expect(
+      leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 20, null, 2026, [])
+    ).toBe("En vintergäst som brukar komma till kommunen kring 18 okt och stanna till kring 5 apr.")
   })
 
   it("has a plain line for a resident, a rare guest and a bird long gone", () => {
     const none = { arrival: null, departure: null, kind: null }
     const allYear = Array.from({ length: 53 }, () => 2)
-    expect(leadSentence({ ...none, years: 20 }, 2026, allYear)).toContain("året runt")
-    expect(leadSentence({ ...none, years: 3 }, 2026, [])).toBe(
+    expect(leadSentence({ ...none, years: 20 }, 20, null, 2026, allYear)).toContain("året runt")
+    expect(leadSentence({ ...none, years: 3 }, 20, null, 2026, [])).toBe(
       "Sedd i kommunen tre av de senaste tjugo åren, en ovanlig gäst."
     )
-    expect(leadSentence({ ...none, years: 0 }, 1996, [])).toBe(
+    expect(leadSentence({ ...none, years: 0 }, 20, { first: 1970, last: 1996 }, 2026, [])).toBe(
       "Inte rapporterad i kommunen de senaste tjugo åren. Senast sedd 1996."
+    )
+  })
+
+  it("says nothing about the twenty years until the index holds them", () => {
+    // Production before its first nights: only this year is in the index, so
+    // an ärtsångare seen every year has no past year in the window.
+    const none = { arrival: null, departure: null, kind: null, years: 0 }
+    expect(leadSentence(none, 0, { first: 1966, last: 2026 }, 2026, [])).toBeNull()
+    expect(
+      leadSentence({ ...none, years: 8 }, 16, { first: 1966, last: 2026 }, 2026, [])
+    ).toBeNull()
+  })
+
+  it("tells a bird back this year after twenty years from one new to the kommun", () => {
+    const none = { arrival: null, departure: null, kind: null, years: 0 }
+    expect(leadSentence(none, 20, { first: 1980, last: 2026 }, 2026, [])).toBe(
+      "Sedd i kommunen i år, för första gången på över tjugo år."
+    )
+    expect(leadSentence(none, 20, { first: 2026, last: 2026 }, 2026, [])).toBe(
+      "Ny för kommunen i år."
     )
   })
 
   it("never says 'året runt' about a bird that only passes in the autumn", () => {
     const october = Array.from({ length: 53 }, (_, week) => (week >= 40 && week <= 46 ? 5 : 0))
     expect(
-      leadSentence({ arrival: null, departure: null, kind: null, years: 20 }, 2026, october)
+      leadSentence(
+        { arrival: null, departure: null, kind: null, years: 20 },
+        20,
+        null,
+        2026,
+        october
+      )
     ).toBe("Ses i kommunen varje år, mest på hösten.")
   })
 })
