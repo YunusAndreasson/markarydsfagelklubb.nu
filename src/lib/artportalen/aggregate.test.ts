@@ -5,6 +5,7 @@ import {
   mergeHistory,
   mergeNames,
   parseCount,
+  SPARSE_REPORTS,
   safeArtportalenUrl,
   speciesIdOf,
   splitObservers,
@@ -94,6 +95,14 @@ describe("aggregateYear", () => {
     expect(stats.speciesCount).toBe(3)
     expect(stats.species.map((one) => one.name)).toEqual(["koltrast", "trana", "prutgås"])
     expect(stats.species[0]).toMatchObject({ first: "2026-01-02", last: "2026-01-05", reports: 2 })
+  })
+
+  it("keeps a sparse year's days, and no days for a common bird", () => {
+    expect(stats.species[0]?.days).toEqual(["2026-01-02", "2026-01-05"])
+    const many = Array.from({ length: SPARSE_REPORTS + 1 }, (_, i) =>
+      record(`2026-04-${String(i + 1).padStart(2, "0")}`, TRANA)
+    )
+    expect(aggregateYear(2026, many, FETCHED).species[0]?.days).toBeUndefined()
   })
 
   it("sums reports and only numeric counts", () => {

@@ -23,7 +23,13 @@ interface Props {
   rarity?: RarityLevel | null
 }
 
-const { when = "", datetime, title, href, count, sci, notes = [], rarity } = Astro.props
+const { when = "", datetime, title: given, href, count, sci, notes = [], rarity } = Astro.props
+// A name that starts the line starts with a capital, as a heading would
+// ("Prutgås"); after a count it reads as a phrase and stays small ("8 sidensvans").
+// Artportalen writes names in lower case, the club's list capitalised, and the
+// two meet on the same page.
+const counted = count !== null && count !== undefined
+const title = counted ? given : given.charAt(0).toLocaleUpperCase("sv") + given.slice(1)
 const lines = notes.filter((note): note is string => Boolean(note))
 ---
 
@@ -31,7 +37,7 @@ const lines = notes.filter((note): note is string => Boolean(note))
   <time datetime={datetime} class="type-meta text-muted-foreground pt-1 tabular-nums">{when}</time>
   <div class="flex min-w-0 flex-col">
     <p class="flex flex-wrap items-baseline gap-x-1.5">
-      {count !== null && count !== undefined && <span class="font-semibold tabular-nums">{count}</span>}
+      {counted && <span class="font-semibold tabular-nums">{count}</span>}
       {
         href ? (
           <a href={href} class="type-item decoration-primary underline-offset-4 hover:underline">

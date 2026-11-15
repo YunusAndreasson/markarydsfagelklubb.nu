@@ -172,8 +172,8 @@ import { speciesLink } from "@/lib/species"
               chart={{ kind: "seasons", data: { years: seasonRows.map((one) => one.year), shares } }}
               height={`${seasonRows.length * 18 + 64}px`}
             >
-              Varje rad är ett år från {SEASONS_FROM}, när Artportalen kom, till {lastComplete}, och varje ruta en månad,
-              mörkare ju större del av årets rapporter som kom då. Skalan under rutorna går från 0 till en fjärdedel av året. {seasonsSentence}
+              Varje rad är ett år från {SEASONS_FROM}, när Artportalen kom, till {lastComplete}, och varje ruta en månad. Ju
+              mörkare ruta, desto större del av årets rapporter kom den månaden. {seasonsSentence}
             </ChartFigure>
           </ObsarSection>
 

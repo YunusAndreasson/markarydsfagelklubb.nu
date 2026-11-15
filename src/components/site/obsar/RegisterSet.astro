@@ -1,0 +1,22 @@
+---
+/**
+ * The one shape of every bird section on the home page and Obsar's Översikt
+ * (docs/design.md, "Startsidan"): a lead sentence, only when it says something
+ * the lists don't; the lists side by side (`RegisterGroup`s, one column on a
+ * phone); and the note on where the numbers come from at the foot.
+ */
+---
+
+<div class="flex flex-col gap-6">
+  {Astro.slots.has("lead") && <div class="flex flex-col gap-2"><slot name="lead" /></div>}
+  <div class="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+    <slot />
+  </div>
+  {
+    Astro.slots.has("note") && (
+      <p class="type-meta text-muted-foreground measure leading-relaxed">
+        <slot name="note" />
+      </p>
+    )
+  }
+</div>

@@ -51,6 +51,12 @@ export type SpeciesYear = Species & {
   reports: number
   /** Reports per week of the year, 53 bins from 1 January. */
   weeks: number[]
+  /**
+   * The days it was reported, sorted, only in a year with few reports
+   * (`SPARSE_REPORTS`): what "Förr om åren" picks from. A common bird's
+   * hundreds of days would only make the keys heavy.
+   */
+  days?: string[]
 }
 
 export type ObserverYear = {
@@ -144,6 +150,8 @@ export type TaxonYear = {
   a?: string
   r: number
   w: [number, number][]
+  /** The days as `MM-DD`, only in a sparse year (`SpeciesYear.days`). */
+  d?: string[]
 }
 
 export type TaxonEntry = { name: string; sci: string; years: Record<string, TaxonYear> }
@@ -167,3 +175,19 @@ export type SeasonTaxon = {
 }
 
 export type Season = { fetchedAt: string; taxa: SeasonTaxon[] }
+
+/**
+ * One sparse taxon-year's day, for "Förr om åren": `[taxonId, year, "MM-DD",
+ * reports that year]`. The page decides what is rare, from the club's prefix;
+ * the year's report count lets it keep a common-ish bird only in a year it was
+ * scarce.
+ */
+export type PastDay = [number, number, string, number]
+
+/** One month of past sparse days (`ap:v1:past:MM`), with the names they use. */
+export type PastMonth = {
+  fetchedAt: string
+  month: number
+  days: PastDay[]
+  names: Record<string, { name: string; sci: string }>
+}

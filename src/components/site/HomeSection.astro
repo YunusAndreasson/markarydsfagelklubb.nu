@@ -6,8 +6,9 @@ import SectionHeading from "@/components/site/SectionHeading.astro"
  * lies on the same spread, so the page reads as one notebook rather than a stack
  * of differently built blocks:
  *
- * - the heading starts where the text does, and its one "all of it" link sits at
- *   the far edge of the container, the same on every section;
+ * - the heading starts at the container's left edge, where the content starts
+ *   (a register's dates, the tiles, the year's figures), and its one "all of it"
+ *   link sits at the far edge, the same on every section;
  * - text goes on the text track (dates in the margin beside it), next steps go in
  *   the outer margin (`Aside`), and only pictures (photos, the jubilee chart) may
  *   take the full width;
@@ -24,7 +25,7 @@ const { id, title, href, link } = Astro.props
 ---
 
 <section aria-labelledby={id} class="spread mt-16 gap-y-6 md:mt-24 md:gap-y-8">
-  <div class="in-full at-text">
+  <div class="in-full">
     <SectionHeading id={id} href={href} link={link}>{title}</SectionHeading>
   </div>
   <slot />

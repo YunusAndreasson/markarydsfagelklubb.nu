@@ -62,15 +62,26 @@ const capitalise = (text: string) => text.charAt(0).toLocaleUpperCase("sv") + te
  * data always gives the same URLs, and a collision (none today) gets the id
  * appended rather than moving an existing page.
  */
-export function buildSpecies(taxa: readonly TaxonName[], app: readonly AppSpecies[]): SpeciesRef[] {
+/**
+ * The app species an Artportalen taxon is, on the scientific name first and
+ * the Swedish name second: the one matching rule for every join of the two.
+ */
+export function matchApp<T extends { name: string; sci: string }>(
+  app: readonly T[]
+): (taxon: { name: string; sci: string }) => T | undefined {
   const bySci = new Map(app.map((one) => [normal(one.sci), one]))
   const byName = new Map(app.map((one) => [normal(one.name), one]))
+  return (taxon) => bySci.get(normal(taxon.sci)) ?? byName.get(normal(taxon.name))
+}
+
+export function buildSpecies(taxa: readonly TaxonName[], app: readonly AppSpecies[]): SpeciesRef[] {
+  const match = matchApp(app)
   const matched = new Set<number>()
 
   const out: Omit<SpeciesRef, "slug" | "altSlug">[] = []
   const artportalenName = new Map<number, string>()
   for (const taxon of taxa.toSorted((a, b) => a.id - b.id)) {
-    const own = bySci.get(normal(taxon.sci)) ?? byName.get(normal(taxon.name))
+    const own = match(taxon)
     if (own && matched.has(own.id)) continue
     if (own) matched.add(own.id)
     artportalenName.set(taxon.id, taxon.name)

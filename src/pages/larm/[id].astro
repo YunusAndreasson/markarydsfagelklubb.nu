@@ -171,7 +171,7 @@ import { speciesLink } from "@/lib/species"
             <p>{larm.observer ?? ANONYMOUS_OBSERVER}</p>
           </AsideNote>
           <p class="text-muted-foreground text-sm leading-relaxed">
-            {larm.position && "Kartan visar platsen som angavs i larmet. "}Larmet skickades i klubbens app{" "}
+            {larm.position && "Kartan visar platsen från larmet. "}Larmet skickades från klubbens app{" "}
             <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
           </p>
         </div>

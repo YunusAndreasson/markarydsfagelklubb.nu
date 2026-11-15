@@ -11,7 +11,14 @@ import {
 } from "./aggregate"
 import type { Client } from "./client"
 import { type Kv, store } from "./store"
-import { allTimeFromIndex, buildSeason, mergeTaxa, needsRebuild, rebuildTaxa } from "./taxa"
+import {
+  allTimeFromIndex,
+  buildPast,
+  buildSeason,
+  mergeTaxa,
+  needsRebuild,
+  rebuildTaxa,
+} from "./taxa"
 import type { Meta, SosRecord, YearStats } from "./types"
 
 /**
@@ -192,7 +199,11 @@ export async function runNightly(
 
     // "Usually" only moves with past years, so once a night is enough.
     const taxaIndex = await store.readTaxa(kv)
-    if (taxaIndex) await store.writeSeason(kv, buildSeason(taxaIndex, thisYear, fetchedAt))
+    if (taxaIndex) {
+      await store.writeSeason(kv, buildSeason(taxaIndex, thisYear, fetchedAt))
+      // "Förr om åren" is about past years, so it moves with them too.
+      for (const month of buildPast(taxaIndex, fetchedAt)) await store.writePast(kv, month)
+    }
 
     await store.writeMeta(kv, { ...meta, lastNightly: fetchedAt, lastError: null })
     return { ok: true, calls: client.calls, note: `cursor now ${meta.cursor}` }

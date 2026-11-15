@@ -28,6 +28,8 @@ export const BELOW_SPECIES = [18, 23, 32] as const
 export const COUNTED_CATEGORIES = [SPECIES_CATEGORY, ...BELOW_SPECIES]
 
 export const LEAGUE_CURVES = 20
+/** A year with at most this many reports of a species keeps their days (`SpeciesYear.days`). */
+export const SPARSE_REPORTS = 10
 export const TOP_LOCALITIES = 15
 
 /**
@@ -249,8 +251,10 @@ export function aggregateYear(
   }
 
   for (const one of species.values()) {
-    const arrival = springArrival([...(dates.get(one.id) ?? [])].sort())
+    const days = [...(dates.get(one.id) ?? [])].sort()
+    const arrival = springArrival(days)
     if (arrival && arrival !== one.first) one.arrival = arrival
+    if (one.reports <= SPARSE_REPORTS) one.days = days
   }
 
   const arrivals = [...species.values()].sort(

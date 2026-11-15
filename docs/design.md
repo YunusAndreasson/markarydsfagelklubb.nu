@@ -186,7 +186,7 @@ there's nothing to say.
   2026-11-14): it is why a reader opened the larm, and stacking the facts and the
   map above it pushed it two screens down.
 - **Lokal:** a map with the club's places spans the whole spread (21:9 from `lg`). The
-  aside sums up "Larmat här" and "Inom tre kilometer", with links down to the lists,
+  aside sums up "Larm på lokalen" and "Inom tre kilometer", with links down to the lists,
   from `lg` only, since narrower the lists follow anyway.
 - **Klubben:** the membership note (fees, Cinclus, "Så blir du medlem" as the page's one
   button) sticks beside the text: "newcomers first", put into the layout. **Bli medlem:**
@@ -393,16 +393,31 @@ the gaps between sections were 80 px in one place and 96 in the others, and a da
 
 **One rule for every section** (`HomeSection.astro`):
 
-- the heading starts where the text does; its one "all of it" link sits at the far edge
-  of the container;
+- the heading starts at the container's left edge, where the section's content starts
+  (a register's dates, the article tiles, the year's figures), and its one "all of it"
+  link sits at the far edge. Until 2026-11-15 it sat on the text track, 7rem in, over
+  content that started at the edge: the user found every section lopsided;
 - text goes on the text track with dates in the margin; next steps (subscribe, the app,
   Obsar's lists) go in the aside; only pictures (the lead photo, the article tiles, the
   jubilee chart) take the full width;
 - 96 px between sections from `md`, 64 on a phone, set by the component, never the page.
 
-**Fynd i kommunen** follows it: the year in one sentence on the text track, *Nya för
-året* beside *Senaste fynden* under it (four each), and Årslistan, the month's sightings
-and Ligan in the aside. A register entry's date column is 4.25rem, the programme's, so
+**The order** (2026-11-15): the larm band, the lead article, the programme, then *Fler
+artiklar*, so the club's own news stays together; then the kommun's birds in time order:
+*Fynd i kommunen* (this year), *Så här års* (this season), *Förr om åren* (earlier years
+on this date), and the jubilee band's forty years to close. Until then *Fler artiklar*
+sat between the bird sections and the jubilee band, cutting the thread.
+
+**The three bird sections share one shape** (`RegisterSet` + `RegisterGroup`): a lead
+sentence only when it says something the lists don't (Fynd's year in one sentence;
+Så här års's and Förr om åren's would only name the birds below, so they have none),
+two labelled lists side by side, four birds each, and a note at the foot on where the
+numbers come from. A name that starts its line takes a capital ("Prutgås"), even from
+Artportalen's lower-case list; after a count it stays a phrase ("8 sidensvans", `Entry`).
+
+**Fynd i kommunen** follows it: the year in one sentence, *Nya för året* beside
+*Senaste fynden*, the year's reports and observers at the foot, and Årslistan, the
+month's sightings and Ligan in the aside. A register entry's date column is 4.25rem, the programme's, so
 titles line up from section to section on a phone. The list under the article tiles is
 four long; the archive is one click away. The aside's notes are `h3` under the
 section's `h2`.
@@ -1105,7 +1120,6 @@ På lokalen
 
 I närheten
               De 12 senaste larmen inom tre kilometer från lokalen.
-              Varje larm har en karta som visar var fågeln sågs.
  2 sep.       Kungsfiskare
 06:28         Nära Klintbadet   Per Persson
 ```
@@ -1232,10 +1246,9 @@ Larmat av medlemmarna
 Which birds usually arrive in the kommun, or leave it, within two weeks of today,
 from the last twenty years in Artportalen (`src/lib/season.ts`, the nightly `season`
 key). On the home page after "Fynd i kommunen", and on Obsar's Översikt after the
-year's headline. A
-sentence leads ("Så här års brukar gråsiska och storskrake komma till kommunen, och
-sävsparv lämna den."), then two short registers with the usual date in the margin
-and this year's status under each bird. Hidden when nothing falls in the window.
+year's headline. Two short registers (no lead sentence since 2026-11-15: it only
+named the birds the lists name) with the usual date in the margin and this year's
+status under each bird. Hidden when nothing falls in the window.
 
 - **What kind of bird it is decides everything** (`seasonKind` in `taxa.ts`), from
   where its reports fall over the twenty years together: a summer bird has at most
@@ -1258,6 +1271,28 @@ and this year's status under each bird. Hidden when nothing falls in the window.
   and names no season ("mest på våren") from fewer than five reports.
 - **Two weeks either way, "så här års"**: a ten-day window left the block empty for
   weeks in late autumn, when little moves.
+
+### Förr om åren
+
+The kommun's rare and odd birds from earlier years within three days of today
+(`src/lib/past-sightings.ts`, `PastSightings.astro`), on the home page after "Så här
+års". Artportalen says what was seen when; **the club's larm prefix says what is
+rare**, joined on the scientific name, then the Swedish one (`matchApp` in
+`species.ts`, the same rule as the species pages). No lead sentence (it only repeated
+the list's first birds). Two lists, as in the other bird sections: *Sällsynta här*
+(prefix 0–2) beside *Ovanliga det året* (a 3 or 4 in a year it was scarce), four each,
+rarest first; the newest year in the date column, the bird with its chip, its days under it. Hidden when nothing qualifies.
+
+- **The rule, measured on 68 years of the kommun's data on 2026-11-15**: prefix 0–2
+  always; a 3 only in a year with at most three reports here; a 4 only in a year with
+  one. 0–2 alone left a median of four sightings a week and some weeks empty; every 3
+  and 4 flooded it (hundreds in a spring week). The rule shows something every week,
+  about fifteen species, which the cap trims.
+- **Data**: a species-year with at most ten reports keeps its days
+  (`SpeciesYear.days`, `TaxonYear.d`); the nightly job writes them as twelve month keys
+  (`ap:v1:past:MM`, `buildPast`), and the page reads one or two. The prefixes come from
+  `listSpeciesRarity()`, one select with no larm sweep.
+- **±3 days**, round New Year, and 29 February between the 28th and 1 March.
 
 ### Året så här långt
 
@@ -1512,10 +1547,8 @@ The Obsar pages now use the site's own grid, and only through components
   An entry is a short date or time, the species in Alegreya, then quieter lines.
 - **Tables stay at the measure**: across 57rem a reader loses the row between a name
   and its number.
-- **The home page's "Fynd i kommunen"** (`ObsarHome`) sits on the container like
-  "Fler artiklar", in the same thirds as the article tiles: the year so far in one,
-  the newest sightings in two columns across the other two. A phone shows four of
-  each. The jubilee band moved to the foot of the page, as its closing figure.
+- **The home page's "Fynd i kommunen"** (`ObsarHome`) is a `RegisterSet` like the
+  other bird sections ("Startsidan"). The jubilee band moved to the foot of the page, as its closing figure.
 
 **How it is built.** Each figure's first paint is a plain SVG drawn by our own code
 (`lib/charts/svg.ts`, a few hundred bytes, well under a millisecond). Apache ECharts

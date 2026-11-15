@@ -177,7 +177,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
                 near.length > NEAR_LIMIT
                   ? `De ${NEAR_LIMIT} senaste larmen inom tre kilometer från lokalen.`
                   : "Larm inom tre kilometer från lokalen."
-              } Varje larm har en karta som visar var fågeln sågs.
+              }
             </p>
           </div>
           <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} compact />
@@ -191,13 +191,13 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
            narrower screen the lists themselves follow the text. */
         <Aside label="Om lokalen" class="max-lg:hidden">
           {newestAt && (
-            <AsideNote label="Larmat här">
+            <AsideNote label="Larm på lokalen">
               <p>
                 {at.length} larm, senast {newestAt.species.toLocaleLowerCase("sv")}{" "}
                 {dayLabel(newestAt.observedAt)}
               </p>
               <a href="#pa-lokalen" class="link flex min-h-11 w-fit items-center font-medium">
-                Larmen på lokalen
+                Se larmen
               </a>
             </AsideNote>
           )}

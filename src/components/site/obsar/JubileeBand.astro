@@ -64,8 +64,8 @@ const sentence = `Sedan klubben bildades ${FOUNDED} har ${facts.reportsSinceFoun
           box="aspect-[2/1] sm:aspect-[3/1]"
           inset="12px 8px 24px 8px"
         >
-          Rapporter per år sedan {FROM}. Gult är {FOUNDED}, året klubben bildades, med {founded?.reports ?? 0} rapporter, och {thisYear}.
-          Peka på en stapel för året.
+          Rapporter per år sedan {FROM}. De gula staplarna är {FOUNDED}, när klubben bildades ({founded?.reports ?? 0} rapporter), och
+          {thisYear}.
         </ChartFigure>
       ) : (
         <figure class="flex flex-col gap-2">

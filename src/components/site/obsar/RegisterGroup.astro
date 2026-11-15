@@ -1,0 +1,21 @@
+---
+import Register from "./Register.astro"
+
+/**
+ * One labelled list in a `RegisterSet`: "Nya för året", "Brukar komma nu",
+ * "Sällsynta här". Its items are `Entry`s.
+ */
+interface Props {
+  id: string
+  label: string
+}
+
+const { id, label } = Astro.props
+---
+
+<section aria-labelledby={id} class="flex flex-col gap-3">
+  <h3 id={id} class="type-meta text-muted-foreground">{label}</h3>
+  <Register columns={1}>
+    <slot />
+  </Register>
+</section>

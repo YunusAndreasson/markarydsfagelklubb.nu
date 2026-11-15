@@ -206,6 +206,6 @@ export function ratioPhrase(ratio: number): string {
     return `${countWord(times)} gånger så många rapporter som vanligt`
   }
   const part = Math.max(2, Math.floor(1 / ratio))
-  if (part > 10) return "mindre än en tiondel så många rapporter som vanligt"
+  if (part > 10) return "inte ens en tiondel så många rapporter som vanligt"
   return `${FRACTIONS[part]} så många rapporter som vanligt`
 }

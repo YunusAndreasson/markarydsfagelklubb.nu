@@ -154,6 +154,6 @@ describe("ratioPhrase", () => {
     expect(ratioPhrase(0.45)).toBe("hälften så många rapporter som vanligt")
     expect(ratioPhrase(0.3)).toBe("en tredjedel så många rapporter som vanligt")
     expect(ratioPhrase(0.12)).toBe("en åttondel så många rapporter som vanligt")
-    expect(ratioPhrase(0.05)).toBe("mindre än en tiondel så många rapporter som vanligt")
+    expect(ratioPhrase(0.05)).toBe("inte ens en tiondel så många rapporter som vanligt")
   })
 })

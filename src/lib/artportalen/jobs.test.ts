@@ -115,6 +115,12 @@ describe("runNightly", () => {
     expect(Object.keys(index?.taxa["1"]?.years ?? {})).toEqual(["2020", "2025"])
     // Two years of a koltrast are too few to say when it usually comes.
     expect((await store.readSeason(kv))?.taxa).toEqual([])
+    // Every month's key for "Förr om åren", the sparse years' days in them.
+    const months = await Promise.all(
+      Array.from({ length: 12 }, (_, i) => store.readPast(kv, i + 1))
+    )
+    expect(months.every((one) => one !== null)).toBe(true)
+    expect(months.flatMap((one) => one?.days ?? []).length).toBeGreaterThan(0)
   })
 
   it("rebuilds a lost species index from the year keys, without calling the API for them", async () => {

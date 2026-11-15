@@ -11,6 +11,7 @@ import HomeSection from "@/components/site/HomeSection.astro"
 import LarmBand from "@/components/site/LarmBand.astro"
 import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
 import ObsarHome from "@/components/site/obsar/ObsarHome.astro"
+import PastSightings from "@/components/site/obsar/PastSightings.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
 import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
 import SiteLayout from "@/layouts/site.astro"
@@ -18,19 +19,28 @@ import { linkPhones } from "@/lib/article-body"
 import { hideEmails } from "@/lib/email-hiding"
 import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { obsarStore, store } from "@/lib/obsar-data"
-import { listPublicAlerts } from "@/lib/public-alerts"
+import { pickPast, splitPast, windowMonths } from "@/lib/past-sightings"
+import { listPublicAlerts, listSpeciesRarity } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
 import { thisWeek } from "@/lib/season"
 import { buildSpecies, taxonSlugs } from "@/lib/species"
-import { formatDate, isoDateTime, startOfStockholmDay, stockholmYear } from "@/lib/stockholm-time"
+import {
+  formatDate,
+  isoDateTime,
+  startOfStockholmDay,
+  stockholmYear,
+  toStockholmInputValue,
+} from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
 import { transitionName } from "@/lib/view-transition"
 
 // The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften",
 // "Uppslaget"): one sentence and the newest larm photos on the spruce band, the
 // page's one block of larm; the newest article as the lead, beside its photo when it
-// has one; the programme as a section of its own; the kommun's birds; then three more
-// articles with their photos and the rest as a dated list. front-page.ts decides what goes where; this file only lays it out.
+// has one; the programme as a section of its own; three more articles with their
+// photos and the rest as a dated list, so the club's own news stays together; then
+// the kommun's birds in time order (this year, this season, earlier years on this
+// date) and the jubilee band's forty years to close. front-page.ts decides what goes where; this file only lays it out.
 
 // One read serves the day list and the rail. Far above the
 // busiest day so far (43 larm), and it reaches back past a day of photo-less
@@ -45,19 +55,37 @@ const now = new Date()
 // section, never the page.
 const kv = obsarStore()
 const thisYear = stockholmYear(now)
-const [navigation, page, larm, upcoming, history, allTime, yearStats, recent, season, names] =
-  await Promise.all([
-    loadNavigation(db),
-    listPublishedArticles(db, { limit: 10 }),
-    listPublicAlerts({ limit: LARM_WINDOW }),
-    listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
-    kv ? store.readHistory(kv).catch(() => null) : null,
-    kv ? store.readAllTime(kv).catch(() => null) : null,
-    kv ? store.readYear(kv, thisYear).catch(() => null) : null,
-    kv ? store.readRecent(kv).catch(() => null) : null,
-    kv ? store.readSeason(kv).catch(() => null) : null,
-    kv ? store.readNames(kv).catch(() => null) : null,
-  ])
+const today = toStockholmInputValue(now).slice(0, 10)
+const [
+  navigation,
+  page,
+  larm,
+  upcoming,
+  history,
+  allTime,
+  yearStats,
+  recent,
+  season,
+  names,
+  pastMonths,
+  clubRarity,
+] = await Promise.all([
+  loadNavigation(db),
+  listPublishedArticles(db, { limit: 10 }),
+  listPublicAlerts({ limit: LARM_WINDOW }),
+  listUpcomingEvents(db, { limit: 3, from: startOfStockholmDay(now) }),
+  kv ? store.readHistory(kv).catch(() => null) : null,
+  kv ? store.readAllTime(kv).catch(() => null) : null,
+  kv ? store.readYear(kv, thisYear).catch(() => null) : null,
+  kv ? store.readRecent(kv).catch(() => null) : null,
+  kv ? store.readSeason(kv).catch(() => null) : null,
+  kv ? store.readNames(kv).catch(() => null) : null,
+  // "Förr om åren": one or two month keys, joined to the club's prefixes.
+  kv
+    ? Promise.all(windowMonths(today).map((month) => store.readPast(kv, month))).catch(() => [])
+    : [],
+  listSpeciesRarity(),
+])
 const { lead, rest } = pickLead(page?.articles ?? [])
 const leadImage = lead?.image && isHeroWorthy(lead.image) ? lead.image : null
 // A lead photo too narrow or too tall for the 3:2 spread, such as a poster, still
@@ -72,6 +100,8 @@ const seasonSlugs = taxonSlugs(
     []
   )
 )
+// Without the club's prefixes nothing can be called rare: no section.
+const past = splitPast(clubRarity.ok ? pickPast(pastMonths, clubRarity.value, today) : [])
 // A larm failure costs the section, never the home page.
 const alerts = larm.ok ? larm.value.alerts : []
 const dayList = buildDayList(alerts, now)
@@ -225,7 +255,7 @@ const taken = Astro.locals.transitionNames
         <div class="in-wide">
           <EventList events={events} headingLevel={3} />
         </div>
-        <Aside label="Håll dig uppdaterad" sticky={false} first={false}>
+        <Aside label="Följ klubben" sticky={false} first={false}>
           <AsideNote label="Programmet i din kalender" headingLevel={3}>
             <p class="text-muted-foreground leading-relaxed">
               <a href="/kalender.ics" class="link font-medium">Prenumerera</a>, så kommer ändringar med automatiskt.
@@ -241,7 +271,7 @@ const taken = Astro.locals.transitionNames
 
   {
     events.length === 0 && (
-      <section aria-labelledby="appen" class="at-text mt-16 flex flex-col gap-1 md:mt-24">
+      <section aria-labelledby="appen" class="mt-16 flex flex-col gap-1 md:mt-24">
         <h2 id="appen" class="type-meta text-muted-foreground">Få larmen direkt i mobilen</h2>
         <AppLinks sentence={false} />
       </section>
@@ -250,6 +280,21 @@ const taken = Astro.locals.transitionNames
 
   <Sponsors class="mt-16 md:hidden" />
 
+  {/* Photos may take the whole width; the dated list keeps its dates in the
+      margin. Four in the list: the archive is one click away. */}
+  {
+    (tiles.length > 0 || list.length > 0) && (
+      <HomeSection id="artiklar" title="Fler artiklar" href="/artiklar" link="Alla artiklar">
+        <div class="in-full flex flex-col gap-12">
+          {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
+          {list.length > 0 && <ArticleList articles={list.slice(0, 4)} headingLevel={3} years="other-years" />}
+        </div>
+      </HomeSection>
+    )
+  }
+
+  {/* The kommun's birds, in time order: this year, this season, earlier years
+      on this date, and the forty years in the jubilee band that closes the page. */}
   <ObsarHome stats={yearStats} recent={recent} now={now} />
 
   {/* "Så här års" (docs/design.md): what usually arrives or leaves around
@@ -266,14 +311,13 @@ const taken = Astro.locals.transitionNames
     )
   }
 
-  {/* Photos may take the whole width; the dated list keeps its dates in the
-      margin. Four in the list: the archive is one click away. */}
+  {/* "Förr om åren" (docs/design.md): the rare birds seen around this date in
+      earlier years, from Artportalen, ranked by the club's prefix. */}
   {
-    (tiles.length > 0 || list.length > 0) && (
-      <HomeSection id="artiklar" title="Fler artiklar" href="/artiklar" link="Alla artiklar">
-        <div class="in-full flex flex-col gap-12">
-          {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
-          {list.length > 0 && <ArticleList articles={list.slice(0, 4)} headingLevel={3} years="other-years" />}
+    (past.rare.length > 0 || past.scarce.length > 0) && (
+      <HomeSection id="forr" title="Förr om åren">
+        <div class="in-wide">
+          <PastSightings rare={past.rare} scarce={past.scarce} slugs={seasonSlugs} />
         </div>
       </HomeSection>
     )

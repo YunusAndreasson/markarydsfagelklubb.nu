@@ -5,14 +5,15 @@ import HomeSection from "@/components/site/HomeSection.astro"
 import type { Recent, YearStats } from "@/lib/artportalen/types"
 import { arter, yearHeadline } from "@/lib/obsar-stats"
 import ArrivalEntries from "./ArrivalEntries.astro"
-import Register from "./Register.astro"
+import RegisterGroup from "./RegisterGroup.astro"
+import RegisterSet from "./RegisterSet.astro"
 import SightingEntries from "./SightingEntries.astro"
 
 /**
  * The kommun's birds on the home page (docs/design.md, "Obsar och statistik",
- * "Startsidan"): on the home page's spread like its other sections. The year in
- * one sentence on the text track, with the year's newest species beside the
- * newest sightings under it; Obsar's pages, the next step, in the outer margin.
+ * "Startsidan"): a `RegisterSet` like the other bird sections. The year in one
+ * sentence, the year's newest species beside the newest sightings, the count's
+ * source at the foot; Obsar's pages, the next step, in the outer margin.
  */
 interface Props {
   stats: YearStats | null
@@ -25,40 +26,32 @@ const sightings = recent?.sightings.slice(0, 4) ?? []
 const links = [
   ...(stats ? [{ href: "/obsar/arslista", label: `Årslistan, ${arter(stats.speciesCount)}` }] : []),
   { href: "/obsar/senaste", label: "Alla fynd den senaste månaden" },
-  { href: "/obsar/ligan", label: "Vem som har sett flest arter" },
+  { href: "/obsar/ligan", label: "Ligan, flest arter i år" },
 ]
 ---
 
 {
   (stats || sightings.length > 0) && (
     <HomeSection id="fynd" title="Fynd i kommunen" href="/obsar" link="Allt om obsar">
-      <div class="in-text flex flex-col gap-8">
-        {stats && (
-          <div class="flex flex-col gap-2">
-            <p class="type-ingress text-pretty">{yearHeadline(stats)}</p>
-            <p class="text-muted-foreground text-sm">
-              {stats.reports.toLocaleString("sv-SE")} rapporter från {stats.observerCount} rapportörer, hämtade från Artportalen.
-            </p>
-          </div>
-        )}
-        <div class="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+      <div class="in-wide">
+        <RegisterSet>
+          {stats && <p slot="lead" class="type-ingress measure text-pretty">{yearHeadline(stats)}</p>}
           {stats && (
-            <section aria-labelledby="fynd-nya" class="flex flex-col gap-3">
-              <h3 id="fynd-nya" class="type-meta text-muted-foreground">Nya för året</h3>
-              <Register columns={1}>
-                <ArrivalEntries species={stats.species} count={4} />
-              </Register>
-            </section>
+            <RegisterGroup id="fynd-nya" label="Nya för året">
+              <ArrivalEntries species={stats.species} count={4} />
+            </RegisterGroup>
           )}
           {sightings.length > 0 && (
-            <section aria-labelledby="fynd-senaste" class="flex flex-col gap-3">
-              <h3 id="fynd-senaste" class="type-meta text-muted-foreground">Senaste fynden</h3>
-              <Register columns={1}>
-                <SightingEntries sightings={sightings} now={now} brief />
-              </Register>
-            </section>
+            <RegisterGroup id="fynd-senaste" label="Senaste fynden">
+              <SightingEntries sightings={sightings} now={now} brief />
+            </RegisterGroup>
           )}
-        </div>
+          {stats && (
+            <Fragment slot="note">
+              {stats.reports.toLocaleString("sv-SE")} rapporter från {stats.observerCount} rapportörer i år, hämtade från Artportalen.
+            </Fragment>
+          )}
+        </RegisterSet>
       </div>
       <Aside label="Mer om fynden" sticky={false} first={false}>
         <AsideNote label="Listorna" headingLevel={3}>

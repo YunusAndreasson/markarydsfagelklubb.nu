@@ -577,6 +577,39 @@ export async function listPublicSpecies(): Promise<LarmResult<AppSpecies[]>> {
   }
 }
 
+/** A species on the club's list and its prefix, nothing else. */
+export type SpeciesRarity = { name: string; sci: string; rarity: number | null }
+
+/**
+ * The club's prefix for every species on its list, for the home page's
+ * "Förr om åren", which joins it to Artportalen's past sightings. One select:
+ * no larm sweep, unlike {@link listPublicSpecies}, since the home page reads it
+ * on every request. Reference data, no member data.
+ */
+export async function listSpeciesRarity(): Promise<LarmResult<SpeciesRarity[]>> {
+  const backend = open()
+  if (!backend.ok) return failed
+  const species = await backend.value.db
+    .from("species")
+    .select("swedish_name, scientific_name, rarity")
+    .limit(REFERENCE_LIMIT)
+  if (species.error) {
+    console.error(`mafk-web: load species rarity failed — ${species.error.message}`)
+    return failed
+  }
+  if (species.data.length === REFERENCE_LIMIT) {
+    console.error("mafk-web: species hit the row cap; the species read needs paging")
+  }
+  return {
+    ok: true,
+    value: species.data.map((row) => ({
+      name: row.swedish_name,
+      sci: row.scientific_name,
+      rarity: row.rarity,
+    })),
+  }
+}
+
 /**
  * Every visible larm of one species, newest first, as public DTOs — a species
  * page's list, prints and map. `publish()` applies the place ladder as

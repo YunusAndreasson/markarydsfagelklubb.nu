@@ -1,6 +1,8 @@
 import { dayOfYear } from "./aggregate"
 import type {
   AllTime,
+  PastDay,
+  PastMonth,
   Season,
   SeasonTaxon,
   TaxonEntry,
@@ -64,6 +66,7 @@ export function mergeTaxa(
       ...(one.arrival ? { a: monthDay(one.arrival) } : {}),
       r: one.reports,
       w: sparseWeeks(one.weeks),
+      ...(one.days ? { d: one.days.map(monthDay) } : {}),
     }
     const existing = taxa[one.id]
     const newest = existing ? Math.max(...Object.keys(existing.years).map(Number)) : -Infinity
@@ -294,4 +297,32 @@ export function allTimeFromIndex(index: TaxonIndex, fetchedAt: string): AllTime 
   })
   taxa.sort((a, b) => b.reports - a.reports || a.id - b.id)
   return { fetchedAt, taxa }
+}
+
+/**
+ * The twelve month keys "Förr om åren" reads (`ap:v1:past:MM`), from the sparse
+ * days in the index. Every year is in them, this one too: the page leaves out
+ * the current year itself, so the keys need no rebuild on New Year's night.
+ */
+export function buildPast(index: TaxonIndex, fetchedAt: string): PastMonth[] {
+  const months: PastMonth[] = Array.from({ length: 12 }, (_, i) => ({
+    fetchedAt,
+    month: i + 1,
+    days: [],
+    names: {},
+  }))
+  for (const [id, entry] of Object.entries(index.taxa)) {
+    for (const [year, data] of Object.entries(entry.years)) {
+      for (const day of data.d ?? []) {
+        const month = months[Number(day.slice(0, 2)) - 1]
+        if (!month) continue
+        month.days.push([Number(id), Number(year), day, data.r] satisfies PastDay)
+        month.names[id] = { name: entry.name, sci: entry.sci }
+      }
+    }
+  }
+  for (const month of months) {
+    month.days.sort((a, b) => a[2].localeCompare(b[2]) || a[1] - b[1] || a[0] - b[0])
+  }
+  return months
 }

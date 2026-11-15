@@ -23,7 +23,9 @@ obsar:seed` fills local KV (`--remote`: production's, only after shipping a chan
 to how the jobs count). Subspecies and populations count as their species
 (gråkråka is kråka). **Species pages** (`/arter/<slug>`, listed A–Ö on
 Markarydslistan) and "Så här års" read a per-taxon index the same jobs keep in KV
-(`artportalen/taxa.ts`), joined to the app's species list (`src/lib/species.ts`). Don't build features ahead of the step
+(`artportalen/taxa.ts`), joined to the app's species list (`src/lib/species.ts`).
+The home page's "Förr om åren" (`src/lib/past-sightings.ts`) joins the nightly
+`ap:v1:past:MM` keys to the club's rarity prefixes. Don't build features ahead of the step
 you've been asked for. The full agenda, the
 decisions and the step order are in `docs/roadmap.md`; plan a step from its
 section there. The public site's design is in `docs/design.md`.

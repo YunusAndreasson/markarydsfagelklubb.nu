@@ -128,7 +128,7 @@ const curveLegend = curves
         ? [{ label: `Snitt ${curves.averageYears} år`, color: ink.pencil, weight: 1.5 }]
         : []),
       ...(curves.low
-        ? [{ label: "Vanligt år, fåtal till flest", color: bandColor, kind: "band" as const }]
+        ? [{ label: `Spannet ${curves.averageYears} år`, color: bandColor, kind: "band" as const }]
         : []),
     ]
   : []
@@ -203,9 +203,8 @@ const paceSentence =
                 box="aspect-[4/3] sm:aspect-[16/7]"
                 inset="16px 96px 28px 32px"
               >
-                Artkurvan: hur många arter som setts i kommunen vecka för vecka. Det ljusa fältet är spannet mellan det sämsta
-                och bästa av de {curves.averageYears} åren före; håller sig årets linje inom det, är det ett vanligt år. Kurvan
-                stiger brant i april och maj, när flyttfåglarna kommer.
+                Hur många arter som setts i kommunen, vecka för vecka. Det ljusa fältet visar spannet för de
+                {curves.averageYears} åren före. Kurvan stiger brant i april och maj, när flyttfåglarna kommer.
               </ChartFigure>
             )}
             {curves && (

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   allTimeFromIndex,
   arrivals,
+  buildPast,
   buildSeason,
   mergeTaxa,
   needsRebuild,
@@ -309,5 +310,26 @@ describe("weeksTotal and arrivals", () => {
       [1, 2],
       [3, 1],
     ])
+  })
+})
+
+describe("buildPast", () => {
+  it("files a sparse year's days under their month, with that year's reports", () => {
+    const ibis = {
+      ...species(5, "eremitibis", "2023-11-14", "2023-11-30"),
+      days: ["2023-11-14", "2023-11-30"],
+    }
+    const tallbit = { ...species(6, "tallbit", "2019-12-31", "2019-12-31"), days: ["2019-12-31"] }
+    const common = species(7, "koltrast", "2023-01-01", "2023-12-31")
+    const index = mergeTaxa(null, year(2023, [ibis, common]), "t")
+    const months = buildPast(mergeTaxa(index, year(2019, [tallbit]), "t"), "t")
+    expect(months).toHaveLength(12)
+    expect(months[10]?.days).toEqual([
+      [5, 2023, "11-14", 2],
+      [5, 2023, "11-30", 2],
+    ])
+    expect(months[10]?.names).toEqual({ 5: { name: "eremitibis", sci: "eremitibis sci" } })
+    expect(months[11]?.days).toEqual([[6, 2019, "12-31", 2]])
+    expect(months[0]?.days).toEqual([])
   })
 })
