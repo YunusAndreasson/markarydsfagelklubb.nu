@@ -1,4 +1,5 @@
 ---
+import EmailLink from "@/components/site/EmailLink.astro"
 import LegalPage from "@/components/site/LegalPage.astro"
 
 // The app links here (../mafk-mobie/src/constants/legal.ts), and both app
@@ -18,7 +19,7 @@ import LegalPage from "@/components/site/LegalPage.astro"
     <h2>3. Uppförande – ingen tolerans mot olämpligt innehåll</h2>
     <p>Du får inte publicera innehåll som är olagligt, kränkande, trakasserande eller på annat sätt olämpligt, och inte heller störa tjänsten eller andra användare. Vi tillämpar <strong>nolltolerans mot stötande innehåll och missbruk.</strong></p>
     <h2>4. Anmälan och moderering</h2>
-    <p>Olämpligt innehåll eller beteende kan anmälas i appen, eller via e‑post till <strong>webmaster@markarydsfagelklubb.nu</strong>. Klubben granskar anmälningar och kan ta bort innehåll och stänga av konton, normalt inom 24 timmar efter en anmälan. Du kan även dölja enskilda medlemmars fynd direkt i appen.</p>
+    <p>Olämpligt innehåll eller beteende kan anmälas i appen, eller via e‑post till <strong><EmailLink address="webmaster@markarydsfagelklubb.nu" /></strong>. Klubben granskar anmälningar och kan ta bort innehåll och stänga av konton, normalt inom 24 timmar efter en anmälan. Du kan även dölja enskilda medlemmars fynd direkt i appen.</p>
     <h2>5. Personuppgifter</h2>
     <p>Behandlingen av personuppgifter beskrivs i vår <a href="/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen">Integritetspolicy</a>.</p>
     <h2>6. Tillgänglighet och ansvar</h2>
@@ -28,5 +29,5 @@ import LegalPage from "@/components/site/LegalPage.astro"
     <h2>8. Ändringar</h2>
     <p>Villkoren kan uppdateras. Väsentliga ändringar meddelas i appen eller på klubbens webbplats.</p>
     <h2>9. Kontakt</h2>
-    <p><strong>webmaster@markarydsfagelklubb.nu</strong></p>
+    <p><strong><EmailLink address="webmaster@markarydsfagelklubb.nu" /></strong></p>
 </LegalPage>

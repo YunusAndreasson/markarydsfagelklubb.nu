@@ -1,0 +1,23 @@
+---
+// An email address as a mailto link, written as character references so
+// address harvesters don't find it in the HTML (src/lib/email-hiding.ts).
+// Written out as HTML because Astro would escape an encoded href a second time.
+import { encodeEntities } from "@/lib/email-hiding"
+
+type Props = {
+  address: string
+  /** The whole href when it carries more than the address (a subject, a body). */
+  href?: string
+  /** The link's words; the address itself when left out. */
+  label?: string
+  class?: string
+}
+
+const { address, href = `mailto:${address}`, label, class: className } = Astro.props
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+const text = label === undefined ? encodeEntities(address) : escapeHtml(label)
+const link = `<a href="${encodeEntities(href)}"${className ? ` class="${escapeHtml(className)}"` : ""}>${text}</a>`
+---
+
+<Fragment set:html={link} />

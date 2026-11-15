@@ -1,4 +1,5 @@
 ---
+import EmailLink from "@/components/site/EmailLink.astro"
 import SiteLayout from "@/layouts/site.astro"
 
 // Prerendered, like the 404: when the database is what failed, this page can't
@@ -13,7 +14,7 @@ import SiteLayout from "@/layouts/site.astro"
     </p>
     <p class="flex flex-wrap gap-x-8">
       <a href="/" class="link flex min-h-11 items-center font-medium">Till startsidan</a>
-      <a href="mailto:webmaster@markarydsfagelklubb.nu" class="link flex min-h-11 items-center font-medium">Kontakta webbansvarig</a>
+      <EmailLink address="webmaster@markarydsfagelklubb.nu" label="Kontakta webbansvarig" class="link flex min-h-11 items-center font-medium" />
     </p>
   </div>
 </SiteLayout>

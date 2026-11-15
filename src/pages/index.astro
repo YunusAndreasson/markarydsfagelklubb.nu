@@ -15,6 +15,7 @@ import Sponsors from "@/components/site/Sponsors.astro"
 import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linkPhones } from "@/lib/article-body"
+import { hideEmails } from "@/lib/email-hiding"
 import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { listPublicAlerts } from "@/lib/public-alerts"
@@ -181,7 +182,7 @@ const taken = Astro.locals.transitionNames
           </h2>
           {lead.excerpt && <p class="type-ingress text-muted-foreground measure">{lead.excerpt}</p>}
           {lead.opening.paragraphs.length > 0 && (
-            <div class="content" set:html={linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join(""))} />
+            <div class="content" set:html={hideEmails(linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")))} />
           )}
           {lead.opening.more && (
             <a href={`/artiklar/${lead.slug}`} class="link flex min-h-11 w-fit items-center font-medium">

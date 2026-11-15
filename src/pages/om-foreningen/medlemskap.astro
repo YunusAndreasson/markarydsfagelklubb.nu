@@ -5,6 +5,7 @@ import { renderSVG } from "uqr"
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import Body from "@/components/site/Body.astro"
+import EmailLink from "@/components/site/EmailLink.astro"
 import SiteLayout from "@/layouts/site.astro"
 import {
   addressMailto,
@@ -181,7 +182,7 @@ const linkClass = "link flex min-h-11 w-fit items-center font-medium"
                     {(mailto || sms) && (
                       <>
                         <p class="flex flex-wrap gap-x-6">
-                          {mailto && <a href={mailto} class={linkClass}>Skicka e-post</a>}
+                          {mailto && m?.contact_email && <EmailLink address={m.contact_email} href={mailto} label="Skicka e-post" class={linkClass} />}
                           {sms && <a href={sms} class={linkClass}>Skicka sms</a>}
                         </p>
                         <p class="text-muted-foreground leading-relaxed">Meddelandet är redan skrivet, du fyller bara i namn och adress.</p>
@@ -204,7 +205,7 @@ const linkClass = "link flex min-h-11 w-fit items-center font-medium"
             <AsideNote label="Frågor">
               {m.contact_name && <p class="text-lg">{m.contact_name}</p>}
               {tel && <a href={tel} class={linkClass}>{m.contact_phone}</a>}
-              {m.contact_email && <a href={`mailto:${m.contact_email}`} class={linkClass}>{m.contact_email}</a>}
+              {m.contact_email && <EmailLink address={m.contact_email} class={linkClass} />}
             </AsideNote>
           </Aside>
         )

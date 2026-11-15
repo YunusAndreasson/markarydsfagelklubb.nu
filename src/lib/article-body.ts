@@ -1,3 +1,4 @@
+import { hideEmails } from "./email-hiding"
 import { isSiteMediaUrl } from "./media"
 import { attributesOf, widestCandidate } from "./teaser"
 
@@ -147,5 +148,5 @@ export function linkPhotos(html: string): string {
     .join("")
 }
 
-/** A stored body, ready for the page. */
-export const renderBody = (html: string) => withGalleries(linkPhotos(linkPhones(html)))
+/** A stored body, ready for the page. Addresses are hidden from harvesters last. */
+export const renderBody = (html: string) => hideEmails(withGalleries(linkPhotos(linkPhones(html))))

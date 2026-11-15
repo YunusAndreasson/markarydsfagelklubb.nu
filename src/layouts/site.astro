@@ -10,6 +10,7 @@
  */
 import logo from "@/assets/logo.webp"
 import AppLinks from "@/components/site/AppLinks.astro"
+import EmailLink from "@/components/site/EmailLink.astro"
 import SiteHeader from "@/components/site/SiteHeader.astro"
 import BaseLayout from "@/layouts/base.astro"
 import type { MenuEntry } from "@/lib/page-tree"
@@ -104,9 +105,10 @@ const footerGroups = [
             <p class="text-foreground font-semibold">{SITE_NAME}</p>
             <p class="text-muted-foreground">{TAGLINE}</p>
             <p>
-              <a href="mailto:webmaster@markarydsfagelklubb.nu" class="text-muted-foreground hover:text-foreground flex min-h-11 w-fit items-center underline underline-offset-4 md:min-h-8">
-                webmaster@markarydsfagelklubb.nu
-              </a>
+              <EmailLink
+                address="webmaster@markarydsfagelklubb.nu"
+                class="text-muted-foreground hover:text-foreground flex min-h-11 w-fit items-center underline underline-offset-4 md:min-h-8"
+              />
             </p>
             <AppLinks sentence={false} class="mt-2" />
           </div>
