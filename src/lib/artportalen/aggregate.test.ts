@@ -6,9 +6,12 @@ import {
   mergeNames,
   parseCount,
   safeArtportalenUrl,
+  speciesIdOf,
   splitObservers,
+  springArrival,
   summarise,
   toSighting,
+  unnamedSpecies,
   weekIndex,
 } from "./aggregate"
 import type { SosRecord } from "./types"
@@ -18,7 +21,14 @@ const FETCHED = "2026-11-14T12:00:00.000Z"
 function record(
   date: string,
   taxon: [number, string, string],
-  extra: { by?: string; count?: string; place?: string; category?: number; time?: string } = {}
+  extra: {
+    by?: string
+    count?: string
+    place?: string
+    category?: number
+    parent?: number
+    time?: string
+  } = {}
 ): SosRecord {
   return {
     taxon: {
@@ -26,7 +36,9 @@ function record(
       vernacularName: taxon[1],
       scientificName: taxon[2],
       attributes:
-        extra.category === undefined ? undefined : { taxonCategory: { id: extra.category } },
+        extra.category === undefined
+          ? undefined
+          : { taxonCategory: { id: extra.category }, parentDyntaxaTaxonId: extra.parent ?? null },
     },
     occurrence: { recordedBy: extra.by ?? "Anna A", individualCount: extra.count ?? "1" },
     event: { startDate: `${date}T${extra.time ?? "08:00"}:00+01:00` },
@@ -70,8 +82,10 @@ describe("aggregateYear", () => {
     record("2026-01-02", KOLTRAST, { count: "2" }),
     record("2026-01-05", KOLTRAST, { by: "Bo B", count: "noterad" }),
     record("2026-11-11", PRUTGAS, { by: "Cia C" }),
-    // A subspecies row and a row from another year are left out.
-    record("2026-05-01", [4, "gråtrut (ssp)", "Larus argentatus argenteus"], { category: 18 }),
+    // A hybrid row and a row from another year are left out.
+    record("2026-05-01", [4, "grågås x kanadagås", "Anser anser x Branta canadensis"], {
+      category: 21,
+    }),
     record("2025-12-31", PRUTGAS),
   ]
   const stats = aggregateYear(2026, records, FETCHED)
@@ -153,6 +167,58 @@ describe("aggregateYear", () => {
   })
 })
 
+describe("subspecies and populations", () => {
+  const KRAKA: [number, string, string] = [5, "kråka", "Corvus corone"]
+  const GRAKRAKA: [number, string, string] = [50, "gråkråka", "Corvus corone cornix"]
+
+  it("count as their species, the way Artportalen's own lists do", () => {
+    const gra = record("2025-03-01", GRAKRAKA, { category: 18, parent: 5 })
+    expect(speciesIdOf(gra)).toBe(5)
+    expect(speciesIdOf(record("2025-03-01", KRAKA, { category: 17 }))).toBe(5)
+    // A hybrid, a genus or "a or b" names no one species.
+    expect(
+      speciesIdOf(record("2025-03-01", [6, "gäss", "Anser/Branta"], { category: 33, parent: 1 }))
+    ).toBeNull()
+
+    const stats = aggregateYear(2025, [gra, record("2025-04-01", KRAKA, { category: 17 })], FETCHED)
+    expect(stats.species.map((one) => [one.id, one.name, one.reports])).toEqual([[5, "kråka", 2]])
+  })
+
+  it("take their species' name from the map when no record in the batch has it", () => {
+    const gra = record("2025-03-01", GRAKRAKA, { category: 18, parent: 5 })
+    expect(unnamedSpecies([gra], null)).toEqual([5])
+    expect(unnamedSpecies([gra], { "5": { name: "kråka", sci: "Corvus corone" } })).toEqual([])
+    const stats = aggregateYear(2025, [gra], FETCHED, {
+      "5": { name: "kråka", sci: "Corvus corone" },
+    })
+    expect(stats.species[0]).toMatchObject({ id: 5, name: "kråka", sci: "Corvus corone" })
+  })
+})
+
+describe("springArrival", () => {
+  it("skips a bird that wintered: a January report, then weeks of nothing", () => {
+    // The trana on Hammarsjön, 4 and 5 January, then the others in late February.
+    expect(springArrival(["2026-01-04", "2026-01-05", "2026-02-25", "2026-02-26"])).toBe(
+      "2026-02-25"
+    )
+    expect(
+      aggregateYear(2026, [record("2026-01-04", TRANA), record("2026-02-25", TRANA)], FETCHED)
+        .species[0]
+    ).toMatchObject({ first: "2026-01-04", arrival: "2026-02-25" })
+  })
+
+  it("keeps the first report when the reports run on from it", () => {
+    expect(springArrival(["2026-02-20", "2026-02-22", "2026-03-01"])).toBe("2026-02-20")
+    expect(
+      aggregateYear(2026, [record("2026-02-20", TRANA)], FETCHED).species[0]?.arrival
+    ).toBeUndefined()
+  })
+
+  it("never moves a spring gap: from 1 March on, a first report is an arrival", () => {
+    expect(springArrival(["2026-03-10", "2026-04-20"])).toBe("2026-03-10")
+  })
+})
+
 describe("toSighting", () => {
   it("marks whole-day reports as untimed and keeps a written count", () => {
     const one = toSighting({
@@ -160,6 +226,12 @@ describe("toSighting", () => {
       event: { startDate: "2026-11-12T00:00:00+01:00", endDate: "2026-11-12T23:59:59+01:00" },
     })
     expect(one).toMatchObject({ timed: false, count: null, countText: "noterad", name: "koltrast" })
+    expect(
+      toSighting(
+        record("2026-11-12", [70, "tamduva", "Columba livia"], { category: 23, parent: 7 }),
+        new Map([[7, { id: 7, name: "klippduva", sci: "Columba livia" }]])
+      )
+    ).toMatchObject({ speciesId: 7, name: "klippduva" })
     expect(toSighting(record("2026-11-12", KOLTRAST, { count: "4" }))).toMatchObject({
       timed: true,
       count: 4,

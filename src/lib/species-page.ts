@@ -68,6 +68,12 @@ const PAD_X = 12
 const PAD_Y = 10
 /** A year with fewer reports than this has a first date that says little. */
 export const FEW_REPORTS = 3
+/**
+ * A first report this many days after the usual arrival is no arrival: the
+ * bird wasn't seen in spring, only on its way back (a blå kärrhök in
+ * September). The figure leaves such a year out and the caption says so.
+ */
+export const NOT_IN_SPRING = 60
 
 /**
  * The first sighting each year as dots, across the last forty years, with the
@@ -78,7 +84,9 @@ export function arrivalFigure(
   thisYear: number,
   typical: number | null
 ): ArrivalFigure | null {
-  const points = arrivals(entry).filter((one) => one.year > thisYear - 40)
+  const points = arrivals(entry).filter(
+    (one) => one.year > thisYear - 40 && (typical === null || one.day - typical < NOT_IN_SPRING)
+  )
   if (points.length < 3) return null
   const from = Math.min(...points.map((one) => one.year))
   const to = thisYear
@@ -168,8 +176,10 @@ export function leadSentence(
   }
   const when = seasonsPhrase(weeks)
   if (years >= 15) {
+    // "Varje år" only when it is: nötkråka's 19 of 20 is "nästan".
+    const every = years >= SEASON_WINDOW ? "varje år" : "nästan varje år"
     return when
-      ? `Ses i kommunen varje år, ${when}.`
+      ? `Ses i kommunen ${every}, ${when}.`
       : "Finns i kommunen och rapporteras året runt, utan någon tydlig flyttningstid."
   }
   const guest = years < 8 ? ", en ovanlig gäst" : ""
@@ -178,6 +188,8 @@ export function leadSentence(
 
 /** A season with at least this share of the reports counts as one it is seen in. */
 const SEASON_SHARE = 0.15
+/** Fewer reports than this say nothing about when it is seen: one berguv isn't "mest på våren". */
+export const SEASON_MIN_REPORTS = 5
 
 /**
  * "mest på hösten", "mest under våren och hösten": the seasons that hold the
@@ -192,7 +204,7 @@ export function seasonsPhrase(weeks: readonly number[]): string | null {
     seasons[season] = (seasons[season] ?? 0) + count
   })
   const total = seasons.reduce((sum, one) => sum + one, 0)
-  if (total === 0) return null
+  if (total < SEASON_MIN_REPORTS) return null
   const held = seasons.flatMap((count, season) => (count / total >= SEASON_SHARE ? [season] : []))
   if (held.length >= 3 || held.length === 0) return null
   const names = [
@@ -221,9 +233,11 @@ export function arrivalSentence(
   const parts: string[] = []
   const now = arrivals(entry).find((one) => one.year === thisYear)
   parts.push(
-    now
-      ? `I år kom den första ${dayMonth(now.day)}, ${offsetPhrase(now.day - typicalArrival)}.`
-      : "I år har ingen rapporterats än."
+    !now
+      ? "I år har ingen rapporterats än."
+      : now.day - typicalArrival >= NOT_IN_SPRING
+        ? `I år sågs den inte när den brukar komma, bara från ${dayMonth(now.day)}.`
+        : `I år kom den första ${dayMonth(now.day)}, ${offsetPhrase(now.day - typicalArrival)}.`
   )
   const earliest = arrivals(entry).reduce((best, one) => (one.day < best.day ? one : best))
   parts.push(`Tidigast: ${dayMonth(earliest.day)} ${earliest.year}.`)

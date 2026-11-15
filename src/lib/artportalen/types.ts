@@ -12,7 +12,11 @@ export type SosRecord = {
     id: number
     vernacularName?: string | null
     scientificName?: string | null
-    attributes?: { taxonCategory?: { id: number; value?: string } | null } | null
+    attributes?: {
+      taxonCategory?: { id: number; value?: string } | null
+      /** The taxon one rank up: a subspecies' species. */
+      parentDyntaxaTaxonId?: number | null
+    } | null
   }
   occurrence?: {
     occurrenceId?: string | null
@@ -39,6 +43,11 @@ export type Species = { id: number; name: string; sci: string }
 export type SpeciesYear = Species & {
   first: string
   last: string
+  /**
+   * The spring arrival, when it isn't the first report: a bird that wintered
+   * gives a January report, then nothing for weeks (`springArrival`).
+   */
+  arrival?: string
   reports: number
   /** Reports per week of the year, 53 bins from 1 January. */
   weeks: number[]
@@ -128,7 +137,14 @@ export type Meta = {
  * weeks are the year's non-empty bins as `[week, reports]`, since most birds
  * are seen in a handful of weeks.
  */
-export type TaxonYear = { f: string; l: string; r: number; w: [number, number][] }
+export type TaxonYear = {
+  f: string
+  l: string
+  /** The spring arrival as `MM-DD`, only when it isn't `f` (`SpeciesYear.arrival`). */
+  a?: string
+  r: number
+  w: [number, number][]
+}
 
 export type TaxonEntry = { name: string; sci: string; years: Record<string, TaxonYear> }
 

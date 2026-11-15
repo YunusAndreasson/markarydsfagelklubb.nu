@@ -56,11 +56,12 @@ const inWindow = (day: number, today: number) => {
 function seenThisYear(
   taxon: SeasonTaxon,
   kind: "arrival" | "departure",
-  year: { first: string; last: string },
+  year: { first: string; last: string; arrival?: string },
   day: number
 ): string | null {
   if (kind === "departure") return year.last
-  if (taxon.kind === "summer") return year.first
+  // A summer bird's arrival, not a January report of one that wintered.
+  if (taxon.kind === "summer") return year.arrival ?? year.first
   return dayOfYear(year.last) >= day - 14 ? year.last : null
 }
 

@@ -36,6 +36,15 @@ describe("arrivalSentence", () => {
     )
   })
 
+  it("doesn't call a first report in September a late arrival", () => {
+    // Blå kärrhök 2026: not seen in spring, only on its way back.
+    const harrier = entry(range(2006, 2026), (y) => (y === 2026 ? "09-26" : "04-10"))
+    expect(arrivalSentence(harrier, 100, 2026)).toBe(
+      "I år sågs den inte när den brukar komma, bara från 26 sep. Tidigast: 10 apr 2006."
+    )
+    expect(arrivalFigure(harrier, 2026, 100)?.dots.some((dot) => dot.year === 2026)).toBe(false)
+  })
+
   it("says so when none has come yet this year", () => {
     const gok = entry(range(2006, 2025), () => "04-23")
     expect(arrivalSentence(gok, 113, 2026)).toContain("I år har ingen rapporterats än.")
@@ -84,6 +93,19 @@ describe("leadSentence", () => {
     )
     expect(leadSentence(none, 20, { first: 2026, last: 2026 }, 2026, [])).toBe(
       "Ny för kommunen i år."
+    )
+  })
+
+  it("says 'varje år' only for all twenty, and names no season from a handful of reports", () => {
+    const none = { arrival: null, departure: null, kind: null }
+    const spring = Array.from({ length: 53 }, (_, week) => (week === 15 ? 30 : 0))
+    expect(leadSentence({ ...none, years: 19 }, 20, null, 2026, spring)).toBe(
+      "Ses i kommunen nästan varje år, mest på våren."
+    )
+    // One berguv in twenty years isn't "mest på våren".
+    const one = Array.from({ length: 53 }, (_, week) => (week === 15 ? 1 : 0))
+    expect(leadSentence({ ...none, years: 1 }, 20, null, 2026, one)).toBe(
+      "Sedd i kommunen en av de senaste tjugo åren, en ovanlig gäst."
     )
   })
 

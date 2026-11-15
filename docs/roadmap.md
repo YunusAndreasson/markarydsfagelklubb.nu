@@ -797,10 +797,19 @@ What that changes:
 ### F7 — Årslista and Kommunlista (Artportalen)
 
 **Built 2026-11-14 as step 10, pulled ahead of launch at the user's request, with
-F6's league and a 40-year history for the jubilee.** The spike settled it: SOS
-matches Artportalen's own lists exactly once the filter keeps species rank only
-(`taxonCategories: [17]`) — 153 species this year and 230 all time, against 158
-and 272 with subspecies and hybrids. A kommun-year is at most 4 420 records, so a
+F6's league and a 40-year history for the jubilee.** The spike kept species rank
+only (`taxonCategories: [17]`), 153 species this year and 230 all time, which
+seemed to match Artportalen's own lists. **Corrected 2026-11-15**: that filter
+dropped every report filed as a subspecies or population, gråkråka's 1 185 above
+all, so kråka read as new to the kommun in 2025 and most years' totals were one
+short; the 230 matched only because jaktfalk (one white-morph record) was missing
+and brudand counted. The jobs now ask for species, Underart, Population and
+Morfotyp (`COUNTED_CATEGORIES` in `aggregate.ts`) and count each record as its
+species, as Artportalen's lists do: 231 all time, the same as Artportalen's list
+but for brudand, which Artportalen leaves out, and the name of *Columba livia*
+(klippduva here, tamduva there). The all-time list is built from the years
+(`allTimeFromIndex`), since TaxonAggregation keeps a subspecies apart from its
+species. Hybrids, genera and "a or b" rows still count for nothing. A kommun-year is at most 4 420 records, so a
 year is scanned whole and the league counted from it. What was built differs from
 the phase B sketch below in three ways, each measured:
 
@@ -809,9 +818,13 @@ the phase B sketch below in three ways, each measured:
   `src/worker.ts` adds a `scheduled` handler to Astro's: every half hour the newest
   sightings and this year, every night the all-time list and eight past years
   (`src/lib/artportalen/jobs.ts`). A 429 stops the run and the cursor carries on.
-  Pages read KV only. `pnpm obsar:seed` fills local KV in about four minutes.
-- **Names come from the year scans,** each species being seen in some year, with a
-  per-taxon lookup for any left over; no Dyntaxa map in the repo.
+  Pages read KV only. `pnpm obsar:seed` fills local KV in about four minutes;
+  `--remote` refills production's, after a change to how the jobs count has
+  shipped, instead of waiting ten nights for the cursor.
+- **Names come from the year scans,** each species being seen in some year. A
+  species seen only as a subspecies (a year of gråkråka, no plain kråka) is named
+  by one species-rank record from anywhere in Sweden (`nameOf`), once; no
+  Dyntaxa map in the repo.
 - **Charts are ECharts in islands over a server-drawn SVG,** because ECharts' own
   SSR cost 35–220 ms of CPU per chart (`docs/design.md`, "Obsar och statistik").
 

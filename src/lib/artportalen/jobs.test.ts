@@ -137,10 +137,29 @@ describe("runNightly", () => {
     expect((await store.readNames(kv))?.["1"]).toEqual({ name: "koltrast", sci: "Turdus merula" })
   })
 
-  it("names a taxon no scanned year named", async () => {
+  it("counts a subspecies as its species, named by one lookup, in the year and the all-time list", async () => {
     const kv = memoryKv()
-    await runNightly(kv, fakeClient({}), NOW, 0)
-    expect((await store.readNames(kv))?.["7"]).toEqual({ name: "sällsynting", sci: "Rara avis" })
+    // Gråkråka only: a subspecies row whose species (9) no record names.
+    const subspecies: SosRecord = {
+      ...sighting("2025-03-01", 90, "gråkråka"),
+      taxon: {
+        id: 90,
+        vernacularName: "gråkråka",
+        scientificName: "Corvus corone cornix",
+        attributes: { taxonCategory: { id: 18 }, parentDyntaxaTaxonId: 9 },
+      },
+    }
+    await runNightly(kv, fakeClient({ 2025: [subspecies] }), NOW, 1)
+    const year = await store.readYear(kv, 2025)
+    expect(year?.species.map((one) => [one.id, one.name])).toEqual([[9, "sällsynting"]])
+    expect((await store.readNames(kv))?.["9"]).toEqual({ name: "sällsynting", sci: "Rara avis" })
+    expect((await store.readAllTime(kv))?.taxa).toEqual([
+      { id: 9, first: "2025-03-01", last: "2025-03-01", reports: 1 },
+    ])
+    // Named now, so the next refresh of the year looks nothing up.
+    const client = fakeClient({ 2025: [subspecies] })
+    await runNightly(kv, client, NOW, 1)
+    expect(client.calls).toBe(2)
   })
 
   it("stops at a rate limit and keeps the cursor where it got to", async () => {

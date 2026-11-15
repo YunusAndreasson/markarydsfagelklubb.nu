@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  allTimeFromIndex,
   arrivals,
   buildSeason,
   mergeTaxa,
@@ -45,6 +46,29 @@ describe("mergeTaxa", () => {
     const index = mergeTaxa(null, year(2024, [species(1, "Gök", "2024-04-23", "2024-07-30")]), "t")
     expect(index.years).toEqual([2024])
     expect(index.taxa[1]?.years["2024"]).toEqual({ f: "04-23", l: "07-30", r: 2, w: [[16, 2]] })
+  })
+
+  it("keeps a spring arrival that isn't the first report", () => {
+    const trana = { ...species(2, "trana", "2026-01-04", "2026-10-17"), arrival: "2026-02-25" }
+    const index = mergeTaxa(null, year(2026, [trana]), "t")
+    expect(index.taxa[2]?.years["2026"]).toMatchObject({ f: "01-04", a: "02-25" })
+  })
+
+  it("builds the all-time list from the years, most reported first", () => {
+    let index = mergeTaxa(null, year(1966, [species(1, "kråka", "1966-04-08", "1966-09-01")]), "t")
+    index = mergeTaxa(index, year(2026, [species(1, "kråka", "2026-01-02", "2026-11-01")]), "t")
+    index = mergeTaxa(
+      index,
+      year(2026, [
+        species(1, "kråka", "2026-01-02", "2026-11-01"),
+        species(3, "berguv", "2026-03-01", "2026-03-01"),
+      ]),
+      "t"
+    )
+    expect(allTimeFromIndex(index, "t").taxa).toEqual([
+      { id: 1, first: "1966-04-08", last: "2026-11-01", reports: 4 },
+      { id: 3, first: "2026-03-01", last: "2026-03-01", reports: 2 },
+    ])
   })
 
   it("replaces a year on a second merge instead of adding to it", () => {
@@ -127,13 +151,37 @@ describe("typicalDays", () => {
     const gok = entry(
       range(2006, 2025),
       (y) => (y === 2010 ? "03-01" : "04-23"),
-      () => "07-30"
+      () => "08-20"
     )
     const typical = typicalDays(gok, window)
     // 23 April is day 113 in a common year and 114 in a leap year.
     expect(typical.arrival).toBeGreaterThanOrEqual(113)
     expect(typical.arrival).toBeLessThanOrEqual(114)
-    expect(typical.departure).toBeGreaterThanOrEqual(211)
+    expect(typical.departure).toBeGreaterThanOrEqual(232)
+  })
+
+  it("gives no departure to a summer bird that only falls silent in June", () => {
+    // Ärtsångare: the last reports are the last songs, not the leaving.
+    const artsangare = entry(
+      range(2006, 2025),
+      () => "04-30",
+      () => "06-27"
+    )
+    expect(typicalDays(artsangare, window)).toMatchObject({ kind: "summer", departure: null })
+  })
+
+  it("takes the spring arrival, not a January report of a bird that wintered", () => {
+    const trana = entry(
+      range(2006, 2025),
+      () => "02-28",
+      () => "10-17"
+    )
+    for (const year of range(2006, 2025)) {
+      const one = trana.years[year]
+      if (one) trana.years[year] = { ...one, f: "01-04", a: "02-28" }
+    }
+    expect(typicalDays(trana, window).arrival).toBe(59)
+    expect(arrivals(trana)[0]).toEqual({ year: 2006, day: 59 })
   })
 
   it("has no arrival for a resident, already seen in early January", () => {

@@ -1,5 +1,13 @@
 import { dayOfYear } from "./aggregate"
-import type { Season, SeasonTaxon, TaxonEntry, TaxonIndex, TaxonYear, YearStats } from "./types"
+import type {
+  AllTime,
+  Season,
+  SeasonTaxon,
+  TaxonEntry,
+  TaxonIndex,
+  TaxonYear,
+  YearStats,
+} from "./types"
 
 /**
  * Each taxon's history across the years (docs/design.md, "Arter"), kept in one
@@ -18,6 +26,12 @@ export const SEASON_WINDOW = 20
 export const SEASON_MIN_YEARS = 8
 /** A last sighting from this day on means it never left. */
 const STILL_HERE_FROM = 352
+/**
+ * A summer bird whose last reports usually come before this day (1 August)
+ * has not left: it has stopped singing (ärtsångare's fall silent in late June).
+ * Its departure is unknown rather than wrong, so it gets none.
+ */
+export const LEAVES_FROM = 213
 
 /** The year's non-empty week bins, as `[week, reports]`. */
 export function sparseWeeks(weeks: readonly number[]): [number, number][] {
@@ -47,6 +61,7 @@ export function mergeTaxa(
     const year: TaxonYear = {
       f: monthDay(one.first),
       l: monthDay(one.last),
+      ...(one.arrival ? { a: monthDay(one.arrival) } : {}),
       r: one.reports,
       w: sparseWeeks(one.weeks),
     }
@@ -161,7 +176,7 @@ export function typicalDays(entry: TaxonEntry, window: readonly number[]): Typic
   const mostly = (count: number) => count > seen.length / 2
 
   if (kind === "summer") {
-    const firsts = seen.map(({ year, data }) => dayOfYear(`${year}-${data?.f}`))
+    const firsts = seen.map(({ year, data }) => dayOfYear(`${year}-${data?.a ?? data?.f}`))
     const lasts = seen.map(({ year, data }) => dayOfYear(`${year}-${data?.l}`))
     const arrival = median(firsts)
     const leaves = mostly(lasts.filter((day) => day >= STILL_HERE_FROM).length)
@@ -169,7 +184,7 @@ export function typicalDays(entry: TaxonEntry, window: readonly number[]): Typic
       : median(lasts)
     return {
       arrival,
-      departure: leaves !== null && leaves > arrival ? leaves : null,
+      departure: leaves !== null && leaves > arrival && leaves >= LEAVES_FROM ? leaves : null,
       kind,
       years: seen.length,
     }
@@ -244,9 +259,39 @@ export function weeksTotal(entry: TaxonEntry): number[] {
   return weeks
 }
 
-/** First sighting per year, oldest first, as 1-based days of the year. */
+/**
+ * The spring arrival per year, oldest first, as 1-based days of the year: the
+ * first report, unless that was a bird that wintered (`springArrival`).
+ */
 export function arrivals(entry: TaxonEntry): { year: number; day: number }[] {
   return Object.entries(entry.years)
-    .map(([year, data]) => ({ year: Number(year), day: dayOfYear(`${year}-${data.f}`) }))
+    .map(([year, data]) => ({ year: Number(year), day: dayOfYear(`${year}-${data.a ?? data.f}`) }))
     .sort((a, b) => a.year - b.year)
+}
+
+/**
+ * The kommun's list of everything, from the per-taxon index: first and last
+ * report and the count. Built from the years rather than asked of
+ * Artportalen, whose aggregation keeps a subspecies apart from its species
+ * (gråkråka's 1 185 reports would be missing from kråka).
+ */
+export function allTimeFromIndex(index: TaxonIndex, fetchedAt: string): AllTime {
+  const taxa = Object.entries(index.taxa).flatMap(([id, entry]) => {
+    const years = Object.keys(entry.years)
+      .map(Number)
+      .sort((a, b) => a - b)
+    const first = years[0]
+    const last = years.at(-1)
+    if (first === undefined || last === undefined) return []
+    return [
+      {
+        id: Number(id),
+        first: `${first}-${entry.years[first]?.f}`,
+        last: `${last}-${entry.years[last]?.l}`,
+        reports: Object.values(entry.years).reduce((sum, one) => sum + one.r, 0),
+      },
+    ]
+  })
+  taxa.sort((a, b) => b.reports - a.reports || a.id - b.id)
+  return { fetchedAt, taxa }
 }

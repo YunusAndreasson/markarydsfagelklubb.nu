@@ -1,4 +1,5 @@
 import { createFetchWithTimeout } from "@/lib/fetch"
+import { COUNTED_CATEGORIES, SPECIES_CATEGORY } from "./aggregate"
 import type { SosRecord, SosTaxonAggregate } from "./types"
 
 /**
@@ -13,10 +14,13 @@ const PAGE_SIZE = 1000
 /** The search endpoint's hard limit; a single year of the kommun is well under it (4 420 at most). */
 export const SEARCH_CAP = 10_000
 
-/** Markaryds kommun (kommunkod 0767), birds (Aves), Artportalen only, species rank only. */
+/**
+ * Markaryds kommun (kommunkod 0767), birds (Aves), Artportalen only: species,
+ * and the subspecies, populations and morphs that `aggregate.ts` counts as them.
+ */
 export const KOMMUN_FILTER = {
   dataProvider: { ids: [1] },
-  taxon: { ids: [4000104], includeUnderlyingTaxa: true, taxonCategories: [17] },
+  taxon: { ids: [4000104], includeUnderlyingTaxa: true, taxonCategories: COUNTED_CATEGORIES },
   geographics: { areas: [{ areaType: "Municipality", featureId: "767" }] },
 } as const
 
@@ -25,6 +29,8 @@ const YEAR_FIELDS = [
   "taxon.id",
   "taxon.vernacularName",
   "taxon.scientificName",
+  "taxon.attributes.taxonCategory",
+  "taxon.attributes.parentDyntaxaTaxonId",
   "occurrence.recordedBy",
   "occurrence.individualCount",
   "event.startDate",
@@ -119,7 +125,12 @@ export function createClient(
       )
     },
 
-    /** One row per species ever recorded in the kommun. */
+    /**
+     * One row per taxon ever recorded in the kommun, a subspecies apart from
+     * its species. The jobs only read how far back it goes: the all-time list
+     * itself is built from the years (`allTimeFromIndex`), which count each
+     * subspecies as its species.
+     */
     async allTime(): Promise<SosTaxonAggregate[]> {
       const body = await post<SosTaxonAggregate[] | { records: SosTaxonAggregate[] }>(
         "/Observations/TaxonAggregation",
@@ -128,13 +139,16 @@ export function createClient(
       return Array.isArray(body) ? body : body.records
     },
 
-    /** One record of a taxon, for its name when no scanned year has it. */
+    /**
+     * A species' own name, from one species-rank record anywhere in Sweden:
+     * a species reported in the kommun only as a subspecies has none here.
+     */
     async nameOf(taxonId: number): Promise<SosRecord | null> {
       const page = await post<{ records: SosRecord[] }>(
         "/Observations/Search?skip=0&take=1&translationCultureCode=sv-SE",
         {
-          ...KOMMUN_FILTER,
-          taxon: { ids: [taxonId] },
+          dataProvider: KOMMUN_FILTER.dataProvider,
+          taxon: { ids: [taxonId], taxonCategories: [SPECIES_CATEGORY] },
           output: { fields: ["taxon.id", "taxon.vernacularName", "taxon.scientificName"] },
         }
       )

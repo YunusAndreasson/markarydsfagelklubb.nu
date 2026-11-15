@@ -15,10 +15,18 @@ import type {
  * tests feed it synthetic records and the jobs feed it the API's.
  */
 
-/** Dyntaxa's taxon category "Art". Subspecies, hybrids and "obestämd" rows are other categories. */
+/** Dyntaxa's taxon category "Art". */
 export const SPECIES_CATEGORY = 17
+/**
+ * The ranks below a species that count as it, the way Artportalen's own
+ * species lists count them: Underart (gråkråka is kråka), Population (tamduva
+ * is klippduva) and Morfotyp (a white jaktfalk). Hybrids, genera, families and
+ * "a or b" complexes name no one species, so they count for none.
+ */
+export const BELOW_SPECIES = [18, 23, 32] as const
+/** What the jobs ask Artportalen for. */
+export const COUNTED_CATEGORIES = [SPECIES_CATEGORY, ...BELOW_SPECIES]
 
-/** How many of the league get a race curve; the rest only a total. */
 export const LEAGUE_CURVES = 20
 export const TOP_LOCALITIES = 15
 
@@ -69,13 +77,24 @@ export function splitObservers(text: string | null | undefined): string[] {
   ]
 }
 
-export function isSpecies(record: SosRecord): boolean {
-  const category = record.taxon.attributes?.taxonCategory?.id
+/**
+ * The species a record counts for: its own taxon, or a subspecies' or
+ * population's parent. Null for a rank that names no single species.
+ */
+export function speciesIdOf(record: SosRecord): number | null {
+  const attributes = record.taxon.attributes
+  const category = attributes?.taxonCategory?.id
   // The jobs filter on the server; an absent category means it was already filtered.
-  return category === undefined || category === SPECIES_CATEGORY
+  if (category === undefined || category === SPECIES_CATEGORY) return record.taxon.id
+  if ((BELOW_SPECIES as readonly number[]).includes(category)) {
+    return attributes?.parentDyntaxaTaxonId ?? null
+  }
+  return null
 }
 
-function speciesOf(record: SosRecord): Species {
+const isOwnSpecies = (record: SosRecord) => speciesIdOf(record) === record.taxon.id
+
+function ownName(record: SosRecord): Species {
   return {
     id: record.taxon.id,
     name:
@@ -86,13 +105,81 @@ function speciesOf(record: SosRecord): Species {
   }
 }
 
+/**
+ * Names for every species the records count for. A species-rank record names
+ * itself; a subspecies' species takes its name from one of those in the same
+ * batch, else from `names`. `unnamedSpecies` says which still need a lookup.
+ */
+export function speciesNames(
+  records: readonly SosRecord[],
+  names: NameMap | null
+): Map<number, Species> {
+  const out = new Map<number, Species>()
+  for (const record of records) {
+    if (isOwnSpecies(record) && !out.has(record.taxon.id)) {
+      out.set(record.taxon.id, ownName(record))
+    }
+  }
+  for (const record of records) {
+    const id = speciesIdOf(record)
+    if (id === null || out.has(id)) continue
+    const known = names?.[id]
+    if (known) out.set(id, { id, ...known })
+  }
+  return out
+}
+
+/** The species the records count for that neither they nor `names` can name. */
+export function unnamedSpecies(records: readonly SosRecord[], names: NameMap | null): number[] {
+  const named = speciesNames(records, names)
+  const ids = new Set<number>()
+  for (const record of records) {
+    const id = speciesIdOf(record)
+    if (id !== null && !named.has(id)) ids.add(id)
+  }
+  return [...ids]
+}
+
+function speciesOf(record: SosRecord, named: Map<number, Species>): Species | null {
+  const id = speciesIdOf(record)
+  if (id === null) return null
+  return (
+    named.get(id) ??
+    (id === record.taxon.id ? ownName(record) : { id, name: `taxon ${id}`, sci: "" })
+  )
+}
+
+/** A report before this day of the year (1 March) can be a bird that wintered. */
+export const WINTER_UNTIL = 60
+/** …when nothing else is reported for this many days after it. */
+export const WINTER_GAP_DAYS = 21
+
+/**
+ * The year's spring arrival from its sorted report dates. A summer bird that
+ * wintered (a trana on Hammarsjön in January) gives a report or two, then
+ * weeks of nothing until the others come: the arrival is the report after the
+ * last such gap that starts in winter. Without one it is the first report.
+ */
+export function springArrival(dates: readonly string[]): string | undefined {
+  let arrival = dates[0]
+  for (let i = 0; i < dates.length - 1; i++) {
+    const day = dayOfYear(dates[i] as string)
+    if (day >= WINTER_UNTIL) break
+    if (dayOfYear(dates[i + 1] as string) - day >= WINTER_GAP_DAYS) arrival = dates[i + 1]
+  }
+  return arrival
+}
+
 const sv = new Intl.Collator("sv")
 
 export function aggregateYear(
   year: number,
   records: readonly SosRecord[],
-  fetchedAt: string
+  fetchedAt: string,
+  names: NameMap | null = null
 ): YearStats {
+  const named = speciesNames(records, names)
+  const dates = new Map<number, Set<string>>()
   const species = new Map<number, SpeciesYear>()
   const observers = new Map<string, { reports: number; firsts: Map<number, string> }>()
   const localities = new Map<string, { reports: number; species: Set<number> }>()
@@ -102,13 +189,20 @@ export function aggregateYear(
   let individuals = 0
 
   for (const record of records) {
-    if (!isSpecies(record)) continue
+    const counted = speciesOf(record, named)
+    if (!counted) continue
     const date = localDate(record.event.startDate)
     if (Number(date.slice(0, 4)) !== year) continue
     reports++
     individuals += parseCount(record.occurrence?.individualCount) ?? 0
 
-    const { id, name, sci } = speciesOf(record)
+    const { id, name, sci } = counted
+    let days = dates.get(id)
+    if (!days) {
+      days = new Set()
+      dates.set(id, days)
+    }
+    days.add(date)
     let entry = species.get(id)
     if (!entry) {
       entry = {
@@ -152,6 +246,11 @@ export function aggregateYear(
       place.reports++
       place.species.add(id)
     }
+  }
+
+  for (const one of species.values()) {
+    const arrival = springArrival([...(dates.get(one.id) ?? [])].sort())
+    if (arrival && arrival !== one.first) one.arrival = arrival
   }
 
   const arrivals = [...species.values()].sort(
@@ -230,8 +329,18 @@ export function mergeNames(names: NameMap | null, species: readonly Species[]): 
   return next
 }
 
-export function toSighting(record: SosRecord): Sighting {
-  const { id, name, sci } = speciesOf(record)
+/**
+ * One record for "Senaste fynden". A subspecies is listed as its species, so
+ * the list counts and links the way the species pages do. Null for a record
+ * that counts for no single species.
+ */
+export function toSighting(
+  record: SosRecord,
+  named: Map<number, Species> = new Map()
+): Sighting | null {
+  const species = speciesOf(record, named)
+  if (!species) return null
+  const { id, name, sci } = species
   const countText = record.occurrence?.individualCount?.trim() || null
   const count = parseCount(countText)
   const start = record.event.startDate

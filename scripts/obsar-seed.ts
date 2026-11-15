@@ -4,12 +4,17 @@
  * nightly backfill. It runs the same jobs as the Worker's cron, but waits out
  * SOS's rate limit instead of stopping.
  *
- *   pnpm obsar:seed            # everything, about two minutes
+ *   pnpm obsar:seed            # everything, about three minutes
  *   pnpm obsar:seed --fast     # only the newest sightings and this year
+ *   pnpm obsar:seed --remote   # everything, into PRODUCTION's namespace
  *
  * The key comes from ARTPORTALEN_API_KEY, or from `.artportalen-keys` in the
- * repo root (gitignored; ARTPORTALEN_API_KEY_PRIMARY=...). It never writes to
- * production: the upload is `wrangler kv bulk put --local`.
+ * repo root (gitignored; ARTPORTALEN_API_KEY_PRIMARY=...). It writes local KV
+ * unless `--remote` says otherwise. That is for when a change to how the jobs
+ * count would otherwise reach production's past years only as the nightly
+ * cursor gets to them (about ten nights): ship the code first, so the crons
+ * write the same shape, then seed. It only replaces the `ap:v1:*` keys the
+ * jobs themselves write, and refuses `--fast`, which would upload a partial set.
  */
 import { execFileSync } from "node:child_process"
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
@@ -63,6 +68,12 @@ const kv: Kv = {
   },
 }
 
+const remote = process.argv.includes("--remote")
+if (remote && process.argv.includes("--fast")) {
+  console.error("--remote uploads the whole set; leave out --fast.")
+  process.exit(1)
+}
+
 const client = createClient(apiKey(), patientFetch)
 const started = Date.now()
 
@@ -79,7 +90,9 @@ if (!process.argv.includes("--fast")) {
 // names, the species index) shrunk to what it reached. Uploading it would
 // overwrite a good local set with a worse one, so stop and leave KV alone.
 if (!ok) {
-  console.error("A job failed; nothing was written to local KV. Run it again.")
+  console.error(
+    `A job failed; nothing was written to ${remote ? "production" : "local"} KV. Run it again.`
+  )
   process.exit(1)
 }
 console.log(
@@ -91,7 +104,17 @@ const file = join(dir, "bulk.json")
 writeFileSync(file, JSON.stringify([...data].map(([key, value]) => ({ key, value }))))
 execFileSync(
   "pnpm",
-  ["exec", "wrangler", "kv", "bulk", "put", file, "--binding", "OBSAR", "--local"],
+  [
+    "exec",
+    "wrangler",
+    "kv",
+    "bulk",
+    "put",
+    file,
+    "--binding",
+    "OBSAR",
+    remote ? "--remote" : "--local",
+  ],
   {
     stdio: "inherit",
   }

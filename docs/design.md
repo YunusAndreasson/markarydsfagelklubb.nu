@@ -1243,9 +1243,19 @@ and this year's status under each bird. Hidden when nothing falls in the window.
   anything else is a resident with no season. Per-year first and last dates alone
   called tjäder a spring arrival (few report it before March) and pilfink a November
   departure (reports thin out); measured on the live data on 2026-11-14.
-- A summer bird's dates are the medians of its first and last reports; a winter
-  guest's come off the summer gap in its weekly reports: back in the autumn, gone in
-  the spring.
+- A summer bird's dates are the medians of its spring arrival and its last report;
+  a winter guest's come off the summer gap in its weekly reports: back in the
+  autumn, gone in the spring. **The arrival is not always the first report**
+  (`springArrival`, 2026-11-15): a report before 1 March followed by three weeks of
+  nothing is a bird that wintered (a trana on Hammarsjön in January), and the
+  arrival is the report after the gap. **A summer bird only "leaves" when its last
+  reports usually come from 1 August on** (`LEAVES_FROM`): before that they are the
+  last songs, and ärtsångare would have "left" on 27 June.
+- A first report two months or more after the usual arrival is no arrival (a blå
+  kärrhök only seen in September): the species page says "I år sågs den inte när
+  den brukar komma" and leaves the year out of the figure (`NOT_IN_SPRING`).
+- The ingress says "varje år" only for all twenty years ("nästan varje år" from 15)
+  and names no season ("mest på våren") from fewer than five reports.
 - **Two weeks either way, "så här års"**: a ten-day window left the block empty for
   weeks in late autumn, when little moves.
 

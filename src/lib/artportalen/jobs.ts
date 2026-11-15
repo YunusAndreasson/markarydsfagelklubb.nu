@@ -4,13 +4,15 @@ import {
   mergeHistory,
   mergeNames,
   type NameMap,
+  speciesNames,
   summarise,
   toSighting,
+  unnamedSpecies,
 } from "./aggregate"
 import type { Client } from "./client"
 import { type Kv, store } from "./store"
-import { buildSeason, mergeTaxa, needsRebuild, rebuildTaxa } from "./taxa"
-import type { Meta, YearStats } from "./types"
+import { allTimeFromIndex, buildSeason, mergeTaxa, needsRebuild, rebuildTaxa } from "./taxa"
+import type { Meta, SosRecord, YearStats } from "./types"
 
 /**
  * The two scheduled jobs (wrangler.jsonc `triggers.crons`, `src/worker.ts`).
@@ -29,8 +31,6 @@ export const RECENT_DAYS = 30
 export const RECENT_MAX = 400
 /** Past years refreshed per night: all of history about once a week. */
 export const YEARS_PER_NIGHT = 8
-/** Names looked up one by one per night, for taxa no scanned year has named yet. */
-const NAME_LOOKUPS_PER_NIGHT = 15
 
 const EMPTY_META: Meta = { cursor: null, lastFast: null, lastNightly: null, lastError: null }
 
@@ -47,21 +47,46 @@ function daysBefore(date: string, days: number): string {
   return new Date(instant).toISOString().slice(0, 10)
 }
 
+/**
+ * Names the species that the records count for only through a subspecies
+ * (a year with gråkråka but no plain kråka), one lookup each, once: the name
+ * stays in the map.
+ */
+async function nameSpecies(
+  client: Client,
+  records: readonly SosRecord[],
+  names: NameMap | null
+): Promise<NameMap | null> {
+  let next = names
+  for (const id of unnamedSpecies(records, names)) {
+    const record = await client.nameOf(id)
+    const sci = record?.taxon.scientificName?.trim() ?? ""
+    const name = record?.taxon.vernacularName?.trim() || sci
+    if (name) next = mergeNames(next, [{ id, name, sci }])
+  }
+  return next
+}
+
 async function refreshYear(
   kv: Kv,
   client: Client,
   year: number,
   fetchedAt: string,
-  names: NameMap | null
+  known: NameMap | null
 ) {
-  const stats = aggregateYear(year, await client.year(year), fetchedAt)
+  const records = await client.year(year)
+  const names = await nameSpecies(client, records, known)
+  const stats = aggregateYear(year, records, fetchedAt, names)
   await store.writeYear(kv, stats)
   await store.writeHistory(
     kv,
     mergeHistory(await store.readHistory(kv), summarise(stats), fetchedAt)
   )
   // The species pages' index (taxa.ts): this year's line replaces itself.
-  await store.writeTaxa(kv, mergeTaxa(await store.readTaxa(kv), stats, fetchedAt))
+  const index = mergeTaxa(await store.readTaxa(kv), stats, fetchedAt)
+  await store.writeTaxa(kv, index)
+  // The all-time list follows the index, so it counts subspecies as their species.
+  await store.writeAllTime(kv, allTimeFromIndex(index, fetchedAt))
   return mergeNames(names, stats.species)
 }
 
@@ -92,11 +117,6 @@ export async function runFast(kv: Kv, client: Client, now = new Date()): Promise
   try {
     const to = today(now)
     const records = await client.recent(daysBefore(to, RECENT_DAYS - 1), to)
-    await store.writeRecent(kv, {
-      fetchedAt,
-      days: RECENT_DAYS,
-      sightings: records.slice(0, RECENT_MAX).map(toSighting),
-    })
     const names = await refreshYear(
       kv,
       client,
@@ -105,6 +125,13 @@ export async function runFast(kv: Kv, client: Client, now = new Date()): Promise
       await store.readNames(kv)
     )
     await store.writeNames(kv, names)
+    // After the year, whose lookups named every species these records count for.
+    const named = speciesNames(records, names)
+    await store.writeRecent(kv, {
+      fetchedAt,
+      days: RECENT_DAYS,
+      sightings: records.slice(0, RECENT_MAX).flatMap((record) => toSighting(record, named) ?? []),
+    })
     await store.writeMeta(kv, { ...meta, lastFast: fetchedAt, lastError: null })
     return { ok: true, calls: client.calls }
   } catch (error) {
@@ -113,8 +140,8 @@ export async function runFast(kv: Kv, client: Client, now = new Date()): Promise
 }
 
 /**
- * Every night: the all-time list, then a window of past years, newest first,
- * wrapping round to last year once it reaches the first recorded year.
+ * Every night: a window of past years, newest first, wrapping round to last
+ * year once it reaches the first recorded year.
  */
 export async function runNightly(
   kv: Kv,
@@ -127,16 +154,8 @@ export async function runNightly(
   const thisYear = stockholmYear(now)
   let names = await store.readNames(kv)
   try {
+    // Only for how far back the years go; the list itself comes from the index.
     const taxa = await client.allTime()
-    await store.writeAllTime(kv, {
-      fetchedAt,
-      taxa: taxa.map((one) => ({
-        id: one.taxonId,
-        first: one.firstSighting.slice(0, 10),
-        last: one.lastSighting.slice(0, 10),
-        reports: one.observationCount,
-      })),
-    })
     const earliest = Number(
       taxa
         .map((one) => one.firstSighting)
@@ -158,6 +177,7 @@ export async function runNightly(
           .map(([id, one]) => ({ id: Number(id), name: one.name, sci: one.sci }))
       )
       await store.writeNames(kv, names)
+      await store.writeAllTime(kv, allTimeFromIndex(indexed, fetchedAt))
     }
 
     let year =
@@ -169,16 +189,6 @@ export async function runNightly(
       meta = { ...meta, cursor: year }
       await store.writeMeta(kv, meta)
     }
-
-    // A taxon in the all-time list that no scanned year has named yet.
-    const unnamed = taxa.filter((one) => !names?.[one.taxonId]).slice(0, NAME_LOOKUPS_PER_NIGHT)
-    for (const one of unnamed) {
-      const record = await client.nameOf(one.taxonId)
-      const sci = record?.taxon.scientificName?.trim() ?? ""
-      const name = record?.taxon.vernacularName?.trim() || sci
-      if (name) names = mergeNames(names, [{ id: one.taxonId, name, sci }])
-    }
-    if (names) await store.writeNames(kv, names)
 
     // "Usually" only moves with past years, so once a night is enough.
     const taxaIndex = await store.readTaxa(kv)
