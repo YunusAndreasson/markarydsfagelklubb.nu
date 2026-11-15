@@ -160,6 +160,22 @@ describe("coarsePlace", () => {
     }
   })
 
+  it("hides Artportalen's protected species, but not an unprotected owl", () => {
+    // Tjäder (44), berguv (178), pilgrimsfalk (94): skyddsklassade. Kattuggla (182): not.
+    for (const id of [44, 178, 94]) expect(PLACE_SUPPRESSED_SPECIES.has(id)).toBe(true)
+    expect(PLACE_SUPPRESSED_SPECIES.has(182)).toBe(false)
+    const lek: AlertPoint = {
+      ...point(56.54261, 13.72467),
+      location_name: "Hammarsjön",
+      species_id: 44,
+    }
+    expect(publicPlace(lek, locations)).toEqual({
+      label: KOMMUN_PLACE,
+      lokal: null,
+      position: null,
+    })
+  })
+
   it("never returns a coordinate, on any rung", () => {
     const cases: AlertPoint[] = [
       { ...point(56.48762, 13.64466), location_name: "Hammarsjön" },

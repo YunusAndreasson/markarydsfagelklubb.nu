@@ -52,15 +52,46 @@ export const OUTSIDE_PLACE = "Utanför kommunen"
 export const UNKNOWN_PLACE = "Okänd plats"
 
 /**
- * Species whose place is never published more precisely than the kommun.
+ * Species whose place is never published more precisely than the kommun:
+ * Artportalen's skyddsklassade arter, by the app's `species.id`.
  *
- * Empty today, and wired up anyway. The app has no sensitivity flag —
- * `species.rarity` measures how often a bird is seen, not whether publishing
- * its nest would put it at risk — so this list has to be maintained by hand,
- * following Artportalen's skyddsklassade arter. Having the hook in place means
- * the first Berguv is a one-line change instead of an emergency.
+ * The app has no sensitivity flag — `species.rarity` measures how often a bird
+ * is seen, not whether publishing its nest would put it at risk — so the list
+ * is kept by hand. Taken on 2026-11-15 from SOS's taxon attribute
+ * `sensitivityCategory`: every app species in class 2 or above, where
+ * Artportalen itself blurs a public position to 1–50 km. None was in class 2.
+ * Recheck when the app adds a species. Not protected there (class 1): kattuggla.
  */
-export const PLACE_SUPPRESSED_SPECIES: ReadonlySet<number> = new Set<number>()
+export const PLACE_SUPPRESSED_SPECIES: ReadonlySet<number> = new Set<number>([
+  // Class 3, at most 5 × 5 km for the public.
+  44, // tjäder
+  48, // smålom
+  72, // bivråk
+  73, // brun glada
+  74, // röd glada
+  77, // blå kärrhök
+  80, // duvhök
+  83, // fjällvråk
+  88, // fiskgjuse
+  91, // stenfalk
+  92, // lärkfalk
+  128, // myrspov
+  180, // hökuggla
+  184, // lappuggla
+  186, // jorduggla
+  190, // kungsfiskare
+  193, // härfågel
+  650, // skogsgås
+  651, // tundragås
+  // Class 4, at most 25 × 25 km.
+  75, // havsörn
+  79, // ängshök
+  87, // kungsörn
+  178, // berguv
+  // Class 5, at most 50 × 50 km.
+  93, // jaktfalk
+  94, // pilgrimsfalk
+])
 
 const EARTH_RADIUS_KM = 6371
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180
