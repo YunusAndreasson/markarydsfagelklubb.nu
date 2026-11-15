@@ -145,6 +145,20 @@ export async function runNightly(
     )
 
     await backfillTaxa(kv, fetchedAt)
+    // The index names every taxon any stored year has seen, so a species page
+    // exists for each the first night, not after the cursor has walked back
+    // through every year at YEARS_PER_NIGHT a night. Only missing names: a
+    // refreshed year's own name is as new or newer.
+    const indexed = await store.readTaxa(kv)
+    if (indexed) {
+      names = mergeNames(
+        names,
+        Object.entries(indexed.taxa)
+          .filter(([id]) => !names?.[Number(id)])
+          .map(([id, one]) => ({ id: Number(id), name: one.name, sci: one.sci }))
+      )
+      await store.writeNames(kv, names)
+    }
 
     let year =
       meta.cursor && meta.cursor < thisYear && meta.cursor >= earliest ? meta.cursor : thisYear - 1

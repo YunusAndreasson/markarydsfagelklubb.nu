@@ -126,6 +126,17 @@ describe("runNightly", () => {
     expect((await store.readTaxa(kv))?.years).toEqual([2020, 2021, 2025])
   })
 
+  it("names every taxon in the stored years the first night, from the index, with no lookups", async () => {
+    const kv = memoryKv()
+    await runNightly(kv, fakeClient(years), NOW, 8)
+    // A fresh deploy: the names hold nothing, the year keys all of history.
+    kv.data.set("ap:v1:names", JSON.stringify({}))
+    kv.data.delete("ap:v1:taxa")
+    await runNightly(kv, fakeClient(years), NOW, 0)
+    // From the stored years, not the one-by-one lookup (which says "sällsynting").
+    expect((await store.readNames(kv))?.["1"]).toEqual({ name: "koltrast", sci: "Turdus merula" })
+  })
+
   it("names a taxon no scanned year named", async () => {
     const kv = memoryKv()
     await runNightly(kv, fakeClient({}), NOW, 0)
