@@ -388,3 +388,64 @@ export async function loadPageBody(db: SupabasePublicClient, id: number) {
   if (error) console.error(`mafk-web: load page failed — ${error.message}`)
   return error ? "error" : data
 }
+
+/** Supabase answers at most 1000 rows; the sitemap pages through articles by id. */
+const SITEMAP_BATCH = 1000
+
+/**
+ * Everything the sitemap lists from this site's own tables (src/lib/sitemap.ts),
+ * with the dates the rows last changed. Null on any failed read: a sitemap
+ * missing half the site would be worse than one Google fetches again later.
+ */
+export async function listSitemapContent(db: SupabasePublicClient) {
+  const [pages, events, categories] = await Promise.all([
+    db
+      .from("pages")
+      .select("id, parent_id, kind, slug, title, link_url, show_in_menu, sort_order, updated_at")
+      .overrideTypes<(PageRow & { updated_at: string })[], { merge: false }>(),
+    db.from("events").select("slug, updated_at").order("starts_at").limit(SITEMAP_BATCH),
+    db.from("categories").select("id, slug"),
+  ])
+  for (const [name, result] of [
+    ["pages", pages],
+    ["events", events],
+    ["categories", categories],
+  ] as const) {
+    if (result.error) {
+      console.error(`mafk-web: sitemap ${name} failed — ${result.error.message}`)
+      return null
+    }
+  }
+  if (!pages.data || !events.data || !categories.data) return null
+  if (events.data.length === SITEMAP_BATCH) {
+    console.error("mafk-web: sitemap events hit the row cap; the events read needs paging")
+  }
+
+  const articles: {
+    id: number
+    slug: string
+    published_at: string | null
+    updated_at: string
+    category_id: number | null
+  }[] = []
+  for (;;) {
+    const last = articles.at(-1)
+    let query = db.from("articles").select("id, slug, published_at, updated_at, category_id")
+    if (last) query = query.gt("id", last.id)
+    const { data, error } = await query.order("id").limit(SITEMAP_BATCH)
+    if (error) {
+      console.error(`mafk-web: sitemap articles failed — ${error.message}`)
+      return null
+    }
+    articles.push(...data)
+    if (data.length < SITEMAP_BATCH) break
+  }
+
+  return {
+    tree: buildPageTree(pages.data),
+    pageUpdatedAt: new Map(pages.data.map((row) => [row.id, row.updated_at])),
+    articles,
+    events: events.data,
+    categories: categories.data,
+  }
+}

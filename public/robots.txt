@@ -2,3 +2,6 @@
 # only to the signed-in administrator and is marked private, no-store.
 User-agent: *
 Disallow: /admin
+
+# Every public page, read from the database when asked (src/pages/sitemap.xml.ts).
+Sitemap: https://markarydsfagelklubb.nu/sitemap.xml

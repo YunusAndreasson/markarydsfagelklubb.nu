@@ -190,7 +190,8 @@ the admin's image uploader.
 
 Since the launch (2026-11-15) the site is indexed at https://markarydsfagelklubb.nu;
 `www.` and workers.dev 301 every page to the apex (`src/lib/canonical-host.ts`), and
-`robots.txt` only keeps out `/admin`.
+`robots.txt` only keeps out `/admin` and points to `/sitemap.xml`
+(`src/lib/sitemap.ts` says what it lists and leaves out).
 
 ## Open source
 
