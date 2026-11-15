@@ -36,7 +36,7 @@ const recent = (articles ?? []).slice(0, 5)
           <h2 id="waiting" class="text-lg font-semibold">Utkast och schemalagda</h2>
           <ul class="flex flex-col divide-y rounded-2xl border">
             {waiting.map((article) => (
-              <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+              <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <a href={`/admin/artiklar/${article.id}`} class="font-medium underline-offset-4 hover:underline">
                   {article.title}
                 </a>
@@ -56,7 +56,7 @@ const recent = (articles ?? []).slice(0, 5)
         ) : (
           <ul class="flex flex-col divide-y rounded-2xl border">
             {recent.map((article) => (
-              <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+              <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <a href={`/admin/artiklar/${article.id}`} class="font-medium underline-offset-4 hover:underline">
                   {article.title}
                 </a>

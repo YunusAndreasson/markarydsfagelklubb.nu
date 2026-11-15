@@ -168,7 +168,7 @@ const hasErrors = Object.keys(errors).length > 0
 ---
 
 <AdminLayout title={title} wide={!isLink}>
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-8">
     <div class="flex flex-wrap items-center gap-3">
       <a href="/admin/sidor" class="text-muted-foreground text-sm underline-offset-4 hover:underline">Sidor</a>
       {page && !isLink && <PublishBadge status={page.status} publishedAt={page.published_at} now={now} />}
@@ -201,7 +201,7 @@ const hasErrors = Object.keys(errors).length > 0
                 ? "Länken försvinner ur menyn."
                 : "Sidan försvinner från webbplatsen och kan inte återställas."}
             </p>
-            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+            <form method="POST" class="mt-4 flex flex-wrap gap-3">
               <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">
                 Ta bort {nounDefinite}
               </Button>
@@ -215,7 +215,7 @@ const hasErrors = Object.keys(errors).length > 0
     }
 
     <form method="POST" class:list={["grid gap-8", !isLink && "lg:grid-cols-[minmax(0,1fr)_18rem]"]}>
-      <div class="flex min-w-0 flex-col gap-7">
+      <div class="flex min-w-0 flex-col gap-8">
         <FieldGroup>
           <Field data-invalid={errors.title ? true : undefined}>
             <FieldLabel htmlFor="title">{isLink ? "Text i menyn" : "Rubrik"}</FieldLabel>
@@ -261,7 +261,7 @@ const hasErrors = Object.keys(errors).length > 0
 
       <aside class="flex flex-col gap-7">
         {!isLink && (
-          <section aria-labelledby="publish-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+          <section aria-labelledby="publish-heading" class="flex flex-col gap-5 rounded-2xl border p-5">
             <h2 id="publish-heading" class="text-sm font-semibold">Publicering</h2>
             <Field data-invalid={errors.publish_at ? true : undefined}>
               <FieldLabel htmlFor="publish_at">Publiceringstid</FieldLabel>

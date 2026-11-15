@@ -78,7 +78,7 @@ const failed = lokaler.error || points.error
 ---
 
 <AdminLayout title="Lokalplatser">
-  <div class="flex max-w-2xl flex-col gap-6">
+  <div class="flex max-w-3xl flex-col gap-8">
     {lokal && <a href="/admin/lokalplatser" class="text-muted-foreground text-sm underline-offset-4 hover:underline">Lokalplatser</a>}
     <h1 class="text-2xl font-semibold tracking-tight">{lokal?.name ?? "Lokalplatser"}</h1>
 
@@ -99,7 +99,7 @@ const failed = lokaler.error || points.error
           <ul class="flex flex-col divide-y rounded-2xl border">
             {(lokaler.data ?? []).map((entry) => (
               <li>
-                <a href={`/admin/lokalplatser?lokal=${entry.id}`} class="hover:bg-muted flex min-h-11 items-center justify-between gap-4 px-3">
+                <a href={`/admin/lokalplatser?lokal=${entry.id}`} class="hover:bg-muted flex min-h-12 items-center justify-between gap-4 px-4">
                   <span>{entry.name}</span>
                   {count(entry.id) > 0 && <span class="text-muted-foreground text-sm tabular-nums">{count(entry.id)}</span>}
                 </a>
@@ -115,7 +115,7 @@ const failed = lokaler.error || points.error
         <Alert variant="destructive">
           <AlertDescription>
             <p>Ta bort ”{confirming.name}”?</p>
-            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+            <form method="POST" class="mt-4 flex flex-wrap gap-3">
               <input type="hidden" name="id" value={confirming.id} />
               <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">Ta bort platsen</Button>
               <a href={`/admin/lokalplatser?lokal=${lokalId}`} class={buttonVariants({ variant: "ghost", className: "h-11" })}>Avbryt</a>
@@ -132,7 +132,7 @@ const failed = lokaler.error || points.error
           const shown = errorFor === key ? errors : {}
           const typed = errorFor === key ? submitted : null
           return (
-            <form method="POST" class="flex flex-col gap-3 rounded-2xl border p-4">
+            <form method="POST" class="flex flex-col gap-4 rounded-2xl border p-5">
               {!row && <h2 class="text-sm font-semibold">Ny plats</h2>}
               {row && <input type="hidden" name="id" value={row.id} />}
               <Field data-invalid={shown.name ? true : undefined}>
@@ -144,7 +144,7 @@ const failed = lokaler.error || points.error
                 <FieldLabel htmlFor={`note-${key}`}>Text</FieldLabel>
                 <Textarea id={`note-${key}`} name="note" rows={2} defaultValue={typed?.note ?? row?.note ?? ""} />
               </Field>
-              <div class="grid gap-3 sm:grid-cols-2">
+              <div class="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor={`kind-${key}`}>Typ</FieldLabel>
                   <NativeSelect id={`kind-${key}`} name="kind" className="w-full" defaultValue={typed?.kind ?? row?.kind ?? "place"}>

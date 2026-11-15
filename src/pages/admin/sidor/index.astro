@@ -48,7 +48,7 @@ const deleted = Astro.url.searchParams.has("borttagen")
 ---
 
 <AdminLayout title="Sidor">
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-8">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-2xl font-semibold tracking-tight">Sidor och meny</h1>
       <div class="flex flex-wrap gap-2">
@@ -91,7 +91,7 @@ const deleted = Astro.url.searchParams.has("borttagen")
             const position = siblings.findIndex((sibling) => sibling.id === node.id)
             const row = statusById.get(node.id)
             return (
-              <li class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2" style={`padding-left: ${0.75 + node.depth * 1.5}rem`}>
+              <li class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3" style={`padding-left: ${0.75 + node.depth * 1.5}rem`}>
                 <div class="flex min-w-0 flex-1 flex-col">
                   <a href={`/admin/sidor/${node.id}`} class="truncate font-medium underline-offset-4 hover:underline">
                     {node.title}

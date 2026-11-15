@@ -136,7 +136,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
 ---
 
 <AdminLayout title={title} wide>
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-8">
     <div class="flex flex-wrap items-center gap-3">
       <a href="/admin/kalender" class="text-muted-foreground text-sm underline-offset-4 hover:underline">
         Kalender
@@ -173,7 +173,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
           <AlertTitle>Ta bort ”{event.title}”?</AlertTitle>
           <AlertDescription>
             <p>Evenemanget försvinner från kalendern och kan inte återställas. Det försvinner också för den som prenumererar på kalendern.</p>
-            <form method="POST" class="mt-3 flex flex-wrap gap-2">
+            <form method="POST" class="mt-4 flex flex-wrap gap-3">
               <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">
                 Ta bort evenemanget
               </Button>
@@ -186,8 +186,8 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
       )
     }
 
-    <form method="POST" class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <div class="flex min-w-0 flex-col gap-7">
+    <form method="POST" class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div class="flex min-w-0 flex-col gap-8">
         <FieldGroup>
           <Field data-invalid={errors.title ? true : undefined}>
             <FieldLabel htmlFor="title">Rubrik</FieldLabel>
@@ -217,7 +217,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
           </Field>
         </FieldGroup>
 
-        <section aria-labelledby="when-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+        <section aria-labelledby="when-heading" class="flex flex-col gap-5 rounded-2xl border p-5">
           <h2 id="when-heading" class="text-sm font-semibold">När</h2>
           <FieldGroup>
             <Field data-invalid={errors.starts_at ? true : undefined}>
@@ -278,7 +278,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
       </div>
 
       <aside class="flex flex-col gap-7">
-        <section aria-labelledby="publish-heading" class="flex flex-col gap-4 rounded-2xl border p-4">
+        <section aria-labelledby="publish-heading" class="flex flex-col gap-5 rounded-2xl border p-5">
           <h2 id="publish-heading" class="text-sm font-semibold">Publicering</h2>
           <Field data-invalid={errors.publish_at ? true : undefined}>
             <FieldLabel htmlFor="publish_at">Publiceringstid</FieldLabel>

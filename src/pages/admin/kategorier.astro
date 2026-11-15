@@ -53,7 +53,7 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
 ---
 
 <AdminLayout title="Kategorier">
-  <div class="flex max-w-2xl flex-col gap-6">
+  <div class="flex max-w-3xl flex-col gap-8">
     <h1 class="text-2xl font-semibold tracking-tight">Kategorier</h1>
     <p class="text-muted-foreground leading-7">
       Artiklarna sorteras i kategorier på webbplatsen. Tar du bort en kategori finns dess artiklar
@@ -76,7 +76,7 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
       <Alert variant="destructive">
         <AlertDescription>
           <p>Ta bort kategorin ”{confirming.name}”? Artiklarna i den finns kvar, utan kategori.</p>
-          <form method="POST" class="mt-3 flex flex-wrap gap-2">
+          <form method="POST" class="mt-4 flex flex-wrap gap-3">
             <input type="hidden" name="id" value={confirming.id} />
             <Button type="submit" name="intent" value="delete" variant="destructive" className="h-11">Ta bort kategorin</Button>
             <a href="/admin/kategorier" class={buttonVariants({ variant: "ghost", className: "h-11" })}>Avbryt</a>
@@ -87,8 +87,8 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
 
     <ul class="flex flex-col divide-y rounded-2xl border">
       {(categories ?? []).map((category) => (
-        <li class="p-3">
-          <form method="POST" class="flex flex-wrap items-end gap-2">
+        <li class="px-4 py-3">
+          <form method="POST" class="flex flex-wrap items-end gap-3">
             <input type="hidden" name="id" value={category.id} />
             <Field className="min-w-48 flex-1" data-invalid={errorFor === category.id && nameError ? true : undefined}>
               <FieldLabel htmlFor={`name-${category.id}`} className="sr-only">Namn</FieldLabel>
@@ -101,11 +101,11 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
         </li>
       ))}
       {categories && categories.length === 0 && (
-        <li class="text-muted-foreground p-3 text-sm">Inga kategorier ännu.</li>
+        <li class="text-muted-foreground px-4 py-3 text-sm">Inga kategorier ännu.</li>
       )}
     </ul>
 
-    <form method="POST" class="flex flex-wrap items-end gap-2">
+    <form method="POST" class="flex flex-wrap items-end gap-3">
       <Field className="min-w-48 flex-1" data-invalid={errorFor === "new" && nameError ? true : undefined}>
         <FieldLabel htmlFor="name-new">Ny kategori</FieldLabel>
         <Input id="name-new" name="name" value={draftName} className="h-11" required aria-invalid={errorFor === "new" && nameError ? true : undefined} />

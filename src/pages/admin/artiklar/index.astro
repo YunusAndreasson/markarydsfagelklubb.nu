@@ -26,7 +26,7 @@ const deleted = Astro.url.searchParams.has("borttagen")
 ---
 
 <AdminLayout title="Artiklar">
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-8">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-2xl font-semibold tracking-tight">Artiklar</h1>
       <a href="/admin/artiklar/ny" class={buttonVariants({ className: "h-11" })}>Ny artikel</a>
@@ -65,7 +65,7 @@ const deleted = Astro.url.searchParams.has("borttagen")
           <TableBody>
             {articles.map((article) => (
               <TableRow>
-                <TableCell className="max-w-[24rem] whitespace-normal">
+                <TableCell className="max-w-[38rem] whitespace-normal">
                   <a href={`/admin/artiklar/${article.id}`} class="font-medium underline-offset-4 hover:underline">
                     {article.title}
                   </a>

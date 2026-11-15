@@ -1,9 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
 
-  // Takes over the Worker of the retired TanStack app (../mafk). The URL
-  // https://mafk-web.jonas-268.workers.dev is also the shared Supabase project's
-  // auth `site_url`, so keeping the name keeps that setting valid.
+  // Takes over the Worker of the retired TanStack app (../mafk). Its
+  // workers.dev URL stays in the shared Supabase project's redirect allow list;
+  // the auth `site_url` is https://markarydsfagelklubb.nu since 2026-11-15.
   "name": "mafk-web",
 
   // Our own entry (src/worker.ts): the adapter's request handler plus the
