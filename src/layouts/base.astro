@@ -1,5 +1,5 @@
 ---
-// The document shell every page shares: head, noindex. It queries
+// The document shell every page shares: the head. It queries
 // nothing, so the prerendered 404 can use it at build time. The public header
 // and menu live in site.astro, the admin chrome in admin.astro.
 
@@ -60,9 +60,6 @@ const SPECULATION_RULES = {
         toolbar to the white header. */}
     <meta name="color-scheme" content="only light" />
     <meta name="theme-color" content="#ffffff" />
-    {/* Until the domain cutover: workers.dev must not compete with the live
-        WordPress site in search. Remove together with public/robots.txt. */}
-    <meta name="robots" content="noindex, nofollow" />
     {description && <meta name="description" content={description} />}
     {/* The club's emblem, as in the header and on the app's icon. Imported, so
         it gets an immutable /_astro/ name and never wakes the Worker. The

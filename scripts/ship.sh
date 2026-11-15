@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-URL="https://mafk-web.jonas-268.workers.dev"
+URL="https://markarydsfagelklubb.nu"
 
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "Uncommitted changes — commit or stash before shipping." >&2

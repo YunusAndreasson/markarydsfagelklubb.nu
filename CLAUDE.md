@@ -76,7 +76,8 @@ that this repo mirrors.
 | `pnpm admin:password <email>` | Set the admin's password. **The user runs it** in their own terminal (hidden prompts); never run it or handle the password yourself |
 | `supabase db query --linked -f scripts/dummy-content.sql` | Load the dummy articles and pages (`exempel-` slugs). `dummy-content-delete.sql` removes them, and runs before the WordPress import. Writes only this repo's tables |
 
-Production is https://mafk-web.jonas-268.workers.dev, shipped **from the
+Production is https://markarydsfagelklubb.nu (the Worker `mafk-web`; its workers.dev
+name redirects there), shipped **from the
 developer's machine only**. CI (`.github/workflows/ci.yml`) runs `pnpm verify`
 on every push and PR and never deploys, so no Cloudflare credential lives in
 GitHub. Don't call `wrangler deploy` directly; `pnpm ship` ties every live
@@ -185,8 +186,9 @@ it, no `@vitejs/plugin-legacy`. The one API above it is `AbortSignal.any`
 (Safari 17.4) in `src/lib/fetch.ts`, which reaches the browser only through
 the admin's image uploader.
 
-Until launch, every page carries `noindex` and `public/robots.txt` disallows
-all. Both come out together at the domain cutover.
+Since the launch (2026-11-15) the site is indexed at https://markarydsfagelklubb.nu;
+`www.` and workers.dev 301 every page to the apex (`src/lib/canonical-host.ts`), and
+`robots.txt` only keeps out `/admin`.
 
 ## Open source
 

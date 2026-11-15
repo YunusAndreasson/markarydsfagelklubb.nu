@@ -1,6 +1,4 @@
-# The new site is under construction on workers.dev while the WordPress site
-# still serves markarydsfagelklubb.nu. Nothing here should be indexed until the
-# domain cutover — replace this file (and drop the noindex meta in
-# src/layouts/base.astro) as part of launch.
+# markarydsfagelklubb.nu: everything public may be indexed. /admin answers
+# only to the signed-in administrator and is marked private, no-store.
 User-agent: *
-Disallow: /
+Disallow: /admin

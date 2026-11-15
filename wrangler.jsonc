@@ -22,9 +22,20 @@
     "traces": { "enabled": true, "head_sampling_rate": 0.05 }
   },
 
-  // workers.dev stays on: it is the only public URL until the custom domain
-  // cutover. Per-version preview URLs are off — nothing uses them (production
-  // ships with `pnpm ship`), and each would be another public copy of the site.
+  // The site's address since the launch (step 9, 2026-11-15). Custom domains:
+  // Cloudflare makes the DNS records and the certificate, and the zone
+  // (Cloudflare DNS since 2026-11-15) must have no other A/AAAA/CNAME at these
+  // names. www answers too, and the middleware 301s it to the apex
+  // (src/lib/canonical-host.ts).
+  "routes": [
+    { "pattern": "markarydsfagelklubb.nu", "custom_domain": true },
+    { "pattern": "www.markarydsfagelklubb.nu", "custom_domain": true }
+  ],
+
+  // workers.dev stays on for the deploy's smoke test of /api/health and as the
+  // Supabase auth site_url's old host; every page there 301s to the apex.
+  // Per-version preview URLs are off — nothing uses them (production ships
+  // with `pnpm ship`), and each would be another public copy of the site.
   "workers_dev": true,
   "preview_urls": false,
 

@@ -913,6 +913,15 @@ time.
 
 ### Launch checklist (step 9)
 
+**Launched 2026-11-15.** DNS moved to Cloudflare (all records copied and
+compared, DNS only; Oderland dropped the .nu DS itself when the nameservers
+changed; the domain's mail was never used, so `webmaster@` now goes through
+Cloudflare Email Routing). The custom domains, the www/workers.dev 301s and the
+indexing went out together. Protected species: `PLACE_SUPPRESSED_SPECIES` holds
+the 25 app species Artportalen classes 3–5 (none in 2). Still open: the privacy
+policy (D1) and the Supabase auth `site_url`, both below, and DNSSEC on the
+Cloudflare zone.
+
 - **DNS.** Move the zone to Cloudflare, since a Workers custom domain needs the
   zone there. **Copy the MX, SPF, DKIM and any other mail records from Oderland
   first**, so `webmaster@` keeps working. Lower the TTLs a day ahead.

@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware"
 import { decideAdminAccess, isAdminPath, type SessionKind } from "@/lib/admin-access"
 import { readIsAdmin } from "@/lib/admin-flag"
+import { canonicalRedirect } from "@/lib/canonical-host"
 import { applySecurityHeaders, supabaseConnectOrigins } from "@/lib/security-headers"
 import { createSupabasePublicClient } from "@/lib/supabase-public"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
@@ -38,6 +39,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (context.isPrerendered) return next()
 
   const { pathname, search } = context.url
+
+  // One address for the site: www and workers.dev move to the apex.
+  const canonical = canonicalRedirect(context.url)
+  if (canonical) return applySecurityHeaders(movedPermanently(canonical))
 
   // /api/health reads the environment itself, so it can report a
   // misconfiguration as a health state rather than a bare 500.
