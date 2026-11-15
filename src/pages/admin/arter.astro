@@ -1,0 +1,129 @@
+---
+export const prerender = false
+
+import RarityChip from "@/components/site/RarityChip.astro"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
+import AdminLayout from "@/layouts/admin.astro"
+import { listSpeciesRarity, setSpeciesRarity, WRITE_MESSAGES } from "@/lib/admin-content"
+import { type RarityLevel, rarityLabel } from "@/lib/rarity"
+import { rarityChanges, rarityField } from "@/lib/species-rarity"
+
+const { supabase } = Astro.locals
+if (!supabase) return new Response(null, { status: 503 })
+
+// One form for the whole (or the searched) list; only changed numbers are written.
+let formError: string | null = null
+let failedNames: string[] = []
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData()
+  const { data: before, error } = await listSpeciesRarity(supabase)
+  if (error || !before) {
+    formError = WRITE_MESSAGES.failed
+  } else {
+    const changes = rarityChanges(form, before)
+    const results = await Promise.all(
+      changes.map((change) => setSpeciesRarity(supabase, change.id, change.rarity))
+    )
+    const failed = changes.filter((_, index) => !results[index]?.ok)
+    if (failed.length === 0) {
+      const q = String(form.get("q") ?? "").trim()
+      const back = new URLSearchParams({ andrade: String(changes.length) })
+      if (q) back.set("q", q)
+      return Astro.redirect(`/admin/arter?${back}`, 303)
+    }
+    formError = WRITE_MESSAGES.failed
+    failedNames = failed.map(
+      (change) => before.find((row) => row.id === change.id)?.swedish_name ?? ""
+    )
+  }
+}
+
+const { data: species, error } = await listSpeciesRarity(supabase)
+if (error) console.error(`mafk-web: list species failed — ${error.message}`)
+
+const q = (Astro.url.searchParams.get("q") ?? "").trim()
+const needle = q.toLocaleLowerCase("sv")
+const shown = (species ?? []).filter(
+  (row) =>
+    !needle ||
+    row.swedish_name.toLocaleLowerCase("sv").includes(needle) ||
+    row.scientific_name.toLocaleLowerCase("sv").includes(needle)
+)
+const changed = Astro.url.searchParams.get("andrade")
+const levels = [0, 1, 2, 3, 4, 5] as const satisfies readonly RarityLevel[]
+---
+
+<AdminLayout title="Arter">
+  <div class="flex max-w-3xl flex-col gap-6">
+    <h1 class="text-2xl font-semibold tracking-tight">Arter</h1>
+    <p class="text-muted-foreground leading-7">
+      Larmlistans nummer för varje art, från 0 (mycket sällsynt) till 5 (allmän). Numret syns på
+      larmen här och i appen. Det styr inte vilka larm som skickas: det gör medlemmarna själva.
+    </p>
+
+    {changed !== null && (
+      <Alert>
+        <AlertDescription>
+          {changed === "0" ? "Inget nummer ändrades." : changed === "1" ? "Ett nummer är ändrat." : `${changed} nummer är ändrade.`}
+        </AlertDescription>
+      </Alert>
+    )}
+    {(formError || error) && (
+      <Alert variant="destructive">
+        <AlertDescription>
+          {error ? "Arterna kunde inte läsas just nu." : formError}
+          {failedNames.length > 0 && ` Inte sparat: ${failedNames.join(", ")}.`}
+        </AlertDescription>
+      </Alert>
+    )}
+
+    <form method="GET" class="flex flex-wrap items-end gap-2" role="search">
+      <label class="flex min-w-56 flex-1 flex-col gap-1.5 text-sm font-medium">
+        Sök art
+        <Input name="q" value={q} placeholder="t.ex. uggla" className="h-11" />
+      </label>
+      <Button type="submit" variant="outline" className="h-11">Sök</Button>
+      {q && <a href="/admin/arter" class={buttonVariants({ variant: "ghost", className: "h-11" })}>Visa alla</a>}
+    </form>
+
+    {species && (
+      <form method="POST" class="flex flex-col gap-4">
+        {q && <input type="hidden" name="q" value={q} />}
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-muted-foreground text-sm">{shown.length} av {species.length} arter</p>
+          <Button type="submit" className="h-11">Spara ändringar</Button>
+        </div>
+
+        <ul class="flex flex-col divide-y rounded-2xl border">
+          {shown.map((row) => {
+            const field = rarityField(row.id)
+            return (
+              <li class="flex flex-wrap items-center gap-3 p-3">
+                <RarityChip level={(row.rarity ?? 5) as RarityLevel} />
+                <label for={field} class="flex min-w-40 flex-1 flex-col">
+                  <span class="font-medium">{row.swedish_name}</span>
+                  <span class="text-muted-foreground text-sm italic">{row.scientific_name}</span>
+                </label>
+                <NativeSelect id={field} name={field} defaultValue={row.rarity === null ? "" : String(row.rarity)} className="w-56">
+                  {row.rarity === null && <NativeSelectOption value="">Inget nummer</NativeSelectOption>}
+                  {levels.map((level) => (
+                    <NativeSelectOption value={String(level)}>{level} – {rarityLabel(level)}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </li>
+            )
+          })}
+          {shown.length === 0 && <li class="text-muted-foreground p-3 text-sm">Ingen art matchar ”{q}”.</li>}
+        </ul>
+
+        <div class="flex justify-end">
+          <Button type="submit" className="h-11">Spara ändringar</Button>
+        </div>
+      </form>
+    )}
+  </div>
+</AdminLayout>

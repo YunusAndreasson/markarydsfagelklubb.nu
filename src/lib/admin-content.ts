@@ -334,3 +334,37 @@ export async function saveMembershipSettings(
   }
   return { ok: true, value: null }
 }
+
+// Species (larmlista numbers)
+
+/** Every species with a scientific name, in the app's order. "Olistad art" and "Övrigt" have none. */
+export async function listSpeciesRarity(supabase: SupabaseServerClient) {
+  return supabase
+    .from("species")
+    .select("id, swedish_name, scientific_name, rarity")
+    .neq("scientific_name", "")
+    .order("sort_order")
+    .limit(ADMIN_LIST_LIMIT)
+}
+
+/**
+ * One species' number. `.select()` makes a write RLS refused visible: it
+ * returns no row instead of an error, and that must not read as saved.
+ */
+export async function setSpeciesRarity(
+  supabase: SupabaseServerClient,
+  id: number,
+  rarity: number | null
+): Promise<WriteResult> {
+  const { data, error } = await supabase
+    .from("species")
+    .update({ rarity })
+    .eq("id", id)
+    .select("id")
+  if (error) return failure("set species rarity", error)
+  if (!data || data.length === 0) {
+    console.error(`mafk-web: set species rarity matched no row (id ${id})`)
+    return { ok: false, reason: "failed" }
+  }
+  return { ok: true, value: null }
+}
