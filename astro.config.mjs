@@ -24,6 +24,10 @@ export default defineConfig({
   // Supabase keeps the admin session in its own cookies. Astro sessions would
   // make the adapter auto-provision a KV namespace (`SESSION`) nothing reads.
   session: false,
+  // A port of its own. 4321, Astro's default, belongs to another project on the
+  // developer's machine, and falling through to the next free port made the
+  // address change from one start to the next.
+  server: { port: 4324 },
   adapter: cloudflare({
     // Optimise images with sharp at build time for prerendered pages, and pass
     // them through untouched at runtime. The default ("cloudflare-binding")
