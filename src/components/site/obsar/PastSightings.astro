@@ -39,7 +39,7 @@ const dates = (bird: PastSpecies) => {
 }
 const groups = [
   { id: "forr-sallsynta", label: "Sällsynta arter", birds: rare },
-  { id: "forr-ovanliga", label: "Få fynd det året", birds: scarce },
+  { id: "forr-ovanliga", label: "Mindre vanliga arter", birds: scarce },
 ].filter((group) => group.birds.length > 0)
 ---
 
@@ -61,7 +61,7 @@ const groups = [
         </RegisterGroup>
       ))}
       <Fragment slot="note">
-        Fynd från Artportalen, tre dagar före eller efter dagens datum. Under ”Få fynd det året” står vanligare arter som bara rapporterades några gånger just det året. Siffran är artens prefix på klubbens larmlista.
+        Fynd från Artportalen, tre dagar före eller efter dagens datum. Siffran är artens prefix på klubbens larmlista.
       </Fragment>
     </RegisterSet>
   )
