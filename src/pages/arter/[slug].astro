@@ -188,11 +188,11 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
       }
     </header>
 
-    {/* The figures take the whole track, from the text's edge to the page's,
-        like the Obsar figures; their captions keep the reading measure. */}
+    {/* The sections start at the margin's edge, in line with the logo, as on the home
+        page: a species page has nothing for the margin. Captions keep the measure. */}
     {
       entry && figure && typical?.arrival && (
-        <ObsarSection id="nar" title="När den kommer">
+        <ObsarSection id="nar" title="När den kommer" wide>
           <ArrivalFigure figure={figure} sentence={arrivalSentence(entry, typical.arrival, thisYear)} headingId="nar" />
         </ObsarSection>
       )
@@ -200,7 +200,7 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
 
     {
       weeks && weeks.some((one) => one > 0) && (
-        <ObsarSection id="aret" title="Över året">
+        <ObsarSection id="aret" title="Över året" wide>
           <YearFigure weeks={weeks} now={weekOfDay(today)} sentence={yearSentence(weeks)} headingId="aret" />
         </ObsarSection>
       )
@@ -208,7 +208,7 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
 
     {
       !ever && bird.alertCount > 0 && (
-        <p class="text-muted-foreground measure at-text">
+        <p class="text-muted-foreground measure">
           {bird.name} har aldrig rapporterats i Markaryds kommun i Artportalen, men den har larmats i appen
           {bird.alertCount > 1 ? ` ${countWord(bird.alertCount)} gånger` : ""}.
         </p>
@@ -218,8 +218,8 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
     {
       alerts.length > 0 ? (
         <section aria-labelledby="larm" class="spread gap-y-8">
-          <h2 id="larm" class="type-section in-text">Larm</h2>
-          <div class="in-text flex flex-col gap-5">
+          <h2 id="larm" class="type-section in-full">Larm</h2>
+          <div class="in-wide flex flex-col gap-5">
             <AlertList alerts={alerts.slice(0, SHOWN)} headingLevel={3} years="other-years" />
             {alerts.length > SHOWN && (
               <LarmFold count={alerts.length - SHOWN}>
@@ -242,7 +242,7 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
         </section>
       ) : (
         bird.appId !== null && (
-          <p class="text-muted-foreground measure at-text">
+          <p class="text-muted-foreground measure">
             {bird.name} har inte larmats ännu.{" "}
             <a href="/larm" class="link">Se alla larm</a>
           </p>
@@ -250,6 +250,6 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
       )
     }
 
-    {entry && <SourceNote fetchedAt={index?.fetchedAt} />}
+    {entry && <SourceNote fetchedAt={index?.fetchedAt} wide />}
   </article>
 </SiteLayout>

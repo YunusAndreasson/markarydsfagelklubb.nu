@@ -1220,6 +1220,12 @@ Larm
 [ larmen, med bild i raden som på /larm ]  [ karta med alla larm ]
 ```
 
+- **The width of the page (2026-11-17).** Below the header the sections start at the
+  margin's edge, in line with the logo, as on the home page (`ObsarSection wide`,
+  `SourceNote wide`): the page has no dates or labels for the margin, so at the
+  text's edge every section read as a narrow page inside the page. The figures run to
+  the page's edge, the larm dates sit in the margin as on /larm, and captions keep
+  the reading measure. The name and its facts stay where every page's title is.
 - **What the bird is, once, at the top (2026-11-15).** An ingress under the name
   (`leadSentence`) says it: a summer bird's usual arrival, a winter guest's return
   and leaving, a resident, a rare guest, or a bird not seen in twenty years. The
