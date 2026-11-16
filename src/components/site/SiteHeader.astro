@@ -172,7 +172,10 @@ const shortcuts = [
           <ul class="flex flex-col">
             {
               menu.map((entry) => {
-                const children = entry.children.filter((child) => child.href !== entry.href)
+                // The section's own pages only. Obsar's grouped links (Rapportera på
+                // Artportalen, the five counties) leave the site and pushed Lokaler and
+                // Klubben below the fold; they stay on /obsar and in the desktop panel.
+                const children = entry.children.filter((child) => child.href !== entry.href && !child.group)
                 return (
                   <li class="border-b last:border-b-0">
                     <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:decoration-primary flex min-h-12 items-center text-lg font-medium underline-offset-[0.4em] aria-[current=page]:underline aria-[current=page]:decoration-2">

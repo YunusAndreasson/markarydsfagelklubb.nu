@@ -821,7 +821,10 @@ desktop ≥ 768 px
   it's empty and offers the same shortcuts; the menu no longer carries a form.
   `/sok` says how many hits there are.
 - **Mobile menu:** a `<details>` disclosure labelled "Meny", which opens the
-  whole menu, each section's pages under it (two-up from `sm`). No JS.
+  whole menu, each section's pages under it (two-up from `sm`). No JS. Only the
+  site's own pages (2026-11-16): Obsar's grouped links (Rapportera, the counties)
+  stay on /obsar and in the desktop panel, or they push Lokaler and Klubben below
+  the fold.
 - The current section is marked with `aria-current` and underlined in green.
 
 ### Sponsorer (2026-10-24)
