@@ -1292,8 +1292,9 @@ The kommun's rare and odd birds from earlier years within three days of today
 års". Artportalen says what was seen when; **the club's larm prefix says what is
 rare**, joined on the scientific name, then the Swedish one (`matchApp` in
 `species.ts`, the same rule as the species pages). No lead sentence (it only repeated
-the list's first birds). Two lists, as in the other bird sections: *Sällsynta här*
-(prefix 0–2) beside *Ovanliga det året* (a 3 or 4 in a year it was scarce), four each,
+the list's first birds). Two lists, as in the other bird sections: *Sällsynta arter*
+(prefix 0–2) beside *Få fynd det året* (a 3 or 4 in a year it was scarce; renamed from
+"Sällsynta här" and "Ovanliga det året" on 2026-11-16, which didn't say what set them apart), four each,
 rarest first; the newest year in the date column, the bird with its chip, its days under it. Hidden when nothing qualifies.
 
 - **The rule, measured on 68 years of the kommun's data on 2026-11-15**: prefix 0–2
