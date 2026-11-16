@@ -44,7 +44,10 @@ const taken = Astro.locals.transitionNames
 
 <ol
   class:list={[
-    "-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6",
+    // `relative`: the containing block for the prints' sr-only text, so the scroll
+    // clips it. Without it that text sat at its static place far off to the right
+    // and made the whole page scroll sideways on a phone (1166 px at 390).
+    "relative -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6",
     layout === "five" && "lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0 lg:pb-0",
     layout === "three" && "md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 md:pb-0",
     layout === "few" && "md:mx-0 md:overflow-visible md:px-0 md:pb-0",

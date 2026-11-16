@@ -11,6 +11,9 @@ import "@/styles/map.css"
  *
  * The box is sized before hydration and carries the muted background, so the
  * tiles fade in rather than pushing the register down the page.
+ *
+ * `isolate` keeps Leaflet's panes (z-index 400–1000) inside the frame. Without
+ * it they stack against the header (z-20) and cover its open menu.
  */
 
 interface Props {
@@ -19,18 +22,26 @@ interface Props {
   still?: boolean
   /** A lokal's numbered places. */
   points?: MapPoint[]
+  /** What a reader without JavaScript reads in the map's place. */
+  fallback?: string
   /** Tailwind aspect and width; the map is the loud thing on /lokaler and a picture on a lokal page. */
   class?: string
 }
 
-const { pins, still = false, points, class: className = "" } = Astro.props
+const {
+  pins,
+  still = false,
+  points,
+  fallback = "Kartan behöver JavaScript. Alla lokaler står i listan här under.",
+  class: className = "",
+} = Astro.props
 ---
 
-<div class:list={["bg-muted relative overflow-hidden rounded-[4px]", className]}>
+<div class:list={["bg-muted relative isolate overflow-hidden rounded-[4px]", className]}>
   <LokalMap pins={pins} still={still} points={points} client:visible />
   <noscript>
     <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-6 text-center">
-      Kartan behöver JavaScript. Alla lokaler står i listan här under.
+      {fallback}
     </p>
   </noscript>
 </div>
