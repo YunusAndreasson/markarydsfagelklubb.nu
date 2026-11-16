@@ -13,9 +13,11 @@ import {
   eventStatus,
   eventStatusLabel,
   signupOpen,
+  summaryBesideDeadline,
   telHref,
 } from "@/lib/event-status"
 import type { MenuEntry } from "@/lib/page-tree"
+import { formatPhone } from "@/lib/phone"
 import {
   type EventSummary,
   type FullEvent,
@@ -97,6 +99,14 @@ const open = event ? signupOpen(event, now) : false
 const deadlineLabel = event?.signup_deadline
   ? formatDate(deadlineInstant(event.signup_deadline), "dayMonth")
   : null
+// The ingress without a closing "Föranmälan senast …": the aside says when.
+const lead =
+  event?.summary && event
+    ? summaryBesideDeadline(
+        event.summary,
+        Boolean(deadlineLabel) && eventStatus(event, now) !== "past"
+      )
+    : ""
 const phoneHref = event?.contact_phone ? telHref(event.contact_phone) : null
 const hasContact = Boolean(event?.contact_name || event?.contact_phone)
 
@@ -157,7 +167,7 @@ const description = month
               </a>
             </nav>
             <h1 class="type-title">{event.title}</h1>
-            {event.summary && <p class="type-ingress text-muted-foreground">{event.summary}</p>}
+            {lead && <p class="type-ingress text-muted-foreground">{lead}</p>}
           </div>
         </header>
 
@@ -205,10 +215,10 @@ const description = month
                   {event.contact_phone &&
                     (phoneHref ? (
                       <a href={phoneHref} class="link flex min-h-11 w-fit items-center font-medium tabular-nums">
-                        {event.contact_phone}
+                        {formatPhone(event.contact_phone)}
                       </a>
                     ) : (
-                      <p class="tabular-nums">{event.contact_phone}</p>
+                      <p class="tabular-nums">{formatPhone(event.contact_phone)}</p>
                     ))}
                 </AsideNote>
               )}

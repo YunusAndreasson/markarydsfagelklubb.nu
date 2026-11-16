@@ -44,16 +44,17 @@ describe("photoRatio", () => {
 })
 
 describe("linkPhones", () => {
-  it("links the styles the club writes numbers in", () => {
-    for (const [text, digits] of [
-      ["0701-74 06 05", "0701740605"],
-      ["0701 – 740605", "0701740605"],
-      ["070-1740606", "0701740606"],
-      ["0701 -740607", "0701740607"],
-      ["0701740605", "0701740605"],
+  it("links the styles the club writes numbers in, written one way", () => {
+    for (const [text, digits, shown] of [
+      ["0701-74 06 05", "0701740605", "070-174 06 05"],
+      ["0701 – 740605", "0701740605", "070-174 06 05"],
+      ["070-1740606", "0701740606", "070-174 06 06"],
+      ["0701 -740607", "0701740607", "070-174 06 07"],
+      ["0701740605", "0701740605", "070-174 06 05"],
+      ["0433-123 45", "043312345", "0433-123 45"],
     ] as const) {
       expect(linkPhones(`<p>Ring ${text}.</p>`), text).toBe(
-        `<p>Ring <a href="tel:${digits}">${text}</a>.</p>`
+        `<p>Ring <a href="tel:${digits}">${shown}</a>.</p>`
       )
     }
   })
@@ -78,7 +79,7 @@ describe("linkPhones", () => {
 
   it("picks up again after a link", () => {
     expect(linkPhones('<a href="/a">x</a> 0701-740605')).toBe(
-      '<a href="/a">x</a> <a href="tel:0701740605">0701-740605</a>'
+      '<a href="/a">x</a> <a href="tel:0701740605">070-174 06 05</a>'
     )
   })
 })

@@ -212,7 +212,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
               defaultValue={values.summary}
               aria-invalid={errors.summary ? true : undefined}
             />
-            <FieldDescription>En eller två meningar som visas i programmet, till exempel var ni samlas.</FieldDescription>
+            <FieldDescription>En eller två meningar som visas i programmet, till exempel var ni samlas. Sista anmälningsdag visas på en egen rad och behöver inte stå här.</FieldDescription>
             <FieldError>{errors.summary}</FieldError>
           </Field>
         </FieldGroup>

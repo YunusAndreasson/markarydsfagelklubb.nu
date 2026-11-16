@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { eventStatus, eventStatusLabel, signupOpen, telHref } from "./event-status"
+import {
+  eventStatus,
+  eventStatusLabel,
+  signupOpen,
+  summaryBesideDeadline,
+  telHref,
+} from "./event-status"
 
 const at = (iso: string) => new Date(iso)
 
@@ -59,5 +65,27 @@ describe("telHref", () => {
     expect(telHref("0701 – 740605")).toBe("tel:0701740605")
     expect(telHref("+46 701 74 06 05")).toBe("tel:+46701740605")
     expect(telHref("ring")).toBeNull()
+  })
+})
+
+describe("summaryBesideDeadline", () => {
+  it("drops a closing sentence that repeats the deadline", () => {
+    expect(
+      summaryBesideDeadline(
+        "Traditionsenligt samkväm och en summering av fågelåret 2026. Föranmälan senast 24 november.",
+        true
+      )
+    ).toBe("Traditionsenligt samkväm och en summering av fågelåret 2026.")
+    expect(summaryBesideDeadline("Vi ses vid Ekebacken! Anmälan före 1 maj.", true)).toBe(
+      "Vi ses vid Ekebacken!"
+    )
+    expect(summaryBesideDeadline("Anmälan senast 1 januari.", true)).toBe("")
+  })
+
+  it("keeps the summary whole without a deadline, or when the sentence isn't last", () => {
+    const text = "Samling kl. 18.30. Föranmälan senast 24 november."
+    expect(summaryBesideDeadline(text, false)).toBe(text)
+    const middle = "Anmälan senast 24 november. Sedan äter vi tillsammans."
+    expect(summaryBesideDeadline(middle, true)).toBe(middle)
   })
 })

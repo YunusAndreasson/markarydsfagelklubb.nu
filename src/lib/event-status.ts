@@ -42,3 +42,17 @@ export function telHref(phone: string): string | null {
   const digits = phone.replace(/[^\d+]/g, "")
   return digits ? `tel:${digits}` : null
 }
+
+/**
+ * The summary without a closing sentence that only repeats the signup deadline
+ * ("… 2026. Föranmälan senast 24 november."), where the page shows that deadline
+ * on its own line. Only a last sentence goes, so an abbreviation inside the text
+ * ("kl. 18.30", "tis. 24/11") can never cut it in two. Feeds and search keep the
+ * whole summary: there it stands alone.
+ */
+export function summaryBesideDeadline(summary: string, hasDeadline: boolean): string {
+  if (!hasDeadline) return summary
+  return summary
+    .replace(/(^|[.!?]\s+)(?:för)?anmälan\s+(?:senast|före|innan)\b[^.!?]*[.!?]?\s*$/iu, "$1")
+    .trim()
+}

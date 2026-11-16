@@ -1,6 +1,12 @@
 ---
 import { publicEventKindLabel } from "@/lib/event-kind"
-import { deadlineInstant, eventStatus, eventStatusLabel, signupOpen } from "@/lib/event-status"
+import {
+  deadlineInstant,
+  eventStatus,
+  eventStatusLabel,
+  signupOpen,
+  summaryBesideDeadline,
+} from "@/lib/event-status"
 import type { EventSummary } from "@/lib/public-content"
 import { formatDate, isoDateTime } from "@/lib/stockholm-time"
 
@@ -38,6 +44,8 @@ const now = new Date()
       const kind = publicEventKindLabel(event.kind)
       const status = eventStatusLabel(eventStatus(event, now))
       const deadline = event.signup_deadline && signupOpen(event, now) ? event.signup_deadline : null
+      // Not the deadline twice: it has its own line below.
+      const summary = event.summary ? summaryBesideDeadline(event.summary, Boolean(deadline)) : ""
       return (
         <li class="margined gap-x-3 max-md:grid-cols-[4.25rem_minmax(0,1fr)] md:gap-x-0">
           <p class="type-meta text-muted-foreground flex flex-col md:in-margin">
@@ -67,7 +75,7 @@ const now = new Date()
                 {event.place && <span>{event.place}</span>}
               </p>
             )}
-            {event.summary && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{event.summary}</p>}
+            {summary && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{summary}</p>}
             {deadline && (
               <p class="text-foreground leading-relaxed font-medium">
                 Anmälan senast {formatDate(deadlineInstant(deadline), "dayMonth")}

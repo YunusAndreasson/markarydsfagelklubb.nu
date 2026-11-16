@@ -17,6 +17,7 @@ import {
   telHref,
 } from "@/lib/membership"
 import { resolvePath } from "@/lib/page-tree"
+import { formatPhone } from "@/lib/phone"
 import { loadNavigation, loadPageBody } from "@/lib/public-content"
 
 // How to join (docs/design.md, "Klubben"), the target of the header's "Bli
@@ -204,7 +205,7 @@ const linkClass = "link flex min-h-11 w-fit items-center font-medium"
           <Aside label="Frågor om medlemskapet" first={false} class="lg:pt-3">
             <AsideNote label="Frågor">
               {m.contact_name && <p class="text-lg">{m.contact_name}</p>}
-              {tel && <a href={tel} class={linkClass}>{m.contact_phone}</a>}
+              {tel && <a href={tel} class={linkClass}>{formatPhone(m.contact_phone)}</a>}
               {m.contact_email && <EmailLink address={m.contact_email} class={linkClass} />}
             </AsideNote>
           </Aside>

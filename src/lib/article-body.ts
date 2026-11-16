@@ -1,5 +1,6 @@
 import { hideEmails } from "./email-hiding"
 import { isSiteMediaUrl } from "./media"
+import { formatPhone } from "./phone"
 import { attributesOf, widestCandidate } from "./teaser"
 
 /**
@@ -55,7 +56,8 @@ const PHONE = /(?<![\d-])0\d{2,3}[\s\u00a0]*[-–—]?[\s\u00a0]*\d[\d\s\u00a0-]
 
 /**
  * Phone numbers as `tel:` links, at render, like the galleries: the club's sign-ups run
- * on them, and thirteen years of posts hold them as plain text. Only text is touched,
+ * on them, and thirteen years of posts hold them as plain text, in every style; the
+ * link's words are the number as `formatPhone` writes it. Only text is touched,
  * never a tag's attributes or a link's own words. The href is digits only.
  */
 export function linkPhones(html: string): string {
@@ -72,7 +74,7 @@ export function linkPhones(html: string): string {
       return part.replace(PHONE, (match) => {
         const digits = match.replace(/\D/g, "")
         return digits.length === 9 || digits.length === 10
-          ? `<a href="tel:${digits}">${match}</a>`
+          ? `<a href="tel:${digits}">${formatPhone(match)}</a>`
           : match
       })
     })
