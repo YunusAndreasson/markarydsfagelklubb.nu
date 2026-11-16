@@ -4,7 +4,7 @@ import { type RarityLevel, rarityLevel } from "@/lib/rarity"
 import { matchApp } from "@/lib/species"
 
 /**
- * "Förr om åren" on the home page (docs/design.md): the kommun's rare birds
+ * "I backspegeln" on the home page (docs/design.md): the kommun's rare birds
  * from earlier years, within a week of today's date.
  *
  * Artportalen says what was seen when (the nightly `ap:v1:past:MM` keys, which

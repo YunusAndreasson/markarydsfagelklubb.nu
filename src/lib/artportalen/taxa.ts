@@ -300,7 +300,7 @@ export function allTimeFromIndex(index: TaxonIndex, fetchedAt: string): AllTime 
 }
 
 /**
- * The twelve month keys "Förr om åren" reads (`ap:v1:past:MM`), from the sparse
+ * The twelve month keys "I backspegeln" reads (`ap:v1:past:MM`), from the sparse
  * days in the index. Every year is in them, this one too: the page leaves out
  * the current year itself, so the keys need no rebuild on New Year's night.
  */

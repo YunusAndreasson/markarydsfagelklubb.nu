@@ -115,7 +115,7 @@ describe("runNightly", () => {
     expect(Object.keys(index?.taxa["1"]?.years ?? {})).toEqual(["2020", "2025"])
     // Two years of a koltrast are too few to say when it usually comes.
     expect((await store.readSeason(kv))?.taxa).toEqual([])
-    // Every month's key for "Förr om åren", the sparse years' days in them.
+    // Every month's key for "I backspegeln", the sparse years' days in them.
     const months = await Promise.all(
       Array.from({ length: 12 }, (_, i) => store.readPast(kv, i + 1))
     )

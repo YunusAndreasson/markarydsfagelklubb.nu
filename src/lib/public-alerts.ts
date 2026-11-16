@@ -582,7 +582,7 @@ export type SpeciesRarity = { name: string; sci: string; rarity: number | null }
 
 /**
  * The club's prefix for every species on its list, for the home page's
- * "Förr om åren", which joins it to Artportalen's past sightings. One select:
+ * "I backspegeln", which joins it to Artportalen's past sightings. One select:
  * no larm sweep, unlike {@link listPublicSpecies}, since the home page reads it
  * on every request. Reference data, no member data.
  */

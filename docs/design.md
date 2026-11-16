@@ -404,14 +404,14 @@ the gaps between sections were 80 px in one place and 96 in the others, and a da
 
 **The order** (2026-11-15): the larm band, the lead article, the programme, then *Fler
 artiklar*, so the club's own news stays together; then the kommun's birds in time order:
-*Fynd i kommunen* (this year), *Så här års* (this season), *Förr om åren* (earlier years
+*Fynd i kommunen* (this year), *Så här års* (this season), *I backspegeln* (earlier years
 around this date), and the jubilee band's forty years to close. Until then *Fler artiklar*
 sat between the bird sections and the jubilee band, cutting the thread.
 
 **The three bird sections share one shape** (`RegisterSet` + `RegisterGroup`): a lead
 sentence only when it says something the lists don't (Fynd's year in one sentence;
-Så här års's and Förr om åren's would only name the birds below, so they have none),
-two labelled lists side by side, four birds each (Förr om åren: one list of eight in two
+Så här års's and I backspegeln's would only name the birds below, so they have none),
+two labelled lists side by side, four birds each (I backspegeln: one list of eight in two
 columns), and a note at the foot on where the numbers come from. A name that starts its line takes a capital ("Prutgås"), even from
 Artportalen's lower-case list; after a count it stays a phrase ("8 sidensvans", `Entry`).
 
@@ -1285,7 +1285,10 @@ status under each bird. Hidden when nothing falls in the window.
 - **Two weeks either way, "så här års"**: a ten-day window left the block empty for
   weeks in late autumn, when little moves.
 
-### Förr om åren
+### I backspegeln
+
+Named "Förr om åren" until 2026-11-16; "I backspegeln" is what birders call it (Club300's
+"I backspegeln 16/11"). No date in the heading: the list spans a week either side.
 
 The kommun's rare birds from earlier years within a week of today
 (`src/lib/past-sightings.ts`, `PastSightings.astro`), on the home page after "Så här

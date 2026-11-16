@@ -80,7 +80,7 @@ const [
   kv ? store.readRecent(kv).catch(() => null) : null,
   kv ? store.readSeason(kv).catch(() => null) : null,
   kv ? store.readNames(kv).catch(() => null) : null,
-  // "Förr om åren": one or two month keys, joined to the club's prefixes.
+  // "I backspegeln": one or two month keys, joined to the club's prefixes.
   kv
     ? Promise.all(windowMonths(today).map((month) => store.readPast(kv, month))).catch(() => [])
     : [],
@@ -311,11 +311,11 @@ const taken = Astro.locals.transitionNames
     )
   }
 
-  {/* "Förr om åren" (docs/design.md): the rare birds seen around this date in
+  {/* "I backspegeln" (docs/design.md): the rare birds seen around this date in
       earlier years, from Artportalen, ranked by the club's prefix. */}
   {
     past.length > 0 && (
-      <HomeSection id="forr" title="Förr om åren">
+      <HomeSection id="backspegeln" title="I backspegeln">
         <div class="in-wide">
           <PastSightings birds={past} slugs={seasonSlugs} />
         </div>

@@ -201,7 +201,7 @@ export async function runNightly(
     const taxaIndex = await store.readTaxa(kv)
     if (taxaIndex) {
       await store.writeSeason(kv, buildSeason(taxaIndex, thisYear, fetchedAt))
-      // "Förr om åren" is about past years, so it moves with them too.
+      // "I backspegeln" is about past years, so it moves with them too.
       for (const month of buildPast(taxaIndex, fetchedAt)) await store.writePast(kv, month)
     }
 

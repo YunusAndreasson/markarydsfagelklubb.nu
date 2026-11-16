@@ -53,7 +53,7 @@ export type SpeciesYear = Species & {
   weeks: number[]
   /**
    * The days it was reported, sorted, only in a year with few reports
-   * (`SPARSE_REPORTS`): what "Förr om åren" picks from. A common bird's
+   * (`SPARSE_REPORTS`): what "I backspegeln" picks from. A common bird's
    * hundreds of days would only make the keys heavy.
    */
   days?: string[]
@@ -177,7 +177,7 @@ export type SeasonTaxon = {
 export type Season = { fetchedAt: string; taxa: SeasonTaxon[] }
 
 /**
- * One sparse taxon-year's day, for "Förr om åren": `[taxonId, year, "MM-DD",
+ * One sparse taxon-year's day, for "I backspegeln": `[taxonId, year, "MM-DD",
  * reports that year]`. The page decides what is rare, from the club's prefix;
  * the year's report count lets it keep a common-ish bird only in a year it was
  * scarce.
