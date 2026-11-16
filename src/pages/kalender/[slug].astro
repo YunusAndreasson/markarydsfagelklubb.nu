@@ -214,11 +214,11 @@ const description = month
                   {event.contact_name && <p>{event.contact_name}</p>}
                   {event.contact_phone &&
                     (phoneHref ? (
-                      <a href={phoneHref} class="link flex min-h-11 w-fit items-center font-medium tabular-nums">
+                      <a href={phoneHref} class="link flex min-h-11 w-fit items-center font-medium">
                         {formatPhone(event.contact_phone)}
                       </a>
                     ) : (
-                      <p class="tabular-nums">{formatPhone(event.contact_phone)}</p>
+                      <p>{formatPhone(event.contact_phone)}</p>
                     ))}
                 </AsideNote>
               )}

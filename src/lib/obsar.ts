@@ -45,10 +45,7 @@ export const OBSAR_PAGES = [
 const REGIONS = new Set(["Blekinge", "Halland", "Skåne", "Småland", "Öland"])
 
 const DESCRIPTIONS: readonly [RegExp, string][] = [
-  [
-    /^Rapportera/,
-    "Lägg in det du har sett. Klubbens listor och årssammanställningar bygger på det.",
-  ],
+  [/^Rapportera/, "Lägg in det du har sett. Listorna och årssammanställningarna bygger på det."],
   [/^Kommunobservationer/, "Alla fynd i Markaryds kommun, senaste först."],
   [/^Årslista/, "Arterna som setts i kommunen i år."],
   [/^Markarydslistan/, "Arterna som någonsin setts i kommunen."],

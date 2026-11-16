@@ -12,6 +12,7 @@ import SiteLayout from "@/layouts/site.astro"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { arter } from "@/lib/obsar-stats"
 import { loadNavigation } from "@/lib/public-content"
+import { countWord } from "@/lib/species-page"
 import { dayHeading, groupByDay } from "@/lib/stockholm-time"
 
 /**
@@ -30,7 +31,9 @@ const recent = kv ? await store.readRecent(kv) : null
 const now = new Date()
 const days = recent ? groupByDay(recent.sightings, (one) => one.start) : []
 const species = recent ? new Set(recent.sightings.map((one) => one.speciesId)).size : 0
-const fynd = (count: number) => `${count} fynd`
+// Ett fynd, fyra fynd, 15 fynd: up to twelve in words, as `arter` writes them.
+const fynd = (count: number) =>
+  `${count === 1 ? "ett" : count > 12 ? count : countWord(count)}\u00a0fynd`
 ---
 
 <SiteLayout

@@ -14,6 +14,7 @@ import { type MapPoint, splitForLokal } from "@/lib/lokal-points"
 import { loadPublicLokal } from "@/lib/public-alerts"
 import { listLokalPoints, loadNavigation } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
+import { countWord } from "@/lib/species-page"
 import { dayLabel } from "@/lib/stockholm-time"
 
 /**
@@ -175,7 +176,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
             <p class="text-muted-foreground max-w-prose">
               {
                 near.length > NEAR_LIMIT
-                  ? `De ${NEAR_LIMIT} senaste larmen inom tre kilometer från lokalen.`
+                  ? `De ${countWord(NEAR_LIMIT)} senaste larmen inom tre kilometer från lokalen.`
                   : "Larm inom tre kilometer från lokalen."
               }
             </p>
