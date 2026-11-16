@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { PastDay, PastMonth } from "@/lib/artportalen/types"
-import {
-  daysApart,
-  PER_GROUP,
-  pickPast,
-  splitPast,
-  windowMonths,
-  worthShowing,
-} from "./past-sightings"
+import { daysApart, pickPast, windowMonths, worthShowing } from "./past-sightings"
 
 const names = {
   1: { name: "eremitibis", sci: "Geronticus eremita" },
@@ -25,13 +18,12 @@ const club = [
 const month = (m: number, days: PastDay[]): PastMonth => ({ fetchedAt: "t", month: m, days, names })
 
 describe("worthShowing", () => {
-  it("keeps 0–2 always, 3 and 4 only in a scarce year, never 5", () => {
-    expect(worthShowing(2, 10)).toBe(true)
-    expect(worthShowing(3, 3)).toBe(true)
-    expect(worthShowing(3, 4)).toBe(false)
-    expect(worthShowing(4, 1)).toBe(true)
-    expect(worthShowing(4, 2)).toBe(false)
-    expect(worthShowing(5, 1)).toBe(false)
+  it("keeps the rare prefixes, 0–2, and nothing commoner", () => {
+    expect(worthShowing(0)).toBe(true)
+    expect(worthShowing(2)).toBe(true)
+    expect(worthShowing(3)).toBe(false)
+    expect(worthShowing(4)).toBe(false)
+    expect(worthShowing(5)).toBe(false)
   })
 })
 
@@ -66,19 +58,13 @@ describe("pickPast", () => {
       club,
       "2026-11-15"
     )
+    // Brunand (3) and Kungsfågel (4) are commoner birds, Koltrast (5) too.
     expect(picked).toEqual([
       {
         taxonId: 1,
         name: "Eremitibis",
         rarity: 1,
         sightings: [{ year: 2023, date: "2023-11-14" }],
-      },
-      { taxonId: 2, name: "Brunand", rarity: 3, sightings: [{ year: 1994, date: "1994-11-16" }] },
-      {
-        taxonId: 3,
-        name: "Kungsfågel",
-        rarity: 4,
-        sightings: [{ year: 2001, date: "2001-11-15" }],
       },
     ])
   })
@@ -88,14 +74,14 @@ describe("pickPast", () => {
       [
         month(11, [
           [1, 2026, "11-15", 1],
-          [1, 2020, "11-19", 1],
-          [1, 2019, "11-18", 1],
+          [1, 2020, "11-23", 1],
+          [1, 2019, "11-22", 1],
         ]),
       ],
       club,
       "2026-11-15"
     )
-    expect(picked[0]?.sightings).toEqual([{ year: 2019, date: "2019-11-18" }])
+    expect(picked[0]?.sightings).toEqual([{ year: 2019, date: "2019-11-22" }])
   })
 
   it("finds December's birds from early January", () => {
@@ -121,7 +107,7 @@ describe("pickPast", () => {
     expect(picked[0]?.sightings).toEqual([{ year: 2020, date: "2020-11-16" }])
   })
 
-  it("puts the rarest first, and splits rare from scarce, four of each", () => {
+  it("keeps only the rare prefixes, rarest first", () => {
     const many = Array.from({ length: 15 }, (_, i) => ({
       name: `Art ${i}`,
       sci: `Sci ${i}`,
@@ -134,10 +120,6 @@ describe("pickPast", () => {
       names: Object.fromEntries(many.map((one, i) => [100 + i, { name: one.name, sci: one.sci }])),
     }
     const picked = pickPast([more], many, "2026-05-10")
-    expect(picked.map((one) => one.rarity)).toEqual([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
-    const { rare, scarce } = splitPast(picked)
-    expect(rare).toHaveLength(PER_GROUP)
-    expect(rare.map((one) => one.rarity)).toEqual([0, 0, 0, 1])
-    expect(scarce.map((one) => one.rarity)).toEqual([3, 3, 3, 4])
+    expect(picked.map((one) => one.rarity)).toEqual([0, 0, 0, 1, 1, 1, 2, 2, 2])
   })
 })

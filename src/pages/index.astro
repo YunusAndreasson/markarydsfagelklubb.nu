@@ -19,7 +19,7 @@ import { linkPhones } from "@/lib/article-body"
 import { hideEmails } from "@/lib/email-hiding"
 import { buildDayList, latestPrints, pickLead, splitFeatured, withoutPhoto } from "@/lib/front-page"
 import { obsarStore, store } from "@/lib/obsar-data"
-import { pickPast, splitPast, windowMonths } from "@/lib/past-sightings"
+import { PAST_SHOWN, pickPast, windowMonths } from "@/lib/past-sightings"
 import { listPublicAlerts, listSpeciesRarity } from "@/lib/public-alerts"
 import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
 import { thisWeek } from "@/lib/season"
@@ -101,7 +101,7 @@ const seasonSlugs = taxonSlugs(
   )
 )
 // Without the club's prefixes nothing can be called rare: no section.
-const past = splitPast(clubRarity.ok ? pickPast(pastMonths, clubRarity.value, today) : [])
+const past = clubRarity.ok ? pickPast(pastMonths, clubRarity.value, today).slice(0, PAST_SHOWN) : []
 // A larm failure costs the section, never the home page.
 const alerts = larm.ok ? larm.value.alerts : []
 const dayList = buildDayList(alerts, now)
@@ -314,10 +314,10 @@ const taken = Astro.locals.transitionNames
   {/* "Förr om åren" (docs/design.md): the rare birds seen around this date in
       earlier years, from Artportalen, ranked by the club's prefix. */}
   {
-    (past.rare.length > 0 || past.scarce.length > 0) && (
+    past.length > 0 && (
       <HomeSection id="forr" title="Förr om åren">
         <div class="in-wide">
-          <PastSightings rare={past.rare} scarce={past.scarce} slugs={seasonSlugs} />
+          <PastSightings birds={past} slugs={seasonSlugs} />
         </div>
       </HomeSection>
     )

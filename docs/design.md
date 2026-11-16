@@ -405,14 +405,14 @@ the gaps between sections were 80 px in one place and 96 in the others, and a da
 **The order** (2026-11-15): the larm band, the lead article, the programme, then *Fler
 artiklar*, so the club's own news stays together; then the kommun's birds in time order:
 *Fynd i kommunen* (this year), *Så här års* (this season), *Förr om åren* (earlier years
-on this date), and the jubilee band's forty years to close. Until then *Fler artiklar*
+around this date), and the jubilee band's forty years to close. Until then *Fler artiklar*
 sat between the bird sections and the jubilee band, cutting the thread.
 
 **The three bird sections share one shape** (`RegisterSet` + `RegisterGroup`): a lead
 sentence only when it says something the lists don't (Fynd's year in one sentence;
 Så här års's and Förr om åren's would only name the birds below, so they have none),
-two labelled lists side by side, four birds each, and a note at the foot on where the
-numbers come from. A name that starts its line takes a capital ("Prutgås"), even from
+two labelled lists side by side, four birds each (Förr om åren: one list of eight in two
+columns), and a note at the foot on where the numbers come from. A name that starts its line takes a capital ("Prutgås"), even from
 Artportalen's lower-case list; after a count it stays a phrase ("8 sidensvans", `Entry`).
 
 **Fynd i kommunen** follows it: the year in one sentence, *Nya för året* beside
@@ -1287,27 +1287,27 @@ status under each bird. Hidden when nothing falls in the window.
 
 ### Förr om åren
 
-The kommun's rare and odd birds from earlier years within three days of today
+The kommun's rare birds from earlier years within a week of today
 (`src/lib/past-sightings.ts`, `PastSightings.astro`), on the home page after "Så här
 års". Artportalen says what was seen when; **the club's larm prefix says what is
 rare**, joined on the scientific name, then the Swedish one (`matchApp` in
 `species.ts`, the same rule as the species pages). No lead sentence (it only repeated
-the list's first birds). Two lists, as in the other bird sections: *Sällsynta arter*
-(prefix 0–2) beside *Mindre vanliga arter* (a 3 or 4 in a year it was scarce; renamed from
-"Sällsynta här" and "Ovanliga det året" on 2026-11-16: the reader needs how rare the bird is, which the
-prefix says, not how the list is chosen), four each,
-rarest first; the newest year in the date column, the bird with its chip, its days under it. Hidden when nothing qualifies.
+the list's first birds). **One list, no subheadings** (2026-11-16): the eight rarest,
+in two columns; the newest year in the date column, the bird with its chip, its days
+under it ("13 nov, även 16 nov 1986"). Hidden when nothing qualifies.
 
-- **The rule, measured on 68 years of the kommun's data on 2026-11-15**: prefix 0–2
-  always; a 3 only in a year with at most three reports here; a 4 only in a year with
-  one. 0–2 alone left a median of four sightings a week and some weeks empty; every 3
-  and 4 flooded it (hundreds in a spring week). The rule shows something every week,
-  about fifteen species, which the cap trims.
+- **The rule**: prefix 0–2 only. Until 2026-11-16 a 3 or a 4 also counted in a year
+  it was scarce here, under a heading of its own ("Ovanliga det året", then "Mindre
+  vanliga arter"), to fill the weeks with no rare bird. A reader couldn't see why a
+  "ganska allmän" skogsgås from 1996 stood on a list of past rarities, and no heading
+  explained it. Measured on 68 years of the kommun's data on 2026-11-15, 0–2 alone
+  gives a median of four a week, so the window is a week either side instead.
 - **Data**: a species-year with at most ten reports keeps its days
   (`SpeciesYear.days`, `TaxonYear.d`); the nightly job writes them as twelve month keys
-  (`ap:v1:past:MM`, `buildPast`), and the page reads one or two. The prefixes come from
-  `listSpeciesRarity()`, one select with no larm sweep.
-- **±3 days**, round New Year, and 29 February between the 28th and 1 March.
+  (`ap:v1:past:MM`, `buildPast`), and the page reads one or two. A rarity that
+  stayed long enough for more than ten reports in its year is missing. The prefixes
+  come from `listSpeciesRarity()`, one select with no larm sweep.
+- **±7 days**, round New Year, and 29 February between the 28th and 1 March.
 
 ### Året så här långt
 

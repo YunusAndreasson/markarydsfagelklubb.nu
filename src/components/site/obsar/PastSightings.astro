@@ -1,27 +1,24 @@
 ---
 import Entry from "@/components/site/obsar/Entry.astro"
-import RegisterGroup from "@/components/site/obsar/RegisterGroup.astro"
-import RegisterSet from "@/components/site/obsar/RegisterSet.astro"
+import Register from "@/components/site/obsar/Register.astro"
 import type { PastSpecies } from "@/lib/past-sightings"
 import { speciesHref } from "@/lib/species"
 import { formatDate } from "@/lib/stockholm-time"
 
 /**
- * "Förr om åren" (docs/design.md): the kommun's rare and odd birds from earlier
- * years within three days of today, from Artportalen, ranked by the club's
- * prefix (`past-sightings.ts`). A `RegisterSet` like the other bird sections,
- * with no lead (it would only name the birds the lists name): the birds rare
- * here at any time beside the ones rare only in the year they came. The newest
- * year stands in the date column, the bird with its chip, the days under it.
+ * "Förr om åren" (docs/design.md): the kommun's rare birds (prefix 0–2) from
+ * earlier years within a week of today, from Artportalen, rarest first
+ * (`past-sightings.ts`). One list in two columns, with no subheadings: since
+ * 2026-11-16 there is only one kind of bird in it. The newest year stands in
+ * the date column, the bird with its chip, the days under it.
  */
 interface Props {
-  rare: PastSpecies[]
-  scarce: PastSpecies[]
+  birds: PastSpecies[]
   /** Taxon id → species page slug (`taxonSlugs`). */
   slugs: Map<number, string>
 }
 
-const { rare, scarce, slugs } = Astro.props
+const { birds, slugs } = Astro.props
 
 const day = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
 const and = (parts: string[]) =>
@@ -37,32 +34,27 @@ const dates = (bird: PastSpecies) => {
   if (more > 0) earlier.push(`${more} år till`)
   return earlier.length > 0 ? `${day(newest.date)}, även ${and(earlier)}` : day(newest.date)
 }
-const groups = [
-  { id: "forr-sallsynta", label: "Sällsynta arter", birds: rare },
-  { id: "forr-ovanliga", label: "Mindre vanliga arter", birds: scarce },
-].filter((group) => group.birds.length > 0)
 ---
 
 {
-  groups.length > 0 && (
-    <RegisterSet>
-      {groups.map((group) => (
-        <RegisterGroup id={group.id} label={group.label}>
-          {group.birds.map((bird) => (
-            <Entry
-              when={String(bird.sightings[0]?.year ?? "")}
-              datetime={bird.sightings[0]?.date}
-              title={bird.name}
-              href={slugs.has(bird.taxonId) ? speciesHref(slugs.get(bird.taxonId) as string) : null}
-              rarity={bird.rarity}
-              notes={[dates(bird)]}
-            />
-          ))}
-        </RegisterGroup>
-      ))}
-      <Fragment slot="note">
-        Fynd från Artportalen, tre dagar före eller efter dagens datum. Siffran är artens prefix på klubbens larmlista.
-      </Fragment>
-    </RegisterSet>
+  birds.length > 0 && (
+    <div class="flex flex-col gap-6">
+      <Register columns={2}>
+        {birds.map((bird) => (
+          <Entry
+            when={String(bird.sightings[0]?.year ?? "")}
+            datetime={bird.sightings[0]?.date}
+            title={bird.name}
+            href={slugs.has(bird.taxonId) ? speciesHref(slugs.get(bird.taxonId) as string) : null}
+            rarity={bird.rarity}
+            notes={[dates(bird)]}
+          />
+        ))}
+      </Register>
+      <p class="type-meta text-muted-foreground measure leading-relaxed">
+        Sällsynta fåglar som setts i kommunen en vecka före eller efter dagens datum tidigare år, enligt Artportalen.
+        Siffran är artens prefix på klubbens larmlista.
+      </p>
+    </div>
   )
 }
