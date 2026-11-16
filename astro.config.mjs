@@ -32,6 +32,35 @@ export default defineConfig({
   }),
   integrations: [react()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), devScriptPaths()],
   },
 })
+
+/**
+ * Dev only. `astro dev` points a component's <script> at its absolute file path
+ * (`/home/…/src/components/site/SiteHeader.astro?astro&type=script…`), not at
+ * `/src/…`. `run_worker_first` sends every path but Vite's own to the Worker,
+ * which 404s it, so in dev the header's section panels and the photo viewer
+ * never ran. Rewriting that path to Vite's `/@fs/` form, which is excluded,
+ * lets Vite serve it. Builds inline or bundle these scripts and never see it.
+ *
+ * @typedef {(request: import("node:http").IncomingMessage, response: import("node:http").ServerResponse, next: () => void) => void} Handler
+ * @typedef {{ config: { root: string }, middlewares: { use: (handler: Handler) => void } }} DevServer
+ */
+function devScriptPaths() {
+  return {
+    name: "mafk:dev-script-paths",
+    apply: "serve",
+    enforce: "pre",
+    /** @param {DevServer} server */
+    configureServer(server) {
+      const root = server.config.root.replace(/\/$/, "")
+      server.middlewares.use((request, _response, next) => {
+        if (request.url?.startsWith(`${root}/`) && request.url.includes("?astro&type=script")) {
+          request.url = `/@fs${request.url}`
+        }
+        next()
+      })
+    },
+  }
+}
