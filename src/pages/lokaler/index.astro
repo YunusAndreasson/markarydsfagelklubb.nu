@@ -36,7 +36,9 @@ const active = lokaler.value
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-10">
-    <header class="flex flex-col gap-3 at-text">
+    {/* Nothing here goes in the margin, so the title starts at the map's edge, in
+        line with the logo, like the sections below (docs/design.md, "Uppslaget"). */}
+    <header class="flex flex-col gap-3">
       <h1 class="type-title">Fågellokaler</h1>
       <p class="type-ingress text-muted-foreground max-w-prose">
         Bra platser att skåda fågel på i Markaryds kommun. En större grön prick på kartan betyder att
@@ -54,7 +56,7 @@ const active = lokaler.value
 
     {
       lokaler.value.length === 0 ? (
-        <p class="text-muted-foreground measure at-text">
+        <p class="text-muted-foreground measure">
           Inga fågellokaler är upplagda ännu. De läggs till i appen och syns sedan här.
         </p>
       ) : (

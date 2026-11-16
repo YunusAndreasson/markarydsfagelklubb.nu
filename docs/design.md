@@ -161,6 +161,16 @@ there's nothing to say.
   follow the title, before the body; `first={false}` keeps it after the text when it's
   "more" rather than facts (an article's related list). `AsideNote.astro` is one note:
   a meta-size label as a heading, then what it says.
+- **One left edge per page (2026-11-17).** A page whose margin holds dates or labels
+  (the larm log, the programme, articles, Klubben, Bli medlem, Årslistan,
+  Markarydslistan, Senaste fynden, a lokal) starts its title at the text's edge, in line
+  with the text beside those labels. A page with **nothing in the margin** starts
+  everything at the margin's edge, in line with the logo: title, crumb, ingress, section
+  headings, figures and the source note. Those are a species page, a larm's page,
+  /lokaler, /obsar, Ligan and 40 år (`wide` on `ObsarHeader`, `ObsarSection`,
+  `ObsarPair` and `SourceNote`; `in-wide` on a spread's header). Before this, those
+  pages either left the margin empty, so they read as a narrow page inside the page, or
+  set the title at one edge and the sections at the other.
 
 **Page by page:**
 

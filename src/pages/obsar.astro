@@ -179,12 +179,13 @@ const paceSentence =
     <ObsarHeader
       title={page.title}
       crumb={false}
+      wide
       ingress={page.description || "Det som rapporteras i Markaryds kommun, hämtat från Artportalen."}
     />
 
     {
       page.body_html && (
-        <ObsarSection measure>
+        <ObsarSection wide measure>
           <Body html={page.body_html} />
         </ObsarSection>
       )
@@ -195,7 +196,7 @@ const paceSentence =
     {
       stats && (
         <>
-          <ObsarSection id="aret">
+          <ObsarSection wide id="aret">
             <div class="flex measure flex-col gap-4">
               <h2 id="aret" class="type-section text-pretty">{headline}</h2>
               <p class="text-muted-foreground leading-relaxed">
@@ -230,19 +231,19 @@ const paceSentence =
           </ObsarSection>
 
           {(seasonWeek.arriving.length > 0 || seasonWeek.leaving.length > 0) && (
-            <ObsarSection id="sahar" title="Så här års">
+            <ObsarSection wide id="sahar" title="Så här års">
               <SeasonBlock week={seasonWeek} slugs={seasonSlugs} headingId="sahar" />
             </ObsarSection>
           )}
 
           {(missing.length > 0 || more.length > 0 || less.length > 0) && (
-            <ObsarSection id="hittills" title="Året så här långt">
+            <ObsarSection wide id="hittills" title="Året så här långt">
               <YearWatch missing={missing} more={more} less={less} slugs={seasonSlugs} headingId="hittills" />
             </ObsarSection>
           )}
 
           {/* The year's four short lists, paired on the content track. */}
-          <ObsarPair>
+          <ObsarPair wide>
             <ObsarSection id="nya" title="Nya för året" href="/obsar/arslista" link="Hela årslistan" nested>
               <Register columns={1}>
                 <ArrivalEntries species={stats.species} count={6} />
@@ -276,7 +277,7 @@ const paceSentence =
 
           {/* The two pages the sections above don't already lead to, so
               Översikt reaches every Obsar page without a row of tabs. */}
-          <ObsarSection>
+          <ObsarSection wide>
             <div class="grid gap-4 sm:grid-cols-2">
               {[
                 {
@@ -305,7 +306,7 @@ const paceSentence =
 
     {
       report.map((child) => (
-        <ObsarSection id="rapportera" title="Har du sett något?" measure>
+        <ObsarSection wide id="rapportera" title="Har du sett något?" measure>
           <p class="text-muted-foreground leading-relaxed">
             {obsarDescription(child)}{" "}
             <a href={hrefOf(child)} class="link font-medium">
@@ -318,7 +319,7 @@ const paceSentence =
 
     {
       regions.length > 0 && (
-        <ObsarSection id="obsar-grannar" title="Runt omkring" measure>
+        <ObsarSection wide id="obsar-grannar" title="Runt omkring" measure>
           <div class="flex flex-col gap-2">
             <p class="text-muted-foreground">Det som rapporteras i landskapen i närheten, på Artportalen.</p>
             <ul class="flex flex-wrap gap-x-6">
@@ -335,6 +336,6 @@ const paceSentence =
       )
     }
 
-    <SourceNote fetchedAt={stats?.fetchedAt} />
+    <SourceNote fetchedAt={stats?.fetchedAt} wide />
   </article>
 </SiteLayout>

@@ -2,10 +2,15 @@
 /**
  * Two short sections side by side on the content track from `lg`, stacked
  * below it (docs/design.md, "Obsar och statistik", "Grid"). Its sections are
- * `ObsarSection nested`.
+ * `ObsarSection nested`. `wide` starts it at the margin's edge, with `wide` sections.
  */
+interface Props {
+  wide?: boolean
+}
+
+const { wide = false } = Astro.props
 ---
 
-<div class="grid gap-12 at-text lg:grid-cols-2 lg:gap-x-10">
+<div class:list={["grid gap-12 lg:grid-cols-2 lg:gap-x-10", !wide && "at-text"]}>
   <slot />
 </div>

@@ -123,7 +123,7 @@ import { speciesLink } from "@/lib/species"
     {
       history && first && (
         <>
-          <ObsarSection id="bildades" title="Året klubben bildades" measure>
+          <ObsarSection wide id="bildades" title="Året klubben bildades" measure>
             <p class="leading-relaxed">
               {FOUNDED} rapporterades {arter(first.species)} i kommunen, i {first.reports.toLocaleString("sv-SE")} rapporter från{" "}
               {countWord(first.observers)} rapportörer. Artportalen kom först kring år 2000, så från de tidiga åren finns bara de fynd som
@@ -133,7 +133,7 @@ import { speciesLink } from "@/lib/species"
           </ObsarSection>
 
           {peopleSvg && (
-            <ObsarSection id="arter-folk" title="Arter och rapportörer">
+            <ObsarSection wide id="arter-folk" title="Arter och rapportörer">
               <ChartFigure
                 chart={{ kind: "people", data: { years: since.map(({ year, reports, species, observers }) => ({ year, reports, species, observers })), marks: [] } }}
                 fallback={peopleSvg}
@@ -157,7 +157,7 @@ import { speciesLink } from "@/lib/species"
             </ObsarSection>
           )}
 
-          <ObsarSection id="decennier" title="Decennierna" measure>
+          <ObsarSection wide id="decennier" title="Decennierna" measure>
             <StatTable
               columns={[
                 { label: "Decennium", rowHeader: true },
@@ -168,7 +168,7 @@ import { speciesLink } from "@/lib/species"
             />
           </ObsarSection>
 
-          <ObsarSection id="arstider" title="Årstiderna">
+          <ObsarSection wide id="arstider" title="Årstiderna">
             <ChartFigure
               chart={{ kind: "seasons", data: { years: seasonRows.map((one) => one.year), shares } }}
               height={`${seasonRows.length * 18 + 64}px`}
@@ -179,7 +179,7 @@ import { speciesLink } from "@/lib/species"
           </ObsarSection>
 
           {newcomers.length > 0 && (
-            <ObsarSection id="nykomlingar" title="Nya arter under klubbens tid" href="/obsar/markarydslistan" link="Hela Markarydslistan">
+            <ObsarSection wide id="nykomlingar" title="Nya arter under klubbens tid" href="/obsar/markarydslistan" link="Hela Markarydslistan">
               <p class="text-muted-foreground measure leading-relaxed">
                 {arter(newcomers.length)} har rapporterats i kommunen för första gången sedan {FOUNDED}. Här är de tolv senaste.
               </p>
@@ -199,7 +199,7 @@ import { speciesLink } from "@/lib/species"
           )}
 
           {complete.length > 0 && (
-            <ObsarSection measure>
+            <ObsarSection wide measure>
               <p class="text-muted-foreground leading-relaxed">
                 Siffrorna för {thisYear} växer fortfarande. Äldre år kan också få fler rapporter när gamla anteckningar förs in.
               </p>
@@ -209,6 +209,6 @@ import { speciesLink } from "@/lib/species"
       )
     }
 
-    <SourceNote fetchedAt={history?.fetchedAt} />
+    <SourceNote fetchedAt={history?.fetchedAt} wide />
   </article>
 </SiteLayout>

@@ -60,7 +60,7 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
   menu={navigation.menu}
 >
   <article class="flex flex-col gap-12">
-    <ObsarHeader
+    <ObsarHeader wide
       title={title}
       ingress={stats &&
         leader &&
@@ -73,7 +73,7 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
 
     {
       runners.length >= 3 && (
-        <ObsarSection id="loppet" title="Året som ett lopp">
+        <ObsarSection wide id="loppet" title="Året som ett lopp">
           <p class="text-muted-foreground measure leading-relaxed">
             De tolv främsta och hur många arter de hade vecka för vecka. Tryck på knappen för att se året spelas upp.
           </p>
@@ -84,7 +84,7 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
 
     {
       rows.length > 0 && (
-        <ObsarSection id="tabell" title="Alla rapportörer" measure>
+        <ObsarSection wide id="tabell" title="Alla rapportörer" measure>
           <StatTable
             columns={[
               { label: "Plats", hidden: true, muted: true },
@@ -106,6 +106,6 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
       )
     }
 
-    <SourceNote fetchedAt={stats?.fetchedAt} />
+    <SourceNote fetchedAt={stats?.fetchedAt} wide />
   </article>
 </SiteLayout>

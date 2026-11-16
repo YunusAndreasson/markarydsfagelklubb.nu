@@ -78,8 +78,10 @@ import { speciesLink } from "@/lib/species"
     <article class="flex flex-col gap-8">
       <header class="spread">
         {/* The scientific name belongs to the species, so it sits under it, as
-            in a field guide, rather than among the facts about this larm. */}
-        <div class="in-text flex flex-col gap-4">
+            in a field guide, rather than among the facts about this larm. It starts
+            at the photo's edge, in line with the logo: the page has nothing for the
+            margin (docs/design.md, "Uppslaget"). */}
+        <div class="in-wide flex flex-col gap-4">
           <nav aria-label="Du är här" class="type-meta text-muted-foreground">
             <a href="/larm" class="crumb">Larm</a>
           </nav>
@@ -104,8 +106,8 @@ import { speciesLink } from "@/lib/species"
           sighting beside it in the outer margin (docs/design.md, "Uppslaget"):
           when, how rare, where (ink, the fact a reader acts on), who. On a phone
           the photo comes first, since it is why a reader opened the larm, and
-          the facts and the map follow it. Without a photo the facts take
-          the text track, with nothing beside them. */}
+          the facts and the map follow it. Without a photo the facts start
+          under the title, at the logo's edge, with nothing beside them. */}
       <div class="spread gap-y-6">
         {
           larm.photoUrl && (
@@ -129,7 +131,7 @@ import { speciesLink } from "@/lib/species"
             </div>
           )
         }
-        <div class:list={["flex flex-col gap-5", larm.photoUrl ? "in-aside lg:row-start-1" : "in-text"]}>
+        <div class:list={["flex flex-col gap-5", larm.photoUrl ? "in-aside lg:row-start-1" : "in-wide"]}>
           <AsideNote label="När">
             <time datetime={isoDateTime(observed)} class="leading-snug">
               {formatDate(observed, "weekday")} {stockholmYear(observed)}, {formatDate(observed, "clock")}

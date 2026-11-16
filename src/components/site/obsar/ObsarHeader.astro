@@ -15,12 +15,14 @@ interface Props {
   /** The crumb back to /obsar; off on /obsar itself. */
   crumb?: boolean
   ingress?: string | null | false
+  /** At the margin's edge, for a page with nothing in the margin (docs/design.md, "Uppslaget"). */
+  wide?: boolean
 }
 
-const { title, crumb = true, ingress } = Astro.props
+const { title, crumb = true, ingress, wide = false } = Astro.props
 ---
 
-<header class="flex flex-col gap-5 at-text">
+<header class:list={["flex flex-col gap-5", !wide && "at-text"]}>
   {
     (title || ingress) && (
       <div class="flex measure flex-col gap-4">
