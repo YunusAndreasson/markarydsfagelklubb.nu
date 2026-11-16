@@ -74,7 +74,9 @@ Astro.locals.transitionNames ??= new Set()
 const taken = Astro.locals.transitionNames
 ---
 
-<ol class:list={["flex flex-col", compact ? "gap-4" : "gap-9"]}>
+{/* gap-9 leaves room between rows that carry a print; without prints the rows
+    read as one list at gap-6 (a lokal's "Larm på lokalen" stood apart). */}
+<ol class:list={["flex flex-col", compact ? "gap-4" : photos ? "gap-9" : "gap-6"]}>
   {
     alerts.map((alert, index) => {
       const year = yearLabel(index)

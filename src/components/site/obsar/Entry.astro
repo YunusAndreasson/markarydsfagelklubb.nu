@@ -50,6 +50,6 @@ const lines = notes.filter((note): note is string => Boolean(note))
       {rarity !== null && rarity !== undefined && <RarityChip level={rarity} />}
     </p>
     {sci && <i class="font-display text-muted-foreground text-sm">{sci}</i>}
-    {lines.map((line) => <p class="text-muted-foreground text-sm leading-snug">{line}</p>)}
+    {lines.map((line) => <p class="text-muted-foreground text-sm leading-snug text-balance">{line}</p>)}
   </div>
 </li>

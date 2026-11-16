@@ -56,12 +56,12 @@ const shortcuts = [
       <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
         <img src={logo.src} width={logo.width} height={logo.height} alt="" class="size-11 md:size-12" />
       </a>
-      <a href="/" class="font-display text-xl leading-tight font-bold md:text-[1.375rem]">{siteName}</a>
+      <a href="/" class="font-display text-xl leading-tight font-bold md:text-[1.375rem] lg:whitespace-nowrap">{siteName}</a>
     </div>
 
-    <div class="flex items-center gap-2 lg:gap-8">
+    <div class="flex items-center gap-2 lg:gap-6 xl:gap-8">
       <nav aria-label="Huvudmeny" class="hidden lg:block">
-        <ul class="flex justify-end gap-x-6">
+        <ul class="flex justify-end gap-x-5 xl:gap-x-6">
           {
             menu.map((entry) =>
               hasPanel(entry) ? (

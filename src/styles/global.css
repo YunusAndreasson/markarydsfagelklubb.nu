@@ -248,25 +248,28 @@
   font-weight: 700;
   text-wrap: balance;
 }
-/* A home-page or end-of-page section: the scale's H2. */
+/* A home-page or end-of-page section: the scale's H2. `pretty`, not
+   `balance`: many of these are whole sentences ("I år har 153 arter …"), and
+   balancing them broke the first line with a third of the measure unused. */
 @utility type-section {
   font-family: var(--font-display);
   font-variant-numeric: lining-nums;
   font-size: 1.75rem;
   line-height: 1.15;
   font-weight: 700;
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 /* The title of an entry in a list: an article, a larm, an event, a lokal, a
    page. One size for every list, so a section heading always outranks the
-   entries under it. */
+   entries under it. `balance`: a title is one to three lines, and Gecko (the
+   user's Zen) has no `pretty`, so a lone last word stayed on its own line. */
 @utility type-item {
   font-family: var(--font-display);
   font-variant-numeric: lining-nums;
   font-size: 1.3125rem;
   line-height: 1.25;
   font-weight: 700;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 @utility type-ingress {
   font-size: 1.1875rem;
@@ -437,4 +440,10 @@
 /* The reading measure. */
 @utility measure {
   max-width: 38rem;
+}
+/* A caption under a figure that spans more than the text track: it follows the
+   figure a little further, to about 80 characters, so a 60rem chart doesn't
+   end in a caption cut off at 38rem. */
+@utility measure-caption {
+  max-width: 44rem;
 }

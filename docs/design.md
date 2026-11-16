@@ -181,7 +181,7 @@ there's nothing to say.
 - **Larm log:** a larm with a photo is a **captioned print**: from `md` the photo at the
   start of the text track with species, place and observer beside it. They used to sit
   at opposite edges of 145 px rows. The store badges are in the header's aside.
-- **Larm:** the photo across margin and text; Sett, Raritet, Plats with its map, and
+- **Larm:** the photo across margin and text; När, Prefix, Plats with its map, and
   Rapporterat av in the aside beside it. On a phone the photo comes first (since
   2026-11-14): it is why a reader opened the larm, and stacking the facts and the
   map above it pushed it two screens down.
@@ -262,7 +262,7 @@ leads under it (the 2026-10-28 decision stands).
 - **Obsar** has its own route: **Rapportera** first as the page's one band, then the
   kommun's links with a line each, then the neighbouring landskap as plain links
   (`lib/obsar.ts`).
-- **Lokaler:** "Larmat senaste två veckorna" first, then the register in columns, about
+- **Lokaler:** "Larm de senaste två veckorna" first, then the register in columns, about
   a thousand pixels shorter. An active pin is larger as well as green, the icon's hit
   area is 24 px, and Leaflet's links are out of the tab order inside the `aria-hidden` map.
 - **Articles:** a cover takes the margin's width too. Two or more photos in a row become
@@ -726,7 +726,17 @@ joins. The scale roughly follows a classic progression (16 · 18 · 21 · 24 · 
 | Body | 1rem → 1.0625rem | 400 | 0 | 1.65 |
 | Meta / dates | 0.875rem, `tabular-nums` | 500 | 0 | 1.4 |
 
-- The reading measure is at most **38rem** (about 68 characters).
+- The reading measure is at most **38rem** (about 68 characters). A caption
+  under a chart wider than the text track (`ChartFigure`, the species figures)
+  takes `measure-caption`, 44rem, so it doesn't stop short under the figure
+  (2026-11-16).
+- Wrapping (2026-11-16). Gecko, the user's Zen, has no `text-wrap: pretty`, so
+  `pretty` is plain greedy wrapping there. `balance` for short text that is one
+  to three lines in its own box: page titles (`type-title`, `type-display`), list
+  titles (`type-item`), register notes, the header panel's descriptions. Never
+  `balance` on a sentence heading or a paragraph that runs three lines on a
+  phone: it narrows every line, which reads as cut short. `type-section` is
+  `pretty` for that reason.
 - **Every list uses `type-item`** for its entries' titles: articles (tiles and
   rows alike), larm, events, lokaler, a page's subpages, the fee table. A
   heading over a list is always `type-section`, so it outranks its entries
@@ -957,7 +967,7 @@ desktop
   chip keeps its colours on the Gran band. The **word** still prints beside it
   from "Ovanlig" (level 2) up, which explains the number to a newcomer, and is
   the chip's hover title and screen-reader text at every level. A larm's own
-  page gives rarity its own note, "Raritet", right after "Sett". *Superseded:*
+  page gives rarity its own note, "Prefix", right after "När" (renamed from "Raritet" and "Sett" on 2026-11-16: "Raritet" called an Allmän species a rarity; "Prefix" is the club's own word for the number). *Superseded:*
   the first build printed only the word, reasoning that 191 of 238 larm are
   level 4–5 so a badge would be noise; the members read the number, so it
   goes on every row.
@@ -1140,7 +1150,7 @@ I närheten
   `Se alla larm`.
 - **An active lokal names its recent birds** (2026-11-14): its map tooltip reads
   the name, then `Nyss: kungsfiskare, storskrake` in Blyerts under it, and its row
-  in "Larmat senaste två veckorna" prints the same line. The row is the tooltip's
+  in "Larm de senaste två veckorna" prints the same line. The row is the tooltip's
   accessible twin, so the two always say the same. Birds larmed *from* the lokal
   in the fortnight, newest first, at most five; never a protected species.
 
@@ -1203,7 +1213,7 @@ I år kom den första 7 maj, som vanligt. Tidigast: 29 apr 2007.
 [ staplar per vecka, alla år; den här veckan grön ]
 Flest rapporter kommer i maj. Den här veckan brukar den inte synas.
 
-Larmat av medlemmarna
+Larm
 [ larmen, med bild i raden som på /larm ]  [ karta med alla larm ]
 ```
 
