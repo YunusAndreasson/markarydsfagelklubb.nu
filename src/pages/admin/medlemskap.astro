@@ -78,7 +78,7 @@ const invalid = (name: keyof MembershipInput) => (errors[name] ? true : undefine
           <Field data-invalid={invalid("year")}>
             <FieldLabel htmlFor="year">År</FieldLabel>
             <Input id="year" name="year" inputMode="numeric" value={value("year")} className="h-11 max-w-32" required aria-invalid={invalid("year")} />
-            <FieldDescription>Avgiften gäller ett kalenderår. Sidan skriver ”Avgift {value("year") || "2027"}”.</FieldDescription>
+            <FieldDescription>Avgiften gäller ett kalenderår. På sidan står det ”Avgift {value("year") || "2027"}”.</FieldDescription>
             <FieldError>{errors.year}</FieldError>
           </Field>
           <div class="grid gap-6 sm:grid-cols-3">
@@ -101,7 +101,7 @@ const invalid = (name: keyof MembershipInput) => (errors[name] ? true : undefine
           <Field data-invalid={invalid("youth_max_age")}>
             <FieldLabel htmlFor="youth_max_age">Ungdom till och med ålder</FieldLabel>
             <Input id="youth_max_age" name="youth_max_age" inputMode="numeric" value={value("youth_max_age")} className="h-11 max-w-32" required aria-invalid={invalid("youth_max_age")} />
-            <FieldDescription>Sidan skriver ”Ungdom, t.o.m. {value("youth_max_age") || "20"} år”. En familjemedlem bor med en vuxen medlem och får inget eget Cinclus.</FieldDescription>
+            <FieldDescription>På sidan står det ”Ungdom, t.o.m. {value("youth_max_age") || "20"} år”. En familjemedlem bor med en vuxen medlem och får inget eget Cinclus.</FieldDescription>
             <FieldError>{errors.youth_max_age}</FieldError>
           </Field>
         </FieldGroup>

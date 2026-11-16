@@ -35,7 +35,7 @@ function failure(context: string, error: PostgrestError): WriteResult<never> {
 /** What a failed write means, in the admin's words. */
 export const WRITE_MESSAGES = {
   failed: "Det gick inte att spara. Försök igen om en stund.",
-  in_use: "Det går inte, eftersom något annat fortfarande hänger ihop med det.",
+  in_use: "Det gick inte, eftersom annat innehåll fortfarande hänvisar till det.",
 } as const
 
 // Articles

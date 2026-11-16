@@ -73,12 +73,12 @@ const hrefOf = (child: (typeof children)[number]) =>
         membership && (
           <Aside label="Bli medlem" class="max-md:pb-2">
             <AsideNote label="Bli medlem">
-              <p class="text-lg leading-relaxed text-pretty">
+              <p class="text-lg leading-relaxed text-balance">
                 {membership.fee_adult} kr om året, {membership.fee_youth} kr om du är {membership.youth_max_age} år
                 eller yngre.
               </p>
               <p class="text-muted-foreground leading-relaxed text-pretty">
-                Som medlem får du programbladet Cinclus och stöttar klubbens fågelskydd.
+                Som medlem får du programbladet Cinclus och stöttar fågelskyddet i kommunen.
               </p>
               <a href={joinHref} class={cn(buttonVariants(), "focus-strong mt-3 h-11 w-fit px-5 text-base")}>
                 Så blir du medlem

@@ -21,7 +21,7 @@ let next = safeNext(Astro.url.searchParams.get("next"), Astro.url.origin)
 
 if (Astro.request.method === "POST") {
   if (!supabase) {
-    errorMessage = "Inloggningen är inte tillgänglig just nu."
+    errorMessage = "Inloggningen fungerar inte just nu."
   } else {
     const form = await Astro.request.formData()
     submittedEmail = String(form.get("email") ?? "").trim()
@@ -51,7 +51,7 @@ if (Astro.request.method === "POST") {
         await supabase.auth.signOut()
         errorMessage =
           isAdmin === null
-            ? "Inloggningen är inte tillgänglig just nu. Försök igen om en stund."
+            ? "Inloggningen fungerar inte just nu. Försök igen om en stund."
             : "Det här kontot är inte administratör. Logga in med administratörskontot."
       }
     }

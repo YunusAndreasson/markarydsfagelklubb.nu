@@ -44,7 +44,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
 
 <SiteLayout
   title="Larm"
-  description="Fynd som medlemmarna larmat om i Markaryds Fågelklubbs app."
+  description="Fynd som har larmats i Markaryds Fågelklubbs app."
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-10">
@@ -54,7 +54,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
       <div class="in-text flex flex-col gap-3">
         <h1 class="type-title">Larm</h1>
         <p class="type-ingress text-muted-foreground">
-          Fynd som medlemmarna har larmat om i klubbens app, med karta över var fågeln sågs.
+          Fynd som har larmats i appen, med karta över var fågeln sågs.
         </p>
       </div>
       <Aside label="Klubbens app" sticky={false} first={false} class="lg:pt-3">
@@ -72,7 +72,7 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
           </p>
         ) : (
           <p class="text-muted-foreground at-text">
-            Inga larm ännu. Larmen skickas från klubbens app och syns sedan här.
+            Inga larm ännu. Larmen skickas från appen och syns sedan här.
           </p>
         )
       ) : (

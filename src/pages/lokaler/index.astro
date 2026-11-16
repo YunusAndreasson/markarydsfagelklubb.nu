@@ -39,8 +39,8 @@ const active = lokaler.value
     <header class="flex flex-col gap-3 at-text">
       <h1 class="type-title">Fågellokaler</h1>
       <p class="type-ingress text-muted-foreground max-w-prose">
-        Platserna där klubben skådar i Markaryds kommun. En större grön prick på kartan betyder att
-        någon har larmat därifrån de senaste två veckorna.
+        Bra platser att skåda fågel på i Markaryds kommun. En större grön prick på kartan betyder att
+        det har larmats därifrån de senaste två veckorna.
       </p>
     </header>
 
@@ -61,7 +61,7 @@ const active = lokaler.value
         <>
           {active.length > 0 && (
             <section aria-labelledby="lokaler-aktiva" class="flex flex-col gap-5">
-              <h2 id="lokaler-aktiva" class="type-section">Larmat senaste två veckorna</h2>
+              <h2 id="lokaler-aktiva" class="type-section">Larm de senaste två veckorna</h2>
               <LokalList lokaler={active} letters={false} />
             </section>
           )}

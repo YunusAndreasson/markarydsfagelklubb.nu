@@ -225,7 +225,7 @@ describe("yearHeadline", () => {
       yearHeadline({ speciesCount: 153, species: [{ name: "prutgås", first: "2026-11-11" }] })
     ).toBe("I år har 153 arter rapporterats i kommunen, den senaste prutgås den 11 november.")
     expect(yearHeadline({ speciesCount: 0, species: [] })).toBe(
-      "I år har 0 arter rapporterats i kommunen."
+      "I år har inga arter rapporterats i kommunen."
     )
   })
 })

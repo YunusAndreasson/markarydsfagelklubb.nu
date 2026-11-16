@@ -34,7 +34,7 @@ const CLUB = "/om-foreningen"
 
 const LEADS: Readonly<Record<string, string>> = {
   [OBSAR]: "Det som rapporteras i Markaryds kommun, hämtat från Artportalen.",
-  [CLUB]: "Föreningen, medlemskapet och det klubben gör för fåglarna.",
+  [CLUB]: "Föreningen, medlemskapet och fågelskyddet.",
 }
 
 function entry(title: string, href: string, extra: Partial<MenuEntry> = {}): MenuEntry {

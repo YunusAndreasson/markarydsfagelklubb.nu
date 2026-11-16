@@ -27,10 +27,11 @@ import {
   shortDay,
 } from "@/lib/obsar-stats"
 import { loadNavigation } from "@/lib/public-content"
+import { countWord } from "@/lib/species-page"
 import { stockholmYear } from "@/lib/stockholm-time"
 
 /**
- * 40 år av fynd (docs/design.md, "Obsar och statistik"): the club's jubilee,
+ * 40 års fynd (docs/design.md, "Obsar och statistik"): the club's jubilee,
  * told through the kommun's reports since 1970. The band is the page's one bold
  * thing; the rest is figures with captions that say what to see, and the
  * record years in words.
@@ -108,14 +109,14 @@ import { speciesLink } from "@/lib/species"
 ---
 
 <SiteLayout
-  title="40 år av fynd"
+  title="40 års fynd"
   description="Markaryds Fågelklubb fyller 40. Fågellivet och rapporterandet i Markaryds kommun sedan 1986, i siffror."
   menu={navigation.menu}
 >
   {history && <JubileeBand slot="band" history={history} allTime={allTime} thisYear={thisYear} interactive headingLevel={1} />}
 
   <article class="flex flex-col gap-12 md:gap-16">
-    <ObsarHeader title={history ? undefined : "40 år av fynd"} crumb={!history} />
+    <ObsarHeader title={history ? undefined : "40 års fynd"} crumb={!history} />
 
     {!history && <NotReady />}
 
@@ -125,7 +126,7 @@ import { speciesLink } from "@/lib/species"
           <ObsarSection id="bildades" title="Året klubben bildades" measure>
             <p class="leading-relaxed">
               {FOUNDED} rapporterades {arter(first.species)} i kommunen, i {first.reports.toLocaleString("sv-SE")} rapporter från{" "}
-              {first.observers} rapportörer. Artportalen kom först kring år 2000, så från de tidiga åren finns bara de fynd som
+              {countWord(first.observers)} rapportörer. Artportalen kom först kring år 2000, så från de tidiga åren finns bara de fynd som
               förts in i efterhand, och fågellivet var rikare än siffrorna visar.
               {mostReports && ` Det år som har flest rapporter är ${mostReports.year}, med ${mostReports.value.toLocaleString("sv-SE")}.`}
             </p>
@@ -139,8 +140,8 @@ import { speciesLink } from "@/lib/species"
                 box="aspect-[1/1] sm:aspect-[16/9]"
               >
                 Hur många arter som rapporterades varje år, och av hur många, på samma tidslinje.
-                {mostSpecies && ` Flest arter kom ${mostSpecies.year}, ${mostSpecies.value} stycken`}
-                {mostObservers && `, och flest rapportörer ${mostObservers.year}, ${mostObservers.value} personer`}.
+                {mostSpecies && ` Flest arter rapporterades ${mostSpecies.year}, ${mostSpecies.value} stycken`}
+                {mostObservers && `, och ${mostObservers.year} hade flest rapportörer, ${mostObservers.value} personer`}.
               </ChartFigure>
               <TableTwin label="Visa alla år som tabell">
                 <StatTable

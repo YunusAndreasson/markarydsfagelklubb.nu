@@ -127,7 +127,7 @@ const savedMessage =
       ? `Schemalagt. Evenemanget syns på webbplatsen ${formatDate(event.published_at, "dateTime")}.`
       : "Publicerat. Evenemanget syns nu på webbplatsen."
     : saved === "unpublish"
-      ? "Avpublicerat. Evenemanget är nu ett utkast och syns inte på webbplatsen."
+      ? "Utkast. Evenemanget syns inte längre på webbplatsen."
       : saved === "save"
         ? "Sparat."
         : null
@@ -257,7 +257,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
                 />
                 Heldag
               </label>
-              <FieldDescription>Visar bara datum, ingen klockslag. Tiden ovan sparas som dygnets början.</FieldDescription>
+              <FieldDescription>Visar bara datum, inget klockslag. Tiden ovan sparas som dygnets början.</FieldDescription>
             </Field>
           </FieldGroup>
         </section>
@@ -291,7 +291,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
               aria-invalid={errors.publish_at ? true : undefined}
             />
             <FieldDescription>
-              När evenemanget ska synas på webbplatsen, inte när det äger rum. Lämna tomt för direkt.
+              När evenemanget ska synas på webbplatsen, inte när det äger rum. Lämna tomt för att publicera direkt.
             </FieldDescription>
             <FieldError>{errors.publish_at}</FieldError>
           </Field>
@@ -313,7 +313,7 @@ const title = isNew ? "Nytt evenemang" : values.title || "Evenemang"
                     Spara ändringar
                   </Button>
                   <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">
-                    Avpublicera
+                    Gör till utkast
                   </Button>
                 </>
               )

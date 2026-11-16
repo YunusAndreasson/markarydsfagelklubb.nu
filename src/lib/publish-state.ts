@@ -34,7 +34,7 @@ export function parsePublishIntent(value: unknown): PublishIntent | null {
  *   a new one is typed in.
  * - *Publicera* publishes at the typed time, or now. A time in the future
  *   schedules it.
- * - *Avpublicera* turns it back into a draft and remembers the time, so
+ * - *Gör till utkast* turns it back into a draft and remembers the time, so
  *   publishing again without typing one keeps the original date.
  */
 export function resolvePublication(

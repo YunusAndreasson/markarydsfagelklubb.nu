@@ -16,7 +16,7 @@ const { level } = Astro.props
 const label = rarityLabel(level)
 ---
 
-<span class="rarity-chip shrink-0 self-center" data-level={level} title={`Raritet ${level}: ${label}`}>
+<span class="rarity-chip shrink-0 self-center" data-level={level} title={`Prefix ${level}, ${label.toLocaleLowerCase("sv")}`}>
   <span aria-hidden="true">{level}</span>
-  <span class="sr-only">Raritet {level}, {label.toLocaleLowerCase("sv")}</span>
+  <span class="sr-only">Prefix {level}, {label.toLocaleLowerCase("sv")}</span>
 </span>

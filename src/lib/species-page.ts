@@ -163,7 +163,7 @@ export function leadSentence(
     return `En flyttfågel som brukar komma till kommunen kring ${dayMonth(arrival)}.`
   }
   if (kind === "winter" && arrival !== null && departure !== null) {
-    return `En vintergäst som brukar komma till kommunen kring ${dayMonth(arrival)} och stanna till kring ${dayMonth(departure)}.`
+    return `En vintergäst som brukar komma till kommunen kring ${dayMonth(arrival)} och stanna kvar till omkring ${dayMonth(departure)}.`
   }
   if (windowYears < SEASON_WINDOW) return null
   if (years === 0) {
@@ -236,7 +236,7 @@ export function arrivalSentence(
     !now
       ? "I år har ingen rapporterats än."
       : now.day - typicalArrival >= NOT_IN_SPRING
-        ? `I år sågs den inte när den brukar komma, bara från ${dayMonth(now.day)}.`
+        ? `I år sågs den inte när den brukar komma, utan först ${dayMonth(now.day)}.`
         : `I år kom den första ${dayMonth(now.day)}, ${offsetPhrase(now.day - typicalArrival)}.`
   )
   const earliest = arrivals(entry).reduce((best, one) => (one.day < best.day ? one : best))

@@ -109,7 +109,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const isAdmin = await readIsAdmin(supabase, claims.sub)
     if (isAdmin === null) {
       return applySecurityHeaders(
-        plainResponse("Administrationen är inte tillgänglig just nu. Försök igen om en stund.", 503)
+        plainResponse("Administrationen går inte att nå just nu. Försök igen om en stund.", 503)
       )
     }
     session = isAdmin ? "admin" : "member"

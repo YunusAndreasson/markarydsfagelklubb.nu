@@ -40,7 +40,7 @@ describe("arrivalSentence", () => {
     // Blå kärrhök 2026: not seen in spring, only on its way back.
     const harrier = entry(range(2006, 2026), (y) => (y === 2026 ? "09-26" : "04-10"))
     expect(arrivalSentence(harrier, 100, 2026)).toBe(
-      "I år sågs den inte när den brukar komma, bara från 26 sep. Tidigast: 10 apr 2006."
+      "I år sågs den inte när den brukar komma, utan först 26 sep. Tidigast: 10 apr 2006."
     )
     expect(arrivalFigure(harrier, 2026, 100)?.dots.some((dot) => dot.year === 2026)).toBe(false)
   })
@@ -61,7 +61,9 @@ describe("leadSentence", () => {
   it("tells a winter guest by its autumn return", () => {
     expect(
       leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 20, null, 2026, [])
-    ).toBe("En vintergäst som brukar komma till kommunen kring 18 okt och stanna till kring 5 apr.")
+    ).toBe(
+      "En vintergäst som brukar komma till kommunen kring 18 okt och stanna kvar till omkring 5 apr."
+    )
   })
 
   it("has a plain line for a resident, a rare guest and a bird long gone", () => {

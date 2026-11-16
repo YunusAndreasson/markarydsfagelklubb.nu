@@ -154,7 +154,7 @@ const savedMessage =
       ? `Schemalagd. Sidan syns på webbplatsen ${formatDate(page.published_at, "dateTime")}.`
       : "Publicerad. Sidan syns nu på webbplatsen."
     : saved === "unpublish"
-      ? "Avpublicerad. Sidan är nu ett utkast och syns inte på webbplatsen."
+      ? "Utkast. Sidan syns inte längre på webbplatsen."
       : saved === "save"
         ? "Sparad."
         : null
@@ -278,7 +278,7 @@ const hasErrors = Object.keys(errors).length > 0
               ) : (
                 <>
                   <Button type="submit" name="intent" value="save" className="h-11">Spara ändringar</Button>
-                  <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">Avpublicera</Button>
+                  <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">Gör till utkast</Button>
                 </>
               )}
             </div>
@@ -294,7 +294,7 @@ const hasErrors = Object.keys(errors).length > 0
           <Field data-invalid={errors.parent_id ? true : undefined}>
             <FieldLabel htmlFor="parent_id">Ligger under</FieldLabel>
             <NativeSelect id="parent_id" name="parent_id" className="w-full" defaultValue={values.parent_id} aria-invalid={errors.parent_id ? true : undefined}>
-              <NativeSelectOption value="">Ingen: överst i menyn</NativeSelectOption>
+              <NativeSelectOption value="">Ingen (överst i menyn)</NativeSelectOption>
               {parentChoices.map((node) => (
                 <NativeSelectOption value={String(node.id)}>{`${"– ".repeat(node.depth)}${node.title}`}</NativeSelectOption>
               ))}

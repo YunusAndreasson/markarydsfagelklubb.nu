@@ -61,7 +61,7 @@ const recipient = m?.contact_name || "kassören"
 // in Klubben's list ("Vad det kostar och hur du betalar …"), and the meta
 // description, where a plain summary serves better.
 const PITCH =
-  "Som medlem får du programbladet Cinclus med årets program, och du stöttar klubbens fågelskydd i Markaryds kommun."
+  "Som medlem får du programbladet Cinclus med årets program, och du stöttar fågelskyddet i Markaryds kommun."
 const linkClass = "link flex min-h-11 w-fit items-center font-medium"
 ---
 
@@ -185,7 +185,7 @@ const linkClass = "link flex min-h-11 w-fit items-center font-medium"
                           {mailto && m?.contact_email && <EmailLink address={m.contact_email} href={mailto} label="Skicka e-post" class={linkClass} />}
                           {sms && <a href={sms} class={linkClass}>Skicka sms</a>}
                         </p>
-                        <p class="text-muted-foreground leading-relaxed">Meddelandet är redan skrivet, du fyller bara i namn och adress.</p>
+                        <p class="text-muted-foreground leading-relaxed">Meddelandet är redan skrivet. Du fyller bara i namn och adress.</p>
                       </>
                     )}
                   </div>

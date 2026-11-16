@@ -133,7 +133,7 @@ const savedMessage =
       ? `Schemalagd. Artikeln syns på webbplatsen ${formatDate(article.published_at, "dateTime")}.`
       : "Publicerad. Artikeln syns nu på webbplatsen."
     : saved === "unpublish"
-      ? "Avpublicerad. Artikeln är nu ett utkast och syns inte på webbplatsen."
+      ? "Utkast. Artikeln syns inte längre på webbplatsen."
       : saved === "save"
         ? "Sparad."
         : null
@@ -274,7 +274,7 @@ const title = isNew ? "Ny artikel" : values.title || "Artikel"
                     Spara ändringar
                   </Button>
                   <Button type="submit" name="intent" value="unpublish" variant="ghost" className="h-11">
-                    Avpublicera
+                    Gör till utkast
                   </Button>
                 </>
               )

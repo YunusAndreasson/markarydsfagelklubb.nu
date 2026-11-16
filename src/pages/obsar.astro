@@ -35,6 +35,7 @@ import {
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
 import { thisWeek } from "@/lib/season"
 import { buildSpecies, taxonSlugs } from "@/lib/species"
+import { countWord } from "@/lib/species-page"
 import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
 import { missingBirds, unusualBirds } from "@/lib/year-watch"
 
@@ -128,7 +129,13 @@ const curveLegend = curves
         ? [{ label: `Snitt ${curves.averageYears} år`, color: ink.pencil, weight: 1.5 }]
         : []),
       ...(curves.low
-        ? [{ label: `Spannet ${curves.averageYears} år`, color: bandColor, kind: "band" as const }]
+        ? [
+            {
+              label: `Variation ${curves.averageYears} år`,
+              color: bandColor,
+              kind: "band" as const,
+            },
+          ]
         : []),
     ]
   : []
@@ -158,21 +165,21 @@ const paceSentence =
   pace === null || !curves
     ? null
     : pace === 0
-      ? `Det är precis som ett vanligt år vid den här tiden, räknat på de senaste ${curves.averageYears} åren.`
-      : `Det är ${arter(Math.abs(pace))} ${pace > 0 ? "fler" : "färre"} än ett vanligt år vid den här tiden, räknat på de senaste ${curves.averageYears} åren.`
+      ? `Det är precis som ett vanligt år vid den här tiden, räknat på de senaste ${countWord(curves.averageYears)} åren.`
+      : `Det är ${arter(Math.abs(pace))} ${pace > 0 ? "fler" : "färre"} än ett vanligt år vid den här tiden, räknat på de senaste ${countWord(curves.averageYears)} åren.`
 ---
 
 <SiteLayout
   title={page.title}
   description={page.description ||
-    "Vad som rapporteras i Markaryds kommun: årets arter, de senaste fynden, listorna och 40 år av obsar."}
+    "Vad som rapporteras i Markaryds kommun: årets arter, de senaste fynden, listorna och 40 års obsar."}
   menu={navigation.menu}
 >
   <article class="flex flex-col gap-12 md:gap-16">
     <ObsarHeader
       title={page.title}
       crumb={false}
-      ingress={page.description || "Det klubbens medlemmar och andra rapporterar i Markaryds kommun, hämtat från Artportalen."}
+      ingress={page.description || "Det som rapporteras i Markaryds kommun, hämtat från Artportalen."}
     />
 
     {
@@ -203,8 +210,8 @@ const paceSentence =
                 box="aspect-[4/3] sm:aspect-[16/7]"
                 inset="16px 96px 28px 32px"
               >
-                Hur många arter som setts i kommunen, vecka för vecka. Det ljusa fältet visar spannet för de
-                {curves.averageYears} åren före. Kurvan stiger brant i april och maj, när flyttfåglarna kommer.
+                Hur många arter som setts i kommunen, vecka för vecka. Det ljusa fältet visar hur det har varierat under de
+                {countWord(curves.averageYears)} åren före. Kurvan stiger brant i april och maj, när flyttfåglarna kommer.
               </ChartFigure>
             )}
             {curves && (
@@ -253,7 +260,7 @@ const paceSentence =
             </ObsarSection>
 
             <ObsarSection id="ligan" title="Flest arter i år" href="/obsar/ligan" link="Hela ligan" nested>
-              <RankList numbered items={leaders.map((one) => ({ name: one.name, value: arter(one.species) }))} />
+              <RankList numbered items={leaders.map((one) => ({ name: one.name, value: arter(one.species, { digits: true }) }))} />
             </ObsarSection>
 
             <ObsarSection id="platser" title="Mest rapporterat från" nested>
@@ -279,7 +286,7 @@ const paceSentence =
                 },
                 {
                   href: "/obsar/40-ar",
-                  title: "40 år av fynd",
+                  title: "40 års fynd",
                   text: "Klubben fyller 40. Så har fågellivet och rapporterandet i kommunen förändrats sedan 1986.",
                 },
               ].map((one) => (
@@ -287,7 +294,7 @@ const paceSentence =
                   <span class="type-section text-reflex underline decoration-1 underline-offset-4 group-hover:decoration-2">
                     {one.title}
                   </span>
-                  <span class="text-muted-foreground leading-relaxed">{one.text}</span>
+                  <span class="text-muted-foreground leading-relaxed text-balance">{one.text}</span>
                 </a>
               ))}
             </div>

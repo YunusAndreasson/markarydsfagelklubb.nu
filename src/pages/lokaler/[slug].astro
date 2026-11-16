@@ -111,9 +111,9 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
           club's numbered places, else a still in the text track. */}
       {pin && (
         mapPoints.length > 0 ? (
-          <LokalMapFrame pins={[pin]} points={mapPoints} class="in-full aspect-square sm:aspect-3/2 lg:aspect-[21/9]" />
+          <LokalMapFrame pins={[pin]} points={mapPoints} fallback="Kartan behöver JavaScript. Platserna på lokalen står i listan längre ner." class="in-full aspect-square sm:aspect-3/2 lg:aspect-[21/9]" />
         ) : (
-          <LokalMapFrame pins={[pin]} still class="in-text aspect-2/1" />
+          <LokalMapFrame pins={[pin]} still fallback="Kartan behöver JavaScript." class="in-text aspect-2/1" />
         )
       )}
     </header>

@@ -1,5 +1,6 @@
 import { weekIndex } from "@/lib/artportalen/aggregate"
 import type { AllTime, History, YearSummary } from "@/lib/artportalen/types"
+import { countWord } from "@/lib/species-page"
 
 /**
  * What the Obsar pages say and draw, derived from the stored statistics.
@@ -194,9 +195,15 @@ export function localDay(date: string): string {
   return `${date}T12:00:00Z`
 }
 
-/** "1 art", "153 arter". */
-export function arter(count: number): string {
-  return `${count.toLocaleString("sv-SE")} ${count === 1 ? "art" : "arter"}`
+/**
+ * "en art", "fyra arter", "153 arter": up to twelve in words, as Svenska
+ * skrivregler writes a count in running text. `digits` keeps the figure for a
+ * ranked list, whose numbers line up in a column.
+ */
+export function arter(count: number, { digits = false } = {}): string {
+  const figure =
+    digits || count > 12 ? count.toLocaleString("sv-SE") : count === 0 ? "inga" : countWord(count)
+  return `${figure} ${count === 1 ? "art" : "arter"}`
 }
 
 /** A route's year: none means this year; anything else must be a year with data. */
