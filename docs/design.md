@@ -1587,8 +1587,10 @@ The Obsar pages now use the site's own grid, and only through components
 
 **How it is built.** Each figure's first paint is a plain SVG drawn by our own code
 (`lib/charts/svg.ts`, a few hundred bytes, well under a millisecond). Apache ECharts
-then draws over it on canvas from a `client:visible` island (`ObsarChart.tsx`,
-`LeagueRace.tsx`) for tooltips, zoom and the race. ECharts' own server rendering was
+then draws over it on canvas for tooltips, zoom and the race: a plain script
+(`obsar-chart.client.ts`, started when the figure nears the screen) for the figures,
+and a `client:visible` island (`LeagueRace.tsx`) only for the race, which has state.
+Since 2026-11-17 the figures and the maps ship no React. ECharts' own server rendering was
 measured and rejected: 35–220 ms of CPU per chart and 1.4 MB of SVG for a heatmap,
 on every request. The heatmaps have no SVG first paint; their caption carries the
 finding. The home page ships the SVG only, no chart script. Below 480 px wide the

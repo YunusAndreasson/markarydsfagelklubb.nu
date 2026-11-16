@@ -64,6 +64,10 @@ export default function LeagueRace({ year, until, runners }: Props) {
   const [frame, setFrame] = useState(frames.length - 1)
   const [playing, setPlaying] = useState(false)
   const date = dateAt(year, frames[frame] ?? lastIndex)
+  // The chart loads after the slider can move, so its first draw reads this.
+  const dateRef = useRef(date)
+  dateRef.current = date
+  const dateLabel = dayMonth.format(new Date(`${date}T00:00:00Z`))
 
   useEffect(() => {
     const element = box.current
@@ -123,13 +127,13 @@ export default function LeagueRace({ year, until, runners }: Props) {
         instance.dispose()
         chartRef.current = null
       }
-      drawRace(instance, runners, dateAt(year, frames.at(-1) ?? lastIndex))
+      drawRace(instance, runners, dateRef.current)
     })()
     return () => {
       disposed = true
       cleanup()
     }
-  }, [runners, year, frames, lastIndex])
+  }, [runners])
 
   useEffect(() => {
     if (chartRef.current) drawRace(chartRef.current, runners, date)
@@ -172,6 +176,7 @@ export default function LeagueRace({ year, until, runners }: Props) {
             min={0}
             max={frames.length - 1}
             value={frame}
+            aria-valuetext={dateLabel}
             onChange={(event) => {
               setPlaying(false)
               setFrame(Number(event.target.value))
@@ -181,9 +186,10 @@ export default function LeagueRace({ year, until, runners }: Props) {
         </label>
         <output
           className="type-meta text-muted-foreground min-w-28 tabular-nums"
-          aria-live="polite"
+          // Quiet while it plays: a new date every half-second would drown a screen reader.
+          aria-live={playing ? "off" : "polite"}
         >
-          {dayMonth.format(new Date(`${date}T00:00:00Z`))}
+          {dateLabel}
         </output>
       </div>
       <div data-chart className="relative h-[26rem] w-full">

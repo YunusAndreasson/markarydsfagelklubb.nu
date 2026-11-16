@@ -51,7 +51,13 @@ if (id !== null) {
 const kind = page?.kind ?? (Astro.url.searchParams.get("typ") === "lank" ? "link" : "page")
 const isLink = kind === "link"
 
-const { data: rows } = await listPageRows(supabase)
+// Without the tree the parent choice would have no options, and saving would
+// quietly move a subpage to the top level.
+const { data: rows, error: rowsError } = await listPageRows(supabase)
+if (rowsError) {
+  console.error(`mafk-web: list pages failed — ${rowsError.message}`)
+  return new Response("Sidorna kunde inte läsas just nu.", { status: 503 })
+}
 const tree = buildPageTree((rows ?? []) as AdminPageRow[])
 // A page can't move under itself or anything below it.
 const forbiddenParentIds = new Set<number>(id === null ? [] : [id, ...descendantIds(tree, id)])

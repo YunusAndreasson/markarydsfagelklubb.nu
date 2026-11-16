@@ -49,9 +49,12 @@ describe("the Artportalen key's reach", () => {
     )
   })
 
-  it("never reaches a page, a component or an island", () => {
+  it("never reaches a page, a component, an island or a *.client.ts module", () => {
     for (const file of files.filter(
-      (one) => /^(pages|components|layouts)\//.test(one) || one.endsWith(".tsx")
+      (one) =>
+        /^(pages|components|layouts)\//.test(one) ||
+        one.endsWith(".tsx") ||
+        one.endsWith(".client.ts")
     )) {
       expect(REACHES_KEY.test(source(file)), file).toBe(false)
     }

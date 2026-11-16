@@ -78,7 +78,7 @@
 
   .content ul,
   .content ol {
-    padding-left: 1.5em;
+    padding-inline-start: 1.5em;
   }
   .content ul {
     list-style: disc outside;
@@ -94,7 +94,7 @@
   }
 
   .content blockquote {
-    padding-left: 1.5em;
+    padding-inline-start: 1.5em;
     color: var(--muted-foreground);
   }
 
@@ -214,7 +214,7 @@
   .content td {
     padding: 0.5em 1em 0.5em 0;
     border-bottom: 1px solid var(--border);
-    text-align: left;
+    text-align: start;
     vertical-align: top;
   }
   .content th {
@@ -274,7 +274,7 @@
     .content-register > h2 {
       grid-column: 1;
       padding-top: 0.2rem;
-      padding-right: 1rem;
+      padding-inline-end: 1rem;
     }
     .content-register > h2,
     .content-register > h2 + * {

@@ -470,6 +470,13 @@ export function RichTextEditor({
                   id={`${id}-embed-title`}
                   value={embedTitle}
                   onChange={(event) => setEmbedTitle(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    // Enter would submit the whole article form, embed unapplied.
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      applyEmbed()
+                    }
+                  }}
                 />
               </Field>
             </FieldGroup>

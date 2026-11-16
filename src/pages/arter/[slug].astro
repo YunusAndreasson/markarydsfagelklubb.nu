@@ -176,10 +176,10 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
                 </p>
               </AsideNote>
             )}
-            {bird.alertCount > 0 && (
+            {alerts.length > 0 && (
               <AsideNote label="Larmad">
                 <p>
-                  <a href="#larm" class="link">{bird.alertCount === 1 ? "En gång" : `${bird.alertCount} gånger`}</a>
+                  <a href="#larm" class="link">{alerts.length === 1 ? "En gång" : `${alerts.length} gånger`}</a>
                 </p>
               </AsideNote>
             )}
@@ -241,7 +241,8 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
           )}
         </section>
       ) : (
-        bird.appId !== null && (
+        // Only when the read worked: a failed one isn't "no larm".
+        larm?.ok && (
           <p class="text-muted-foreground measure">
             {bird.name} har inte larmats ännu.{" "}
             <a href="/larm" class="link">Se alla larm</a>

@@ -1,5 +1,4 @@
 ---
-import ObsarChart from "@/components/site/charts/ObsarChart"
 import type { ChartData } from "@/lib/charts/options"
 
 /**
@@ -58,12 +57,19 @@ const { chart, fallback, box, height, inset = "0", legend, class: className } = 
     style={{ height }}
   >
     {fallback && <div class="chart-fallback absolute" style={{ inset }} set:html={fallback} />}
-    <ObsarChart client:visible chart={chart} />
+    {/* Filled by obsar-chart.client.ts when it nears the screen. */}
+    <div data-obsar-chart data-props={JSON.stringify(chart)} class="absolute inset-0" aria-hidden="true"></div>
   </div>
   <figcaption class="text-muted-foreground measure-caption leading-relaxed text-pretty">
     <slot />
   </figcaption>
 </figure>
+
+<script>
+  import { mountObsarCharts } from "./obsar-chart.client"
+
+  mountObsarCharts()
+</script>
 
 <style is:global>
   .chart-fallback {

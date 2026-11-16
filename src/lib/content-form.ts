@@ -73,7 +73,8 @@ function body(form: FormData): string | null {
 }
 
 /** "" → null; a positive integer → itself; anything else → undefined (invalid). */
-function optionalId(raw: string): number | null | undefined {
+/** A submitted id: a number, null for "none", undefined when it isn't an id. */
+export function optionalId(raw: string): number | null | undefined {
   if (raw === "") return null
   return /^[1-9]\d{0,15}$/.test(raw) ? Number(raw) : undefined
 }

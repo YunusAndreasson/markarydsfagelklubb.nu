@@ -191,7 +191,11 @@ const description = month
             </a>
           </div>
 
-          {(event.place || hasContact || deadlineLabel || (event.registration_url && open)) && (
+          {/* The same test as the Anmälan note's, or a past event with only a
+              deadline would get an empty, labelled aside. */}
+          {(event.place ||
+            hasContact ||
+            ((deadlineLabel || (event.registration_url && open)) && eventStatus(event, now) !== "past")) && (
             <Aside label="Kort om dagen" class="max-md:-mt-2">
               {event.place && (
                 <AsideNote label="Plats">

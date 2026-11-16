@@ -434,7 +434,7 @@
    block that also sets `measure` keeps the whole measure. */
 @utility at-text {
   @media (width >= 48rem) {
-    margin-left: 7rem;
+    margin-inline-start: 7rem;
   }
 }
 /* The reading measure. */

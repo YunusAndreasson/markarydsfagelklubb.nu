@@ -68,4 +68,8 @@ describe("escapeXml", () => {
   it("drops control characters XML refuses, and keeps tabs and newlines", () => {
     expect(escapeXml("a\u0000b\u000bc\td\ne")).toBe("abc\td\ne")
   })
+
+  it("mends half an emoji and drops the two non-characters", () => {
+    expect(escapeXml("gök \ud83d!\ufffe")).toBe("gök \ufffd!")
+  })
 })

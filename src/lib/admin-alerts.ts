@@ -52,6 +52,12 @@ export async function listAdminAlerts(
     return null
   }
 
+  // Supabase's cap: past it the oldest larm drop off this list unseen, and a
+  // member asking for one to be hidden can't be helped. Page it when this logs.
+  if ((alerts.data?.length ?? 0) >= limit) {
+    console.warn(`mafk-web: admin larm list hit its ${limit}-row cap; older larm are not listed`)
+  }
+
   // Every error was handled above, so the `?? []` are only to satisfy the
   // response type, which pairs `data: null` with `error: null` structurally.
   const lokaler = buildLokaler(locations.data ?? [])

@@ -226,6 +226,9 @@ const shortcuts = [
     const panelOf = (toggle: HTMLButtonElement) =>
       document.getElementById(toggle.getAttribute("aria-controls") ?? "")
     const isOpen = (toggle: HTMLButtonElement) => toggle.getAttribute("aria-expanded") === "true"
+    // The phone menu, a <details>: it closes when the panels do, so it doesn't
+    // come back open over a page restored from the back/forward cache.
+    const menu = header.querySelector<HTMLDetailsElement>("details")
 
     const setOpen = (toggle: HTMLButtonElement, open: boolean) => {
       toggle.setAttribute("aria-expanded", String(open))
@@ -234,6 +237,7 @@ const shortcuts = [
     }
     const closeAll = () => {
       for (const toggle of toggles) setOpen(toggle, false)
+      if (menu) menu.open = false
     }
     const open = (toggle: HTMLButtonElement) => {
       closeAll()
@@ -254,12 +258,22 @@ const shortcuts = [
         if (opened) {
           setOpen(opened, false)
           opened.focus()
+        } else if (menu?.open) {
+          menu.open = false
+          menu.querySelector("summary")?.focus()
         }
         return
       }
       if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return
       const target = event.target
       if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select"))) return
+      // /sok has its own field; a second one in the header would be in the way.
+      const pageSearch = document.querySelector<HTMLInputElement>("main input[type=search]")
+      if (pageSearch && location.pathname === "/sok") {
+        event.preventDefault()
+        pageSearch.focus()
+        return
+      }
       const search = toggles.find((toggle) => toggle.hasAttribute("data-search-toggle"))
       // Only where the bar shows it (lg up); a phone has no "/" to press.
       if (!search || search.offsetParent === null) return

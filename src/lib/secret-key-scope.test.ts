@@ -47,8 +47,13 @@ describe("the secret key's blast radius", () => {
     expect(importers).toEqual([...ALLOWED_TO_OPEN].sort())
   })
 
-  it("never reaches a React island, which would ship it to the browser", () => {
-    for (const island of files.filter((file) => file.endsWith(".tsx"))) {
+  it("never reaches browser code: a React island or a *.client.ts module", () => {
+    const browser = files.filter((file) => file.endsWith(".tsx") || file.endsWith(".client.ts"))
+    expect(
+      browser.some((file) => file.endsWith(".client.ts")),
+      "no *.client.ts found"
+    ).toBe(true)
+    for (const island of browser) {
       const text = source(island)
       expect(REACHES_KEY.test(text), island).toBe(false)
       expect(READS_LARM.test(text), island).toBe(false)

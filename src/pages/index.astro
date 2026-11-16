@@ -115,9 +115,10 @@ const taken = Astro.locals.transitionNames
 ---
 
 <SiteLayout menu={navigation.menu} image={leadImage?.src}>
+  {/* The page's h1 first, in the band slot ahead of the larm band, so a screen
+      reader moving by heading meets it before the band's h2. */}
+  <h1 slot="band" class="sr-only">Markaryds Fågelklubb</h1>
   <LarmBand slot="band" list={dayList} prints={prints} now={now} />
-
-  <h1 class="sr-only">Markaryds Fågelklubb</h1>
 
   {/* The sponsors, twice, one shown at a time (docs/design.md, "Sponsorer"):
       from md up a credit line over the lead, as a magazine credits a sponsor

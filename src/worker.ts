@@ -33,10 +33,16 @@ export default {
       return
     }
     ctx.waitUntil(
-      job.then((result) => {
-        if (result.ok) console.log("obsar: done", { cron: controller.cron, ...result })
-        else console.error("obsar: failed", { cron: controller.cron, ...result })
-      })
+      job
+        .then((result) => {
+          if (result.ok) console.log("obsar: done", { cron: controller.cron, ...result })
+          else console.error("obsar: failed", { cron: controller.cron, ...result })
+        })
+        // A KV read or write outside the job's own try (its meta) would
+        // otherwise be an unhandled rejection with no log line of ours.
+        .catch((error: unknown) =>
+          console.error("obsar: crashed", { cron: controller.cron, error: String(error) })
+        )
     )
   },
 } satisfies ExportedHandler<Env>

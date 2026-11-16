@@ -165,8 +165,11 @@ exactly what the `to anon` policies allow, and they send
 `Cache-Control: public, max-age=60`. Only the 404 is prerendered, and it must
 never query. Hydrate only the narrowest interactive leaf, using
 `client:visible` or `client:idle` (`client:load` only when it must be
-immediate); today the only islands are the admin's editor and uploader
-(`client:only`). The one plain script on every public page is the header's
+immediate); today the islands are the admin's editor and uploader
+(`client:only`) and Ligan's race, the one public island with state. The maps
+and the Obsar charts are plain scripts (`*.client.ts`, started by
+`whenVisible`), since React only ran one effect there; the key-scope tests
+treat a `*.client.ts` module as browser code, like a `.tsx`. The one plain script on every public page is the header's
 section panels (`SiteHeader.astro`), which only enhances links that already
 work without it. The other is the photo viewer (`PhotoViewer.astro`,
 PhotoSwipe), only on pages with a body or a larm photo; it too enhances links

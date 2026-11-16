@@ -123,6 +123,13 @@ export function ImageUpload({ supabaseUrl, supabasePublishableKey, onUploaded, o
             value={alt}
             disabled={busy}
             onChange={(event) => setAlt(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              // Enter would submit the form around the uploader and lose the file.
+              if (event.key === "Enter") {
+                event.preventDefault()
+                if (file && alt.trim() && !busy) void upload()
+              }
+            }}
           />
           <FieldDescription>
             Läses upp för den som inte ser bilden. Till exempel: ”Strömstare på en sten i Lagan”.

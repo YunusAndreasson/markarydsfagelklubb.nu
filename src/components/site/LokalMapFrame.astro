@@ -1,7 +1,9 @@
 ---
-import LokalMap from "@/components/site/LokalMap"
+import type { LokalMapProps } from "@/components/site/lokal-map.client"
 import type { LokalPin } from "@/lib/lokal"
 import type { MapPoint } from "@/lib/lokal-points"
+// Leaflet's own sheet first, so map.css overrides it.
+import "leaflet/dist/leaflet.css"
 import "@/styles/map.css"
 
 /**
@@ -9,7 +11,7 @@ import "@/styles/map.css"
  * `src/styles/map.css`, imported here and by `LarmMapFrame.astro` so it ships
  * only with the pages that draw a map, never with `global.css`.
  *
- * The box is sized before hydration and carries the muted background, so the
+ * The box is sized before the map draws and carries the muted background, so the
  * tiles fade in rather than pushing the register down the page.
  *
  * `isolate` keeps Leaflet's panes (z-index 400–1000) inside the frame. Without
@@ -35,13 +37,22 @@ const {
   fallback = "Kartan behöver JavaScript. Alla lokaler står i listan här under.",
   class: className = "",
 } = Astro.props
+const props: LokalMapProps = { pins, still, points: points ?? [] }
 ---
 
 <div class:list={["bg-muted relative isolate overflow-hidden rounded-[4px]", className]}>
-  <LokalMap pins={pins} still={still} points={points} client:visible />
+  {/* Drawn by lokal-map.client.ts when it nears the screen. */}
+  <div data-lokal-map data-props={JSON.stringify(props)} class="size-full" aria-hidden="true"></div>
+
   <noscript>
     <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-6 text-center">
       {fallback}
     </p>
   </noscript>
 </div>
+
+<script>
+  import { mountLokalMaps } from "./lokal-map.client"
+
+  mountLokalMaps()
+</script>

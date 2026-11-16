@@ -35,8 +35,11 @@ export type FeedChannel = {
  */
 function withoutControlCharacters(value: string): string {
   let out = ""
-  for (const char of value) {
+  // toWellFormed: a lone surrogate (half an emoji, cut by a paste) is as fatal to
+  // XML as a control character. U+FFFE and U+FFFF aren't characters either.
+  for (const char of value.toWellFormed()) {
     const code = char.codePointAt(0) ?? 0
+    if (code === 0xfffe || code === 0xffff) continue
     if (code >= 0x20 || code === 0x09 || code === 0x0a || code === 0x0d) out += char
   }
   return out

@@ -7,12 +7,11 @@ import boundary from "@/data/markaryd-boundary.json"
  * motion and scroll manners, and the tooltip text (docs/design.md, "Lokaler").
  *
  * **Leaflet is loaded here, inside a function, never at a module's top.** It
- * reads `window` while its module body runs, and an `.astro` page importing an
- * island pulls the island into the Worker bundle even under `client:visible` —
- * which fails the route with `window is not defined` rather than degrading.
- * Calling {@link loadLeaflet} from an effect keeps it strictly in the browser.
+ * reads `window` while its module body runs, so it must never reach the
+ * Worker bundle; {@link loadLeaflet} also keeps it out of a page's first load
+ * until a map nears the screen (`*-map.client.ts`).
  *
- * Nothing here knows about larm or lokaler; the islands bring their own marks.
+ * Nothing here knows about larm or lokaler; the map modules bring their own marks.
  */
 
 export type Leaflet = typeof import("leaflet")

@@ -19,7 +19,13 @@ import {
   saveArticle,
   WRITE_MESSAGES,
 } from "@/lib/admin-content"
-import { type FieldErrors, LIMITS, parseArticleForm, parseRouteId } from "@/lib/content-form"
+import {
+  type FieldErrors,
+  LIMITS,
+  optionalId,
+  parseArticleForm,
+  parseRouteId,
+} from "@/lib/content-form"
 import type { MediaFormat } from "@/lib/media"
 import { parsePublishIntent, publishStateOf, resolvePublication } from "@/lib/publish-state"
 import { sanitizeContent } from "@/lib/sanitize"
@@ -44,7 +50,12 @@ if (id !== null) {
   article = data
 }
 
-const { data: categories } = await listCategories(supabase)
+// Without them the category choice would be empty, and saving would clear it.
+const { data: categories, error: categoriesError } = await listCategories(supabase)
+if (categoriesError) {
+  console.error(`mafk-web: list categories failed — ${categoriesError.message}`)
+  return new Response("Kategorierna kunde inte läsas just nu.", { status: 503 })
+}
 
 const toUploaded = (media: NonNullable<typeof article>["cover"]): UploadedImage | null =>
   media ? { ...media, format: media.format as MediaFormat } : null
@@ -111,8 +122,11 @@ if (Astro.request.method === "POST") {
       }
     }
 
-    // Keep a newly chosen cover on screen while the errors are fixed.
-    const submittedCover = parsed.ok ? parsed.value.cover_media_id : undefined
+    // Keep a newly chosen cover on screen while the errors are fixed. Read from
+    // the form, not the parse: a missing title must not drop the new cover.
+    const submittedCover = form.has("cover_media_id")
+      ? optionalId(field("cover_media_id"))
+      : undefined
     if (submittedCover === null) cover = null
     else if (submittedCover !== undefined && submittedCover !== cover?.id) {
       const { data } = await supabase

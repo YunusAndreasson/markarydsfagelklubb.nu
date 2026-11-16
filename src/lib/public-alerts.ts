@@ -502,7 +502,9 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
     if (relation === "elsewhere") continue
     ;(relation === "at" ? at : near).push(publish(row, context.value))
   }
-  const newestFirst = (a: PublicAlert, b: PublicAlert) => (a.observedAt < b.observedAt ? 1 : -1)
+  // Ties by id, so two larm from the same minute keep one order between renders.
+  const newestFirst = (a: PublicAlert, b: PublicAlert) =>
+    b.observedAt.localeCompare(a.observedAt) || b.id.localeCompare(a.id)
   return {
     ok: true,
     value: {
