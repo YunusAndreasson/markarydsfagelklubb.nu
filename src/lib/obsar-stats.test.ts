@@ -214,8 +214,8 @@ describe("monthName and shortDay", () => {
   })
 
   it("shortens a date without the trailing period", () => {
-    expect(shortDay("2026-01-02")).toBe("2 jan")
-    expect(shortDay("2026-11-11")).toBe("11 nov")
+    expect(shortDay("2026-01-02")).toBe("2\u00a0jan")
+    expect(shortDay("2026-11-11")).toBe("11\u00a0nov")
   })
 })
 
@@ -223,9 +223,11 @@ describe("yearHeadline", () => {
   it("names the count and the newest species", () => {
     expect(
       yearHeadline({ speciesCount: 153, species: [{ name: "prutgås", first: "2026-11-11" }] })
-    ).toBe("I år har 153 arter rapporterats i kommunen, den senaste prutgås den 11 november.")
+    ).toBe(
+      "I år har 153\u00a0arter rapporterats i kommunen, den senaste prutgås den 11\u00a0november."
+    )
     expect(yearHeadline({ speciesCount: 0, species: [] })).toBe(
-      "I år har inga arter rapporterats i kommunen."
+      "I år har inga\u00a0arter rapporterats i kommunen."
     )
   })
 })

@@ -21,8 +21,8 @@ const entry = (years: number[], first: (y: number) => string): TaxonEntry => ({
 
 describe("dayMonth", () => {
   it("writes a day of the year the site's way, with no full stop", () => {
-    expect(dayMonth(1)).toBe("1 jan")
-    expect(dayMonth(113)).toBe("23 apr")
+    expect(dayMonth(1)).toBe("1\u00a0jan")
+    expect(dayMonth(113)).toBe("23\u00a0apr")
   })
 })
 
@@ -32,7 +32,7 @@ describe("arrivalSentence", () => {
       y === 2014 ? "04-09" : y === 2026 ? "04-18" : "04-23"
     )
     expect(arrivalSentence(gok, 113, 2026)).toBe(
-      "I år kom den första 18 apr, fem dagar tidigare än vanligt. Tidigast: 9 apr 2014."
+      "I år kom den första 18\u00a0apr, fem dagar tidigare än vanligt. Tidigast: 9\u00a0apr 2014."
     )
   })
 
@@ -40,7 +40,7 @@ describe("arrivalSentence", () => {
     // Blå kärrhök 2026: not seen in spring, only on its way back.
     const harrier = entry(range(2006, 2026), (y) => (y === 2026 ? "09-26" : "04-10"))
     expect(arrivalSentence(harrier, 100, 2026)).toBe(
-      "I år sågs den inte när den brukar komma, utan först 26 sep. Tidigast: 10 apr 2006."
+      "I år sågs den inte när den brukar komma, utan först 26\u00a0sep. Tidigast: 10\u00a0apr 2006."
     )
     expect(arrivalFigure(harrier, 2026, 100)?.dots.some((dot) => dot.year === 2026)).toBe(false)
   })
@@ -55,14 +55,14 @@ describe("leadSentence", () => {
   it("names a summer bird's coming, not its last report", () => {
     expect(
       leadSentence({ arrival: 127, departure: 185, kind: "summer", years: 20 }, 20, null, 2026, [])
-    ).toBe("En flyttfågel som brukar komma till kommunen kring 7 maj.")
+    ).toBe("En flyttfågel som brukar komma till kommunen kring 7\u00a0maj.")
   })
 
   it("tells a winter guest by its autumn return", () => {
     expect(
       leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 20, null, 2026, [])
     ).toBe(
-      "En vintergäst som brukar komma till kommunen kring 18 okt och stanna kvar till omkring 5 apr."
+      "En vintergäst som brukar komma till kommunen kring 18\u00a0okt och stanna kvar till omkring 5\u00a0apr."
     )
   })
 

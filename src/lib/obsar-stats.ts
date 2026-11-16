@@ -203,7 +203,7 @@ export function localDay(date: string): string {
 export function arter(count: number, { digits = false } = {}): string {
   const figure =
     digits || count > 12 ? count.toLocaleString("sv-SE") : count === 0 ? "inga" : countWord(count)
-  return `${figure} ${count === 1 ? "art" : "arter"}`
+  return `${figure}\u00a0${count === 1 ? "art" : "arter"}`
 }
 
 /** A route's year: none means this year; anything else must be a year with data. */
@@ -249,7 +249,9 @@ export function monthName(index: number, capital = false): string {
 
 /** "2 jan", a short date for a register's narrow column (Intl writes "2 jan."). */
 export function shortDay(date: string): string {
-  return SHORT_DAY.format(new Date(localDay(date))).replace(".", "")
+  return SHORT_DAY.format(new Date(localDay(date)))
+    .replace(".", "")
+    .replace(" ", "\u00a0")
 }
 
 const SHORT_DAY = new Intl.DateTimeFormat("sv-SE", {
@@ -276,5 +278,5 @@ const DAY_MONTH = new Intl.DateTimeFormat("sv-SE", {
 
 /** "11 november". */
 export function dayMonth(date: string): string {
-  return DAY_MONTH.format(new Date(localDay(date)))
+  return DAY_MONTH.format(new Date(localDay(date))).replace(" ", "\u00a0")
 }

@@ -11,7 +11,7 @@ import { MONTHS_SHORT } from "./charts/theme"
 /** "23 apr" for a 1-based day of the year, read in a common (non-leap) year. */
 export function dayMonth(day: number): string {
   const date = new Date(Date.UTC(2025, 0, day))
-  return `${date.getUTCDate()} ${MONTHS_SHORT[date.getUTCMonth()]}`
+  return `${date.getUTCDate()}\u00a0${MONTHS_SHORT[date.getUTCMonth()]}`
 }
 
 const NUMBERS = [

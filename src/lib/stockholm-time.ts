@@ -174,9 +174,15 @@ export type DateFormat = keyof typeof FORMATS
  */
 const ABBREVIATED = new Set<DateFormat>(["monthShort", "short", "dateTime"])
 
+/**
+ * A day and its month never break apart ("11 november", "27 nov"): Svenska
+ * skrivregler binds a number to the word after it with a no-break space.
+ */
+const bindNumbers = (text: string) => text.replace(/(\d) (?=\p{L})/gu, "$1\u00a0")
+
 export function formatDate(value: Date | string, format: DateFormat): string {
   const text = FORMATS[format].format(toDate(value))
-  return ABBREVIATED.has(format) ? text.replace(/(\p{L})\.(?=\s|$)/u, "$1") : text
+  return bindNumbers(ABBREVIATED.has(format) ? text.replace(/(\p{L})\.(?=\s|$)/u, "$1") : text)
 }
 
 /**

@@ -28,12 +28,14 @@ const and = (parts: string[]) =>
   parts.length <= 1 ? parts.join("") : `${parts.slice(0, -1).join(", ")} och ${parts.at(-1)}`
 const MAX_DATES = 4
 const dates = (bird: PastSpecies) => {
-  // The newest year stands in the date column already; the older ones need theirs.
-  const shown = bird.sightings
-    .slice(0, MAX_DATES)
-    .map((one, i) => (i === 0 ? day(one.date) : `${day(one.date)} ${one.year}`))
-  const more = bird.sightings.length - shown.length
-  return more > 0 ? `${shown.join(", ")} och ${more} år till` : and(shown)
+  // The newest year stands in the date column already; the older ones need theirs,
+  // after "även", so "1994: 13 nov, även 16 nov 1986" doesn't read as one span.
+  const [newest, ...older] = bird.sightings.slice(0, MAX_DATES)
+  if (!newest) return ""
+  const earlier = older.map((one) => `${day(one.date)} ${one.year}`)
+  const more = bird.sightings.length - 1 - earlier.length
+  if (more > 0) earlier.push(`${more} år till`)
+  return earlier.length > 0 ? `${day(newest.date)}, även ${and(earlier)}` : day(newest.date)
 }
 const groups = [
   { id: "forr-sallsynta", label: "Sällsynta här", birds: rare },
