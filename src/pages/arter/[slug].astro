@@ -122,21 +122,20 @@ const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
           {bird.sci && <p class="text-muted-foreground text-lg italic">{bird.sci}</p>}
         </div>
         {lead && <p class="type-ingress text-muted-foreground measure text-pretty">{lead}</p>}
-        {
-          bird.rarity !== null && (
-            <p class="flex items-center gap-2">
-              <RarityChip level={bird.rarity} />
-              <span class:list={[isRare(bird.rarity) && "text-rarity font-medium"]} aria-hidden="true">
-                {rarityLabel(bird.rarity)}
-              </span>
-              <span class="text-muted-foreground">på klubbens larmlista</span>
-            </p>
-          )
-        }
       </div>
       {
-        (ever || bird.alertCount > 0) && (
+        (ever || bird.alertCount > 0 || bird.rarity !== null) && (
           <Aside label="I kommunen" sticky={false} first={false} class="lg:pt-10">
+            {bird.rarity !== null && (
+              <AsideNote label="Prefix">
+                <p class="flex items-center gap-2">
+                  <RarityChip level={bird.rarity} />
+                  <span class:list={[isRare(bird.rarity) && "text-rarity font-medium"]} aria-hidden="true">
+                    {rarityLabel(bird.rarity)}
+                  </span>
+                </p>
+              </AsideNote>
+            )}
             {ever && (
               <AsideNote label="Första fyndet">
                 <p>{date(ever.first)}</p>

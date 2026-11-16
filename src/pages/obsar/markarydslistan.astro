@@ -141,8 +141,8 @@ const fallback =
       allTime && byName && (
         <>
           <p class="type-meta text-muted-foreground at-text measure">
-            Året vid varje art är när den först sågs i kommunen. Siffran är artens prefix på klubbens
-            larmlista. Varje art har en egen sida.
+            Året vid varje art är när den först sågs i kommunen. Siffran är artens prefix, från 0 för de sällsyntaste till 5 för de
+            allmänna. Varje art har en egen sida.
           </p>
           {[...letters].map(([letter, list]) => (
             <MarginGroup id={`bokstav-${letter.toLocaleLowerCase("sv")}`} label={letter}>

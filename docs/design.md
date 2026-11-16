@@ -1202,11 +1202,11 @@ so any page can link a bird by name (`speciesLink`).
 
 ```
 Markarydslistan
-Gök                                         Första fyndet   12 maj 1967
-Cuculus canorus                             Senast sedd     16 juni 2026
-En flyttfågel som brukar komma till         Rapporter       401 under 49 år
-kommunen kring 7 maj.                       Larmad          En gång
-[5] Allmän på klubbens larmlista
+Gök                                         Prefix          [5] Allmän
+Cuculus canorus                             Första fyndet   12 maj 1967
+En flyttfågel som brukar komma till         Senast sedd     16 juni 2026
+kommunen kring 7 maj.                       Rapporter       401 under 49 år
+                                            Larmad          En gång
 När den kommer
 [ prickar över hela bredden, text till sidans kant; årtionden under ]
 - - Brukar komma, 7 maj   ● I år   ○ Bara en eller två rapporter det året
