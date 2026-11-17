@@ -36,7 +36,13 @@ import {
   loadPublishedEvent,
 } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
-import { formatDate, isoDateTime, stockholmMonthKey, stockholmYear } from "@/lib/stockholm-time"
+import {
+  dateParts,
+  formatDate,
+  isoDateTime,
+  stockholmMonthKey,
+  stockholmYear,
+} from "@/lib/stockholm-time"
 
 /**
  * One segment under /kalender is either a month — /kalender/2026-10 — or an
@@ -159,12 +165,11 @@ const description = month
         <div class="spread gap-y-8">
           <MarginDate
             datetime={isoDateTime(event.starts_at)}
-            parts={[
-              formatDate(event.starts_at, "weekdayName"),
-              formatDate(event.starts_at, "dayMonth"),
-              stockholmYear(event.starts_at),
-              clockLabel,
-            ]}
+            parts={dateParts(event.starts_at, "page", {
+              weekday: true,
+              year: stockholmYear(event.starts_at),
+              time: clockLabel,
+            })}
             class="in-margin max-lg:-order-1"
           >
             {untilLabel && <span>till {untilLabel}</span>}

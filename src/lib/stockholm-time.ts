@@ -252,6 +252,33 @@ export function yearUnlessThis(value: Date | string, now: Date = new Date()): nu
 }
 
 /**
+ * A date as the site writes it, in parts (docs/design.md, "Spalterna"): the one
+ * place that decides, so a date reads the same in every margin and list. `MarginDate`
+ * stacks the parts from md; a row joins them on one line.
+ *
+ * - "page": the date of a page's own subject, spelled out ("8 november"): an
+ *   article, an event, the home page's lead.
+ * - "row": an entry in a list, short ("6 nov"): articles, larm, the programme, tiles.
+ *
+ * The caller adds only what its reader needs: the weekday where the day decides
+ * something (the programme, a page), the year where it isn't this one or a page
+ * wants it, a time where there is one.
+ */
+export function dateParts(
+  value: Date | string,
+  form: "page" | "row",
+  extra: { weekday?: boolean; year?: number | string | null; time?: string | null } = {}
+): string[] {
+  const parts = [
+    extra.weekday ? formatDate(value, "weekdayName") : null,
+    formatDate(value, form === "page" ? "dayMonth" : "short"),
+    extra.year === null || extra.year === undefined ? null : String(extra.year),
+    extra.time ?? null,
+  ]
+  return parts.filter((part): part is string => Boolean(part))
+}
+
+/**
  * The year to print on a dated list's row, or null. "changes": on the first row
  * and wherever the year changes from the row above (an archive). "other-years":
  * only on rows that aren't this year (a list that is mostly recent).

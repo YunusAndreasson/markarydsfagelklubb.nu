@@ -1,4 +1,5 @@
 ---
+import MarginDate from "@/components/site/MarginDate.astro"
 import { publicEventKindLabel } from "@/lib/event-kind"
 import {
   deadlineInstant,
@@ -8,7 +9,7 @@ import {
   summaryBesideDeadline,
 } from "@/lib/event-status"
 import type { EventSummary } from "@/lib/public-content"
-import { formatDate, isoDateTime } from "@/lib/stockholm-time"
+import { dateParts, formatDate, isoDateTime } from "@/lib/stockholm-time"
 
 /**
  * One event per row, in the same field-notebook shape as a larm: when it is in
@@ -20,11 +21,12 @@ import { formatDate, isoDateTime } from "@/lib/stockholm-time"
  * whether they can come. And no year is printed: the month heading above the
  * list already carries it, so repeating it in the margin would be noise.
  *
- * The date is what a member scans for here, so unlike every other list it is set
- * in ink, with "I dag" or "Pågår" under it when that is the answer. Since
- * Uppslaget (2026-11-14) the day of the month is set large in Alegreya, as on a
- * calendar page: the one list on the site whose content really is dates. On a
- * phone the date keeps a narrow column of its own, so the eye runs down the days.
+ * The date is a `MarginDate` like every other list's (docs/design.md,
+ * "Spalterna"): weekday, "27 nov", the time, with "I dag" or "Pågår" under it in
+ * ink when that is the answer. Until 2026-11-17 the day of the month was set
+ * large in Alegreya and the date in ink, the one list with a date of its own
+ * look; the user asked why the programme's dates and the articles' differed, and
+ * they no longer do.
  */
 
 interface Props {
@@ -47,27 +49,18 @@ const now = new Date()
       // Not the deadline twice: it has its own line below.
       const summary = event.summary ? summaryBesideDeadline(event.summary, Boolean(deadline)) : ""
       return (
-        <li class="margined items-start gap-x-3 max-md:grid-cols-[4.25rem_minmax(0,1fr)] md:gap-x-0">
-          {/* The programme's own device (docs/design.md, "Uppslaget"): the day of
-              the month large, so the title lines up with the number, not the
-              weekday over it. That is the one row that opts out of the first
-              baseline (`items-start`) and keeps an offset. */}
-          <p class="type-label flex flex-col md:in-margin">
-            <time datetime={isoDateTime(event.starts_at)} class="flex flex-col">
-              <span>{formatDate(event.starts_at, "weekdayName")}</span>
-              <span class="type-day">
-                {formatDate(event.starts_at, "day")}
-              </span>
-              {/* Month and time on one line where the margin is 7rem; stacked in the
-                  phone's 4.25rem, where "nov 18:30" wrapped but "jan 08:00" didn't. */}
-              <span class="flex md:gap-x-[0.3em] max-md:flex-col">
-                <span>{formatDate(event.starts_at, "monthShort")}</span>{" "}
-                {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
-              </span>
-            </time>
-            {status && <span class="text-foreground mt-0.5 font-semibold">{status}</span>}
-          </p>
-          <div class="measure flex flex-col gap-1 pt-[1.15rem] md:in-text">
+        <li class="margined gap-y-1">
+          <MarginDate
+            datetime={isoDateTime(event.starts_at)}
+            parts={dateParts(event.starts_at, "row", {
+              weekday: true,
+              time: event.all_day ? null : formatDate(event.starts_at, "clock"),
+            })}
+            class="md:in-margin"
+          >
+            {status && <span class="text-foreground font-semibold">{status}</span>}
+          </MarginDate>
+          <div class="measure flex flex-col gap-1 md:in-text">
             <Heading class="type-item">
               <a href={`/kalender/${event.slug}`} class="title-link">
                 {event.title}

@@ -77,6 +77,10 @@
      register read these; nothing else writes 7rem or 38rem. */
   --track-margin: 7rem;
   --track-text: 38rem;
+  /* The one gutter: between the text and the aside, and between a trio's
+     columns, so a trio's third column is the aside track at full width
+     (docs/design.md, "Spalterna"). */
+  --track-gap: 3rem;
   --background: oklch(1 0 0);
   /* Bläck, 16.7:1 on white. */
   --foreground: #17201d;
@@ -324,17 +328,6 @@
   font-style: italic;
   font-weight: 400;
 }
-/* The programme's day of the month, large in Alegreya under its weekday: a
-   calendar page's own device, used only where the content is dates
-   (docs/design.md, "Uppslaget"). Ink, whatever the meta around it. */
-@utility type-day {
-  font-family: var(--font-display);
-  font-variant-numeric: lining-nums tabular-nums;
-  font-size: 2.25rem;
-  line-height: 1.05;
-  font-weight: 700;
-  color: var(--foreground);
-}
 /* An entry's title in the aside (an article's "Mer i"): `type-item` a step
    down, since the aside must never outrank the text beside it. */
 @utility type-item-aside {
@@ -502,7 +495,7 @@
     grid-template-columns:
       [full-start wide-start margin-start] var(--track-margin)
       [margin-end text-start] minmax(0, var(--track-text))
-      [text-end wide-end] 3rem
+      [text-end wide-end] var(--track-gap)
       [aside-start] minmax(14rem, 1fr)
       [aside-end full-end];
   }
@@ -542,6 +535,22 @@
 @utility in-full {
   grid-column: full;
   min-width: 0;
+}
+/* Things of one kind side by side (docs/design.md, "Spalterna"): the article
+   tiles, the kommun's three bird sections. One column on a phone; from lg, three
+   equal columns on the spread's gutter. At the container's full width (69rem)
+   they fall on the spread's own lines: 3 × 21rem + 2 × 3rem = 69rem, and
+   margin + text + gutter = 7 + 38 + 3 = 48rem = 2 × 21rem + 2 × 3rem, so the
+   third column is the aside track. Narrower, the columns stay equal and the
+   aside takes its minimum, so they drift apart a little. Fewer than three items
+   span columns (`lg:col-span-2`) rather than change the columns, so the lines
+   hold whatever the content. */
+@utility trio {
+  display: grid;
+  @media (width >= 64rem) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--track-gap);
+  }
 }
 /* From md up, start a block at the text track's edge outside a spread: a
    section heading over text, a link under a list. A margin, not padding, so a

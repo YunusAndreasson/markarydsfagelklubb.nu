@@ -15,8 +15,14 @@ import SectionHeading from "@/components/site/SectionHeading.astro"
  * - `spread` makes the section a spread: the heading across it, and the
  *   children choose their tracks (`in-text`, `in-aside`, …), as the home page's
  *   sections do. `wide` puts the heading at the container's edge.
+ * - `row`: one of several sections side by side in a `trio` (the home page's
+ *   bird row, docs/design.md, "Spalterna"). From lg it is a subgrid of the row's
+ *   three rows: the heading, the content (one element) and the `foot` slot, so
+ *   headings, first entries and footnotes line up across the row whatever wraps.
+ *   Without subgrid (Chrome before 117) each column simply flows on its own.
  *
- * The heading's `lead` slot passes through: a short muted line under it.
+ * The heading's `lead` slot passes through: a short muted line under it. The
+ * `foot` slot comes after the content: a footnote, a source.
  */
 interface Props {
   /** The id of the section's heading: the `title` one, or a heading in the slot. */
@@ -30,6 +36,9 @@ interface Props {
   nested?: boolean
   wide?: boolean
   dated?: boolean
+  row?: boolean
+  /** Placement only, e.g. a column span in a `trio`. */
+  class?: string | false
 }
 
 const {
@@ -43,6 +52,8 @@ const {
   nested = false,
   wide = false,
   dated = false,
+  row = false,
+  class: className,
 } = Astro.props
 const spread = layout === "spread"
 const lead = Astro.slots.has("lead")
@@ -51,7 +62,15 @@ const lead = Astro.slots.has("lead")
 <section
   aria-labelledby={id}
   class:list={[
-    spread ? "spread gap-y-6" : ["flex min-w-0 flex-col gap-6", !nested && !wide && !dated && "at-text", measure && "measure"],
+    spread
+      ? "spread gap-y-6"
+      : [
+          "flex min-w-0 flex-col gap-6",
+          !nested && !wide && !dated && !row && "at-text",
+          measure && "measure",
+          row && "lg:row-span-3 lg:grid lg:grid-rows-subgrid",
+        ],
+    className,
   ]}
 >
   {
@@ -73,4 +92,11 @@ const lead = Astro.slots.has("lead")
     )
   }
   <slot />
+  {
+    Astro.slots.has("foot") && (
+      <div class="flex flex-col gap-2">
+        <slot name="foot" />
+      </div>
+    )
+  }
 </section>

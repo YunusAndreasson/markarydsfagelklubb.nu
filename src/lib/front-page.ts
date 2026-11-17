@@ -39,6 +39,30 @@ export function splitFeatured<T extends { image: TeaserImage | null }>(
 }
 
 /**
+ * The articles after the lead (docs/design.md, "Spalterna"). A lead with no
+ * picture of its own (no hero photo, no poster beside it) gets the next story
+ * beside it from lg, so the first screen pairs words with a photo as a photo lead
+ * does: the newest article with a photo, which is also the first tile. The page
+ * shows it beside the lead from lg and as the first tile below, so with a next
+ * story the tiles hold one more, shown only from lg. The rest stay the dated list.
+ */
+export function arrangeArticles<T extends { image: TeaserImage | null }>(
+  rest: T[],
+  leadHasPicture: boolean,
+  tileCount = 3
+): { nextStory: T | null; tiles: T[]; list: T[] } {
+  const { tiles, list } = splitFeatured(rest, leadHasPicture ? tileCount : tileCount + 1)
+  // Posts about one event share photos; a row repeating a tile's photo a few
+  // centimetres below it reads as a mistake, so the row keeps its text only.
+  const shown = tiles.flatMap((tile) => (tile.image?.src ? [tile.image.src] : []))
+  return {
+    nextStory: leadHasPicture ? null : (tiles[0] ?? null),
+    tiles,
+    list: shown.reduce((rows, src) => withoutPhoto(rows, src), list),
+  }
+}
+
+/**
  * An article whose photo is the lead's own loses it here, so one bird doesn't
  * open the page and then the first tile. It stays on the page as text.
  */

@@ -5,7 +5,7 @@ import Print from "@/components/site/Print.astro"
 import type { PublicAlert } from "@/lib/alert-dto"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
-import { formatDate, isoDateTime, listYear } from "@/lib/stockholm-time"
+import { dateParts, formatDate, isoDateTime, listYear } from "@/lib/stockholm-time"
 import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
@@ -76,7 +76,11 @@ const taken = takenTransitionNames(Astro.locals)
         <li class="margined gap-y-1">
           <MarginDate
             datetime={isoDateTime(alert.observedAt)}
-            parts={clockOnly ? [formatDate(alert.observedAt, "clock")] : [formatDate(alert.observedAt, "short"), year, formatDate(alert.observedAt, "clock")]}
+            parts={
+              clockOnly
+                ? [formatDate(alert.observedAt, "clock")]
+                : dateParts(alert.observedAt, "row", { year, time: formatDate(alert.observedAt, "clock") })
+            }
             inline={compact}
             class="md:in-margin"
           />

@@ -1,0 +1,91 @@
+---
+import Print from "@/components/site/Print.astro"
+import type { ArticleTeaser } from "@/lib/public-content"
+import { dateParts, formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
+
+/**
+ * One article as a tile (docs/design.md, "Tidskriften", "Spalterna"): a 3:2
+ * photo, the date (and the category on the home page), the title as the link and
+ * the opening line. No card around it: no border, fill or shadow. A tile is a
+ * tile wherever it stands, in the row under "Fler artiklar" or beside a lead
+ * that has no photo of its own, so its type roles never change with its place.
+ *
+ * `compact`: below md it takes the dated list's row instead (`ArticleList`):
+ * title and opening on the left, a small print on the right, two lines. The home
+ * page's tiles after the first use it, so a phone doesn't scroll past three
+ * full-width photos before rows that hold the same things.
+ */
+interface Props {
+  article: ArticleTeaser
+  /** `li` in the tiles' list; `article` where it stands alone. */
+  as?: "li" | "article"
+  headingLevel?: 2 | 3
+  showCategory?: boolean
+  compact?: boolean
+  /** The print's rendered width, for the browser's choice of file. */
+  sizes: string
+  /** Its view-transition style, decided by the caller (`lib/view-transition.ts`). */
+  transition?: string
+  class?: string
+}
+
+const {
+  article,
+  as: Tag = "li",
+  headingLevel = 3,
+  showCategory = false,
+  compact = false,
+  sizes,
+  transition,
+  class: className,
+} = Astro.props
+const Heading = headingLevel === 2 ? "h2" : "h3"
+const year = yearUnlessThis(article.published_at, new Date())
+---
+
+<Tag
+  class:list={[
+    "flex flex-col gap-4",
+    compact && "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:items-baseline max-md:gap-x-4 max-md:gap-y-1",
+    className,
+  ]}
+>
+  {
+    article.image && (
+      <Print
+        href={`/artiklar/${article.slug}`}
+        src={article.image.src}
+        srcset={article.image.srcset}
+        sizes={sizes}
+        width={article.image.width}
+        height={article.image.height}
+        transition={transition}
+        class={compact ? "max-md:col-start-2 max-md:row-start-1 max-md:w-28 max-md:self-start" : undefined}
+      />
+    )
+  }
+  <div class:list={["flex flex-col gap-1.5", compact && "max-md:col-start-1 max-md:row-start-1 max-md:gap-1"]}>
+    <p class="type-label flex flex-wrap items-center gap-x-3">
+      <time datetime={isoDateTime(article.published_at)}>{dateParts(article.published_at, "row", { year }).join(" ")}</time>
+      {
+        showCategory && article.category && (
+          <a href={`/artiklar/kategori/${article.category.slug}`} class="crumb">
+            {article.category.name}
+          </a>
+        )
+      }
+    </p>
+    <Heading class="type-item">
+      <a href={`/artiklar/${article.slug}`} class="title-link">
+        {article.title}
+      </a>
+    </Heading>
+    {
+      article.standfirst && (
+        <p class:list={["text-muted-foreground line-clamp-3 leading-relaxed", compact && "max-md:line-clamp-2"]}>
+          {article.standfirst}
+        </p>
+      )
+    }
+  </div>
+</Tag>

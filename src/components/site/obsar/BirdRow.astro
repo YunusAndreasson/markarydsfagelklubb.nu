@@ -1,0 +1,127 @@
+---
+import Section from "@/components/site/Section.astro"
+import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
+import type { Recent, YearStats } from "@/lib/artportalen/types"
+import { arter } from "@/lib/obsar-stats"
+import { PAST_NOTE, type PastSpecies } from "@/lib/past-sightings"
+import { SEASON_NOTE, type ThisWeek } from "@/lib/season"
+import ArrivalEntries from "./ArrivalEntries.astro"
+import PastSightings from "./PastSightings.astro"
+import RegisterGroup from "./RegisterGroup.astro"
+import RegisterSet from "./RegisterSet.astro"
+import SightingEntries from "./SightingEntries.astro"
+import SourceNote from "./SourceNote.astro"
+
+/**
+ * The kommun's birds on the home page as one row of time (docs/design.md,
+ * "Spalterna"): this year ("Fynd i kommunen"), this season ("Så här års") and
+ * earlier years around this date ("I backspegeln"), side by side from lg on the
+ * same three columns as the article tiles, stacked on a phone. Each is a
+ * `Section row`, so the three headings, first entries and footnotes line up
+ * whatever wraps. A block with nothing to show is left out and the first takes
+ * its columns, so the row stays on the page's lines (Fynd's two lists then sit
+ * side by side). Artportalen is credited once, under the row, not in each
+ * footnote.
+ *
+ * Each list keeps four birds, so the columns are about as long as each other:
+ * Fynd's two lists of four, Så här års's two of four, I backspegeln's eight.
+ */
+interface Props {
+  stats: YearStats | null
+  recent: Recent | null
+  week: ThisWeek
+  past: PastSpecies[]
+  /** Taxon id → species page slug (`taxonSlugs`). */
+  slugs: Map<number, string>
+  now: Date
+  /** Today, `YYYY-MM-DD` in Stockholm. */
+  today: string
+}
+
+const { stats, recent, week, past, slugs, now, today } = Astro.props
+const PER_LIST = 4
+const sightings = recent?.sightings.slice(0, PER_LIST) ?? []
+const season = {
+  arriving: week.arriving.slice(0, PER_LIST),
+  leaving: week.leaving.slice(0, PER_LIST),
+}
+
+const fynd = stats !== null || sightings.length > 0
+const sahar = season.arriving.length > 0 || season.leaving.length > 0
+const backspegeln = past.length > 0
+const fetchedAt = stats?.fetchedAt ?? recent?.fetchedAt ?? null
+// The first block takes the columns of any that are missing. Whole class names,
+// so Tailwind finds them.
+const present = (
+  [
+    ["fynd", fynd],
+    ["sahar", sahar],
+    ["backspegeln", backspegeln],
+  ] as const
+)
+  .filter(([, shown]) => shown)
+  .map(([block]) => block)
+const firstSpan =
+  present.length === 1 ? "lg:col-span-3" : present.length === 2 ? "lg:col-span-2" : undefined
+const span = (block: (typeof present)[number]) => (block === present[0] ? firstSpan : undefined)
+---
+
+{
+  (fynd || sahar || backspegeln) && (
+    <div class="flex flex-col gap-6">
+      {/* Stacked, the blocks keep the page's own gap between sections
+          (`page-stack`'s --section-gap); side by side, it is the gap between
+          a heading and its content. */}
+      <div class="trio gap-y-(--section-gap) lg:gap-y-6">
+        {fynd && (
+          <Section
+            id="fynd"
+            title="Fynd i kommunen"
+            note={stats ? `${arter(stats.speciesCount)} i år` : null}
+            href="/obsar"
+            link="Allt om obsar"
+            row
+            class={span("fynd")}
+          >
+            <RegisterSet>
+              {stats && (
+                <RegisterGroup id="fynd-nya" label="Nya för året">
+                  <ArrivalEntries species={stats.species} count={PER_LIST} />
+                </RegisterGroup>
+              )}
+              {sightings.length > 0 && (
+                <RegisterGroup id="fynd-senaste" label="Senaste fynden">
+                  <SightingEntries sightings={sightings} now={now} brief />
+                </RegisterGroup>
+              )}
+            </RegisterSet>
+            {stats && (
+              <p slot="foot" class="type-caption measure">
+                {stats.reports.toLocaleString("sv-SE")} rapporter från {stats.observerCount} rapportörer i år.
+              </p>
+            )}
+          </Section>
+        )}
+
+        {sahar && (
+          <Section id="veckan" title="Så här års" href="/obsar#flytt" link="Flyttfåglarnas år" row class={span("sahar")}>
+            <SeasonBlock week={season} slugs={slugs} headingId="veckan" note={false} />
+            <p slot="foot" class="type-caption measure">
+              {SEASON_NOTE}
+            </p>
+          </Section>
+        )}
+
+        {backspegeln && (
+          <Section id="backspegeln" title="I backspegeln" row class={span("backspegeln")}>
+            <PastSightings birds={past} slugs={slugs} today={today} note={false} />
+            <p slot="foot" class="type-caption measure">
+              {PAST_NOTE}
+            </p>
+          </Section>
+        )}
+      </div>
+      <SourceNote fetchedAt={fetchedAt} wide />
+    </div>
+  )
+}

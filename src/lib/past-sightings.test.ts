@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { PastDay, PastMonth } from "@/lib/artportalen/types"
-import { daysApart, pickPast, windowMonths, worthShowing } from "./past-sightings"
+import { daysApart, pickPast, windowLabel, windowMonths, worthShowing } from "./past-sightings"
 
 const names = {
   1: { name: "eremitibis", sci: "Geronticus eremita" },
@@ -38,6 +38,17 @@ describe("the window", () => {
     expect(daysApart("12-30", "01-02")).toBe(3)
     expect(daysApart("02-28", "03-01")).toBe(2)
     expect(daysApart("02-29", "03-01")).toBe(1)
+  })
+})
+
+describe("windowLabel", () => {
+  // formatDate binds a number to its month with a no-break space.
+  it("names the week either side of today", () => {
+    expect(windowLabel("2026-11-17")).toBe("10–24\u00a0nov")
+  })
+
+  it("names both months across a month's edge", () => {
+    expect(windowLabel("2026-01-03")).toBe("27\u00a0dec–10\u00a0jan")
   })
 })
 

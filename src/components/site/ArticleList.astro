@@ -2,7 +2,7 @@
 import MarginDate from "@/components/site/MarginDate.astro"
 import Print from "@/components/site/Print.astro"
 import type { ArticleTeaser } from "@/lib/public-content"
-import { formatDate, isoDateTime, listYear } from "@/lib/stockholm-time"
+import { dateParts, formatDate, isoDateTime, listYear } from "@/lib/stockholm-time"
 import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
@@ -43,7 +43,7 @@ const taken = takenTransitionNames(Astro.locals)
         <li class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 md:grid-cols-[var(--track-margin)_minmax(0,1fr)_auto] md:gap-x-0 lg:spread">
           <MarginDate
             datetime={isoDateTime(article.published_at)}
-            parts={[formatDate(article.published_at, "short"), year]}
+            parts={dateParts(article.published_at, "row", { year })}
             class="lg:in-margin"
           />
           <div class="col-start-1 flex flex-col gap-1 self-baseline md:col-start-2 md:row-start-1 lg:in-text">

@@ -20,6 +20,11 @@ export const WINDOW_BEFORE = 14
 export const WINDOW_AFTER = 14
 /** Each list stays short enough to read as a sentence's worth of birds. */
 export const MAX_PER_LIST = 6
+/**
+ * What the dates are. The source, Artportalen, is said once per page by its
+ * source line (`SourceNote`), so the note doesn't repeat it.
+ */
+export const SEASON_NOTE = "Datumen är medianen för de senaste tjugo åren."
 
 export type SeasonBird = {
   id: number

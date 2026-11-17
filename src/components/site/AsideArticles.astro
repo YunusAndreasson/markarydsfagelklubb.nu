@@ -1,7 +1,7 @@
 ---
 import Print from "@/components/site/Print.astro"
 import type { ArticleTeaser } from "@/lib/public-content"
-import { formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
+import { dateParts, formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
 import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
@@ -44,8 +44,7 @@ const taken = takenTransitionNames(Astro.locals)
           )}
           <div class="flex flex-col">
             <time datetime={isoDateTime(article.published_at)} class="type-label">
-              {formatDate(article.published_at, "short")}
-              {yearUnlessThis(article.published_at, now) && ` ${yearUnlessThis(article.published_at, now)}`}
+              {dateParts(article.published_at, "row", { year: yearUnlessThis(article.published_at, now) }).join(" ")}
             </time>
             <a href={`/artiklar/${article.slug}`} class="type-item-aside title-link">
               {article.title}

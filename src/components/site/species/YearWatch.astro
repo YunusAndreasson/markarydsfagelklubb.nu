@@ -38,7 +38,7 @@ const groups = [
       <div class:list={["grid gap-x-10 gap-y-8 md:grid-cols-2", groups.length > 2 && "lg:grid-cols-3"]}>
         {groups.map((group) => (
           <section aria-labelledby={`${headingId}-${group.id}`} class="flex flex-col gap-3">
-            <h3 id={`${headingId}-${group.id}`} class="type-label">{group.title}</h3>
+            <h3 id={`${headingId}-${group.id}`} class="type-meta">{group.title}</h3>
             <ul>
               {group.kind === "missing" &&
                 missing.map((bird) => (

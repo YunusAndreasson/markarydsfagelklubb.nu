@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  dateParts,
   dayHeading,
   dayLabel,
   formatDate,
@@ -140,6 +141,29 @@ describe("groupByDay", () => {
   })
   it("has no groups for no items", () => {
     expect(groupByDay([], (date: string) => date)).toEqual([])
+  })
+})
+
+describe("dateParts", () => {
+  const at = "2026-11-08T17:30:00Z"
+  const nb = (text: string) => text.replace(/ (?=\p{L})/gu, "\u00a0")
+
+  it("spells out a page's own date", () => {
+    expect(dateParts(at, "page", { weekday: true, year: 2026 })).toEqual([
+      "söndag",
+      nb("8 november"),
+      "2026",
+    ])
+  })
+
+  it("keeps a row short, with only what the caller adds", () => {
+    expect(dateParts(at, "row")).toEqual([nb("8 nov")])
+    expect(dateParts(at, "row", { weekday: true, time: "18:30" })).toEqual([
+      "söndag",
+      nb("8 nov"),
+      "18:30",
+    ])
+    expect(dateParts(at, "row", { year: null })).toEqual([nb("8 nov")])
   })
 })
 

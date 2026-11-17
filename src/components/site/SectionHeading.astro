@@ -4,10 +4,13 @@
  * larm", "Hela programmet" (docs/design.md, "Tidskriften"). The size of the
  * heading carries the hierarchy; there is no label above it and no rule.
  *
- * On a phone the link always sits under the heading, so every section reads
- * the same whether or not its name leaves room beside it; from sm it sits at
- * the far edge. A `note` (a count) sits beside the heading, and the `lead`
- * slot is the short muted line under it that says what the section holds.
+ * In a narrow box the link always sits under the heading, so every section
+ * there reads the same whether or not its name leaves room beside it; in a box
+ * of 28rem or more it sits at the far edge. The box is the heading's own
+ * (a container query), not the window: a phone, and a third of the home page's
+ * bird row, are both narrow (docs/design.md, "Spalterna"). A `note` (a count)
+ * sits beside the heading, and the `lead` slot is the short muted line under it
+ * that says what the section holds.
  */
 
 interface Props {
@@ -26,8 +29,8 @@ interface Props {
 const { id, href, link, note, reserveLink = false } = Astro.props
 ---
 
-<div class="flex flex-col gap-2">
-  <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-6">
+<div class="@container flex flex-col gap-2">
+  <div class="flex flex-col @md:flex-row @md:flex-wrap @md:items-baseline @md:justify-between @md:gap-x-6">
     <div class="flex flex-wrap items-baseline gap-x-3">
       <h2 id={id} class="type-section"><slot /></h2>
       {note && <p class="type-label">{note}</p>}
@@ -39,9 +42,9 @@ const { id, href, link, note, reserveLink = false } = Astro.props
         </a>
       ) : (
         /* The link's box with nothing in it, so the heading sits where a link
-           beside it would put it. */
+           beside it would put it: for sections side by side from lg. */
         reserveLink && (
-          <span aria-hidden="true" class="invisible hidden min-h-11 lg:flex">
+          <span aria-hidden="true" class="invisible hidden min-h-11 lg:@md:flex">
             &nbsp;
           </span>
         )

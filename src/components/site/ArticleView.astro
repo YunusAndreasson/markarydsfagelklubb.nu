@@ -4,7 +4,7 @@ import PageHeader from "@/components/site/PageHeader.astro"
 import PhotoViewer from "@/components/site/PhotoViewer.astro"
 import { photoLink, renderBody } from "@/lib/article-body"
 import type { FullArticle } from "@/lib/public-content"
-import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
+import { dateParts, formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
 import { liftHero } from "@/lib/teaser"
 import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
@@ -72,7 +72,7 @@ const heroLink = hero && photoLink(hero.src, hero.srcset, hero.width, hero.heigh
       (published || article.author_name) && (
         <MarginDate
           datetime={published && isoDateTime(published)}
-          parts={published ? [formatDate(published, "weekdayName"), formatDate(published, "dayMonth"), stockholmYear(published)] : []}
+          parts={published ? dateParts(published, "page", { weekday: true, year: stockholmYear(published) }) : []}
           class:list={["in-margin max-md:-mt-4", hero ? "md:row-start-2" : "md:row-start-1"]}
         >
           {article.author_name && <span>Text: {article.author_name}</span>}

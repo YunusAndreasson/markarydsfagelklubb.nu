@@ -1,17 +1,22 @@
 ---
-import Print from "@/components/site/Print.astro"
+import ArticleTile from "@/components/site/ArticleTile.astro"
 import type { ArticleTeaser } from "@/lib/public-content"
-import { formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
 import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
  * One row of up to three articles with their photos (docs/design.md,
- * "Tidskriften"): a 3:2 photo, the date, the title as the link and the
- * opening line. No card around them — no border, fill or shadow — and never
- * stacked into a second row; what doesn't fit is the dated list below.
+ * "Tidskriften", "Spalterna"), never a second row; what doesn't fit is the dated
+ * list below. From lg the row is a `trio`, so at full width its third tile stands
+ * on the aside's line, as the rows below and the sections above do.
  *
  * `splitFeatured` hands over only articles with a photo, so a tile never has
  * a hole where its picture should be.
+ *
+ * `besideLead`: the first tile is the story beside a lead without a photo
+ * (`HomeLead`), shown there from lg. Here it hides from lg and a fourth tile
+ * takes its place, so below lg nothing moves. Both copies carry the same
+ * view-transition name (`firstTransition`): only one is ever displayed, and an
+ * element that isn't rendered takes no part in a transition.
  */
 
 interface Props {
@@ -20,56 +25,46 @@ interface Props {
   headingLevel?: 2 | 3
   /** The home page names the category; "Mer i Referat" already has. */
   showCategory?: boolean
+  besideLead?: boolean
+  firstTransition?: string
 }
 
-const { articles, headingLevel = 3, showCategory = false } = Astro.props
-const Heading = headingLevel === 2 ? "h2" : "h3"
-const now = new Date()
+const {
+  articles,
+  headingLevel = 3,
+  showCategory = false,
+  besideLead = false,
+  firstTransition,
+} = Astro.props
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
 const taken = takenTransitionNames(Astro.locals)
 ---
 
-<ol class="grid gap-x-6 gap-y-10 md:grid-cols-3">
+<ol
+  class:list={[
+    "trio gap-y-10 md:max-lg:grid-cols-3 md:max-lg:gap-x-6",
+    // Below md the tiles after the first are rows: closer together, like the list.
+    "max-md:gap-y-8",
+    besideLead && "lg:[&>li:first-child]:hidden max-lg:[&>li:nth-child(4)]:hidden",
+    // Only the story beside the lead: nothing is left for this row from lg.
+    besideLead && articles.length === 1 && "lg:hidden",
+  ]}
+>
   {
-    articles.map((article) => {
-      const year = yearUnlessThis(article.published_at, now)
-      return (
-        <li class="flex flex-col gap-4">
-          {article.image && (
-            <Print
-              href={`/artiklar/${article.slug}`}
-              src={article.image.src}
-              srcset={article.image.srcset}
-              sizes="(min-width: 64rem) 20rem, (min-width: 48rem) 30vw, 100vw"
-              width={article.image.width}
-              height={article.image.height}
-              transition={transitionName(taken, "artikel", article.id)}
-            />
-          )}
-          <div class="flex flex-col gap-1.5">
-            <p class="type-label flex flex-wrap items-center gap-x-3">
-              <time datetime={isoDateTime(article.published_at)}>
-                {formatDate(article.published_at, "short")}
-                {year !== null && ` ${year}`}
-              </time>
-              {showCategory && article.category && (
-                <a href={`/artiklar/kategori/${article.category.slug}`} class="crumb">
-                  {article.category.name}
-                </a>
-              )}
-            </p>
-            <Heading class="type-item">
-              <a href={`/artiklar/${article.slug}`} class="title-link">
-                {article.title}
-              </a>
-            </Heading>
-            {article.standfirst && (
-              <p class="text-muted-foreground line-clamp-3 leading-relaxed">{article.standfirst}</p>
-            )}
-          </div>
-        </li>
-      )
-    })
+    articles.map((article, index) => (
+      <ArticleTile
+        article={article}
+        headingLevel={headingLevel}
+        showCategory={showCategory}
+        compact={index > 0}
+        sizes={
+          index > 0
+            ? "(min-width: 72rem) 21rem, (min-width: 48rem) 30vw, 7rem"
+            : "(min-width: 72rem) 21rem, (min-width: 48rem) 30vw, 100vw"
+        }
+        transition={besideLead && index === 0 ? firstTransition : transitionName(taken, "artikel", article.id)}
+      />
+    ))
   }
 </ol>

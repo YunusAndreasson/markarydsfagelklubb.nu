@@ -3,9 +3,14 @@
  * A long list set in columns, top to bottom then across, as the lokal register
  * is (docs/design.md, "Obsar och statistik", "Grid"). Its items are `Entry`s,
  * which keep themselves whole across a column break.
+ *
+ * The columns follow the register's own width, not the window's (docs/design.md,
+ * "Spalterna"): an entry needs about 17rem, so two columns from 36rem and three
+ * from 56rem. The same register then reads right across a page, in a margin
+ * group, in half of a pair and in a third of the home page's bird row.
  */
 interface Props {
-  /** The most columns at full width; 1 inside a half-width section. */
+  /** The most columns there is room for; 1 inside a half-width section. */
   columns?: 1 | 2 | 3
   /** On a phone, show only this many; the rest appear from `sm` up. */
   phoneLimit?: 4
@@ -14,13 +19,16 @@ interface Props {
 const { columns = 3, phoneLimit } = Astro.props
 ---
 
-<ol
-  class:list={[
-    "gap-x-10",
-    columns >= 2 && "sm:columns-2",
-    columns === 3 && "lg:columns-3",
-    phoneLimit === 4 && "max-sm:[&>li:nth-child(n+5)]:hidden",
-  ]}
->
-  <slot />
-</ol>
+<div class="@container">
+  <ol
+    class:list={[
+      // The page's one gutter, so a register's columns fall on a trio's lines.
+      "gap-x-(--track-gap)",
+      columns >= 2 && "@xl:columns-2",
+      columns === 3 && "@4xl:columns-3",
+      phoneLimit === 4 && "max-sm:[&>li:nth-child(n+5)]:hidden",
+    ]}
+  >
+    <slot />
+  </ol>
+</div>

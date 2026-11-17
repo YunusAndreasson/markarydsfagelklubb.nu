@@ -2,7 +2,7 @@
 import type { LokalSummary } from "@/lib/lokal"
 import { registerLetter } from "@/lib/lokal"
 import type { LokalReports } from "@/lib/lokal-reports"
-import { formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
+import { dateParts, formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
 import { rapporter } from "@/lib/text"
 
 /**
@@ -41,7 +41,7 @@ const now = new Date()
 
 /** "12 sep" this year, "12 sep 2025" when it isn't — the site's rule everywhere. */
 const lastSeen = (at: string): string =>
-  [formatDate(at, "short"), yearUnlessThis(at, now)].filter(Boolean).join(" ")
+  dateParts(at, "row", { year: yearUnlessThis(at, now) }).join(" ")
 
 const groups: { letter: string | null; lokaler: LokalSummary[] }[] = []
 for (const lokal of lokaler) {

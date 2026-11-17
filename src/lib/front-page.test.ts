@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  arrangeArticles,
   buildDayList,
   latestPrints,
   namedSpecies,
@@ -78,6 +79,66 @@ describe("splitFeatured", () => {
     const { tiles, list } = splitFeatured([article(1, null), article(2, null)], 3)
     expect(tiles).toEqual([])
     expect(ids(list)).toEqual([1, 2])
+  })
+})
+
+describe("arrangeArticles", () => {
+  const photoAt = (src: string) => ({ ...landscape, src })
+  const rest = [
+    article(2, null),
+    article(3, photoAt("a.webp")),
+    article(4, photoAt("b.webp")),
+    article(5, null),
+    article(6, photoAt("c.webp")),
+    article(7, photoAt("d.webp")),
+    article(8, photoAt("e.webp")),
+  ]
+
+  it("gives a lead with a picture no next story and three tiles", () => {
+    const { nextStory, tiles, list } = arrangeArticles(rest, true)
+    expect(nextStory).toBeNull()
+    expect(ids(tiles)).toEqual([3, 4, 6])
+    expect(ids(list)).toEqual([2, 5, 7, 8])
+  })
+
+  it("puts the newest article with a photo beside a lead without one, as the first of four tiles", () => {
+    const { nextStory, tiles, list } = arrangeArticles(rest, false)
+    expect(nextStory?.id).toBe(3)
+    expect(ids(tiles)).toEqual([3, 4, 6, 7])
+    expect(ids(list)).toEqual([2, 5, 8])
+  })
+
+  it("has no next story when nothing after the lead has a photo", () => {
+    const { nextStory, tiles, list } = arrangeArticles([article(2, null), article(3, null)], false)
+    expect(nextStory).toBeNull()
+    expect(tiles).toEqual([])
+    expect(ids(list)).toEqual([2, 3])
+  })
+
+  it("doesn't repeat a tile's photo in the list", () => {
+    const shared = photoAt("same.webp")
+    const { tiles, list } = arrangeArticles(
+      [article(2, shared), article(3, null), article(4, shared), article(5, photoAt("own.webp"))],
+      true,
+      1
+    )
+    expect(ids(tiles)).toEqual([2])
+    expect(list.map((one) => [one.id, one.image?.src ?? null])).toEqual([
+      [3, null],
+      [4, null],
+      [5, "own.webp"],
+    ])
+  })
+
+  it("keeps a repeated photo out of the next story and the tiles", () => {
+    const shared = photoAt("same.webp")
+    const { nextStory, tiles, list } = arrangeArticles(
+      [article(2, shared), article(3, shared), article(4, photoAt("other.webp"))],
+      false
+    )
+    expect(nextStory?.id).toBe(2)
+    expect(ids(tiles)).toEqual([2, 4])
+    expect(ids(list)).toEqual([3])
   })
 })
 

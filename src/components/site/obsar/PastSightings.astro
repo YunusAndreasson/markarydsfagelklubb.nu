@@ -1,24 +1,30 @@
 ---
 import Entry from "@/components/site/obsar/Entry.astro"
-import Register from "@/components/site/obsar/Register.astro"
-import type { PastSpecies } from "@/lib/past-sightings"
+import RegisterGroup from "@/components/site/obsar/RegisterGroup.astro"
+import { PAST_NOTE, type PastSpecies, windowLabel } from "@/lib/past-sightings"
 import { speciesHref } from "@/lib/species"
 import { formatDate } from "@/lib/stockholm-time"
 
 /**
  * "I backspegeln" (docs/design.md): the kommun's rare birds (prefix 0–2) from
  * earlier years within a week of today, from Artportalen, rarest first
- * (`past-sightings.ts`). One list in two columns, with no subheadings: since
- * 2026-11-16 there is only one kind of bird in it. The newest year stands in
- * the date column, the bird with its chip, the days under it.
+ * (`past-sightings.ts`). One list, two columns when there is room: since
+ * 2026-11-16 there is only one kind of bird in it. Its label names the dates
+ * ("Sällsynta arter 10–24 nov"), as the other bird lists' labels name theirs,
+ * so in the home page's row its first bird lines up with theirs. The newest
+ * year stands in the date column, the bird with its chip, the days under it.
  */
 interface Props {
   birds: PastSpecies[]
   /** Taxon id → species page slug (`taxonSlugs`). */
   slugs: Map<number, string>
+  /** Today, `YYYY-MM-DD`, for the label's dates. */
+  today: string
+  /** Its note under the list; off where the caller sets `PAST_NOTE` itself (the home page's row). */
+  note?: boolean
 }
 
-const { birds, slugs } = Astro.props
+const { birds, slugs, today, note = true } = Astro.props
 
 const day = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
 const and = (parts: string[]) =>
@@ -39,7 +45,7 @@ const dates = (bird: PastSpecies) => {
 {
   birds.length > 0 && (
     <div class="flex flex-col gap-6">
-      <Register columns={2}>
+      <RegisterGroup id="backspegeln-arter" label={`Sällsynta arter ${windowLabel(today)}`} columns={2}>
         {birds.map((bird) => (
           <Entry
             when={String(bird.sightings[0]?.year ?? "")}
@@ -50,11 +56,8 @@ const dates = (bird: PastSpecies) => {
             notes={[dates(bird)]}
           />
         ))}
-      </Register>
-      <p class="type-caption measure">
-        Sällsynta fåglar som setts i kommunen en vecka före eller efter dagens datum tidigare år, enligt Artportalen.
-        Siffran är artens prefix, från 0 för de sällsyntaste till 5 för de allmänna.
-      </p>
+      </RegisterGroup>
+      {note && <p class="type-caption measure">{PAST_NOTE}</p>}
     </div>
   )
 }

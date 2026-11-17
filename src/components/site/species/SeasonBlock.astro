@@ -2,7 +2,7 @@
 import Entry from "@/components/site/obsar/Entry.astro"
 import RegisterGroup from "@/components/site/obsar/RegisterGroup.astro"
 import RegisterSet from "@/components/site/obsar/RegisterSet.astro"
-import type { ThisWeek } from "@/lib/season"
+import { SEASON_NOTE, type ThisWeek } from "@/lib/season"
 import { speciesHref } from "@/lib/species"
 import { dayOfYearLabel } from "@/lib/species-page"
 import { formatDate } from "@/lib/stockholm-time"
@@ -21,9 +21,11 @@ interface Props {
   slugs: Map<number, string>
   /** The heading's level: 2 on the home page, 2 on /arter too, but a caller may nest it. */
   headingId: string
+  /** Its note under the lists; off where the caller sets `SEASON_NOTE` itself (the home page's row). */
+  note?: boolean
 }
 
-const { week, slugs, headingId } = Astro.props
+const { week, slugs, headingId, note = true } = Astro.props
 const { arriving, leaving } = week
 
 const short = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
@@ -64,7 +66,7 @@ const short = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
           ))}
         </RegisterGroup>
       )}
-      <Fragment slot="note">Datumen är medianen för de senaste tjugo åren i Artportalen.</Fragment>
+      {note && <Fragment slot="note">{SEASON_NOTE}</Fragment>}
     </RegisterSet>
   )
 }

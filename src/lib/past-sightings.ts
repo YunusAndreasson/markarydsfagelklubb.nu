@@ -2,6 +2,7 @@ import { dayOfYear } from "@/lib/artportalen/aggregate"
 import type { PastMonth } from "@/lib/artportalen/types"
 import { type RarityLevel, rarityLevel } from "@/lib/rarity"
 import { matchApp } from "@/lib/species"
+import { formatDate } from "@/lib/stockholm-time"
 
 /**
  * "I backspegeln" on the home page (docs/design.md): the kommun's rare birds
@@ -22,6 +23,12 @@ export const WINDOW_DAYS = 7
 export const RARE_UP_TO = 2
 /** Birds the section shows, two columns of four. */
 export const PAST_SHOWN = 8
+/**
+ * What the list holds and what its chips mean. Its label gives the dates
+ * (`windowLabel`) and the source line names Artportalen, so neither is repeated.
+ */
+export const PAST_NOTE =
+  "Sällsynta fåglar som setts i kommunen de här dagarna tidigare år. Siffran är artens prefix, från 0 för de sällsyntaste till 5 för de allmänna."
 
 export type PastSighting = { year: number; date: string }
 
@@ -49,6 +56,20 @@ export function windowMonths(today: string): number[] {
     months.add(new Date(noon + offset * DAY).getUTCMonth() + 1)
   }
   return [...months]
+}
+
+/**
+ * The window as the list's label says it (docs/design.md, "Spalterna"): "10–24 nov",
+ * or "28 dec–11 jan" across a month's edge. Short months have no full stop.
+ */
+export function windowLabel(today: string): string {
+  const noon = Date.parse(`${today}T12:00:00Z`)
+  const from = new Date(noon - WINDOW_DAYS * DAY)
+  const to = new Date(noon + WINDOW_DAYS * DAY)
+  const end = formatDate(to.toISOString(), "short")
+  return from.getUTCMonth() === to.getUTCMonth()
+    ? `${from.getUTCDate()}–${end}`
+    : `${formatDate(from.toISOString(), "short")}–${end}`
 }
 
 /**

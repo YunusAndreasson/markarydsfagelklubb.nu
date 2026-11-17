@@ -4,18 +4,24 @@ import Register from "./Register.astro"
 /**
  * One labelled list in a `RegisterSet`: "Nya för året", "Brukar komma nu",
  * "Sällsynta arter". Its items are `Entry`s.
+ *
+ * The label is ink (`type-meta`), not Blyerts (docs/design.md, "Spalterna"): it
+ * sits right over the entries' dates, which are Blyerts at the same size, and in
+ * their colour it read as that column's header rather than as the list's name.
  */
 interface Props {
   id: string
   label: string
+  /** As many as there is room for, up to this (`Register`); one beside another group. */
+  columns?: 1 | 2
 }
 
-const { id, label } = Astro.props
+const { id, label, columns = 1 } = Astro.props
 ---
 
 <section aria-labelledby={id} class="flex flex-col gap-3">
-  <h3 id={id} class="type-label">{label}</h3>
-  <Register columns={1}>
+  <h3 id={id} class="type-meta">{label}</h3>
+  <Register columns={columns}>
     <slot />
   </Register>
 </section>

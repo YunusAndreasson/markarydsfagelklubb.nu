@@ -1,0 +1,160 @@
+---
+import ArticleTile from "@/components/site/ArticleTile.astro"
+import MarginDate from "@/components/site/MarginDate.astro"
+import { linkPhones } from "@/lib/article-body"
+import { hideEmails } from "@/lib/email-hiding"
+import type { ArticleTeaser } from "@/lib/public-content"
+import { dateParts, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
+import type { TeaserImage } from "@/lib/teaser"
+
+/**
+ * The newest article, leading the home page (docs/design.md, "Uppslaget",
+ * "Kontaktark", "Spalterna"). Every shape pairs words with a picture:
+ *
+ * - with a hero photo, a spread from lg: the photo at 3:2 on the left and the
+ *   headline beside it, so neither the bird nor the headline is cut by a 3:1 band;
+ *   on a phone the photo comes full-bleed first;
+ * - with a photo too narrow or tall for that (a poster), type on the margin and
+ *   text tracks and the photo whole in the aside;
+ * - with no photo, type on the margin and text tracks, and from lg the next story
+ *   in the aside: the newest article with a photo, as the tile it is below lg
+ *   (`arrangeArticles`). It is its own article, so its title is an h2 like the
+ *   lead's, at the tile's size.
+ */
+interface Props {
+  lead: ArticleTeaser
+  /** The lead's own photo, when it is wide enough for the spread (`isHeroWorthy`). */
+  image: TeaserImage | null
+  /** A photo of the lead's that isn't (a poster): whole, in the aside. */
+  poster: TeaserImage | null
+  /** The story beside a lead with neither, from lg. */
+  nextStory: ArticleTeaser | null
+  transition?: string
+  nextTransition?: string
+}
+
+const { lead, image, poster, nextStory, transition, nextTransition } = Astro.props
+const when = dateParts(lead.published_at, "page", {
+  weekday: true,
+  year: yearUnlessThis(lead.published_at),
+})
+---
+
+<div
+  class:list={[
+    // Not "flex" on both: it beat "spread", so a lead without a hero photo
+    // never sat on the margin and text tracks.
+    image
+      ? "flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-x-10"
+      : "spread gap-y-4",
+  ]}
+>
+  {/* `contents`, so the lead's parts sit on the wrapper's grid beside the next
+      story, which is an article of its own rather than a part of this one. */}
+  <article class="contents">
+    {
+      image && (
+        /* The photo repeats the headline's link, so it is hidden from the
+           accessibility tree and kept out of the tab order. */
+        <a href={`/artiklar/${lead.slug}`} tabindex="-1" aria-hidden="true" class="-mx-4 block sm:mx-0">
+          <img
+            src={image.src}
+            srcset={image.srcset || undefined}
+            sizes="(min-width: 72rem) 40rem, (min-width: 64rem) 58vw, 100vw"
+            width={image.width}
+            height={image.height}
+            alt=""
+            fetchpriority="high"
+            class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px]"
+            style={transition}
+          />
+        </a>
+      )
+    }
+    {
+      !image && (
+        /* The lead's date is the date of the page it opens, written as the
+           article page writes it (`dateParts` "page", docs/design.md,
+           "Spalterna"): in the margin from md, a line above on a phone. */
+        <MarginDate datetime={isoDateTime(lead.published_at)} parts={when} class="md:in-margin" />
+      )
+    }
+    <div class:list={["flex flex-col gap-4", !image && "in-text md:self-baseline"]}>
+      {
+        /* The category over the headline, in every shape: "Föreningsaktuellt" is
+           wider than the 7rem margin, and Gecko won't hyphenate it there. A hero
+           has no margin, so its date shares the line. */
+        (image || lead.category) && (
+          <p class:list={["type-label flex flex-wrap items-center gap-x-3", !image && "-mb-2"]}>
+            {image && <time datetime={isoDateTime(lead.published_at)}>{when.join(" ")}</time>}
+            {lead.category && (
+              <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
+                {lead.category.name}
+              </a>
+            )}
+          </p>
+        )
+      }
+      <h2 class="type-display">
+        <a href={`/artiklar/${lead.slug}`} class="title-link">
+          {lead.title}
+        </a>
+      </h2>
+      {lead.excerpt && <p class="type-ingress text-muted-foreground measure">{lead.excerpt}</p>}
+      {
+        lead.opening.paragraphs.length > 0 && (
+          <div
+            class="content"
+            set:html={hideEmails(linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")))}
+          />
+        )
+      }
+      {
+        lead.opening.more && (
+          <a href={`/artiklar/${lead.slug}`} class="action-link">
+            Läs hela artikeln
+          </a>
+        )
+      }
+    </div>
+    {
+      poster && (
+        /* Like the hero photo, a repeat of the headline's link: hidden from the
+           accessibility tree and the tab order. The article page carries its alt. */
+        <a
+          href={`/artiklar/${lead.slug}`}
+          tabindex="-1"
+          aria-hidden="true"
+          class="in-aside block w-full max-w-[60%] self-start sm:max-w-[16rem] lg:row-start-1 lg:max-w-none lg:pt-3"
+        >
+          <img
+            src={poster.src}
+            srcset={poster.srcset || undefined}
+            sizes="(min-width: 64rem) 20rem, (min-width: 40rem) 16rem, 60vw"
+            width={poster.width}
+            height={poster.height}
+            alt=""
+            fetchpriority="high"
+            class="bg-muted h-auto w-full rounded-[4px]"
+            style={transition}
+          />
+        </a>
+      )
+    }
+  </article>
+  {
+    nextStory && (
+      /* Below lg the same story is the first tile under "Fler artiklar"
+         (`ArticleTiles besideLead`), so nothing moves on a phone. */
+      <ArticleTile
+        as="article"
+        article={nextStory}
+        headingLevel={2}
+        showCategory
+        sizes="(min-width: 72rem) 21rem, 22vw"
+        transition={nextTransition}
+        class="in-aside hidden self-start lg:row-start-1 lg:flex"
+      />
+    )
+  }
+</div>
