@@ -77,6 +77,8 @@ describe("sitemapEntries", () => {
       "/lokaler",
       "/om-foreningen/anvandarvillkor-markaryds-fagelklubb-appen",
       "/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen",
+      "/en",
+      "/de",
       "/om-foreningen",
       "/om-foreningen/medlemskap",
       "/om-foreningen/styrelsen",

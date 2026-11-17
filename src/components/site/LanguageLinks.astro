@@ -1,0 +1,47 @@
+---
+import { Globe } from "lucide-react"
+import { otherLanguages, type SiteLang } from "@/lib/languages"
+import { cn } from "@/lib/utils"
+
+/**
+ * The language switch (docs/design.md, "Besökare"): a globe, which reads as
+ * "language" in any language, then the languages the reader can switch to,
+ * each named in itself, with `lang` so a screen reader says "Deutsch" in German
+ * and `hreflang` for the page it opens. No flags: a flag is a country, not a
+ * language. It lists only the other languages, so it carries no green mark for
+ * the current one and stays in Blyerts beside the bar's one green button.
+ *
+ * - `line`: the header's strip, from md, where a pointer is the rule and the
+ *   footer's 32 px target is the site's precedent.
+ * - `menu`: the first row of the phone's Meny, and a visitor page's own switch
+ *   under its ingress on a phone, at 44 px.
+ */
+interface Props {
+  variant: "line" | "menu"
+  /** The language of the page it is on. */
+  current: SiteLang
+  class?: string
+}
+
+const { variant, current, class: className } = Astro.props
+---
+
+<div class={cn("flex items-center gap-2", className)}>
+  <Globe aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
+  <ul class={cn("flex", variant === "line" ? "gap-x-4" : "gap-x-6")}>
+    {
+      otherLanguages(current).map((language) => (
+        <li>
+          <a
+            href={language.href}
+            lang={language.code}
+            hreflang={language.code}
+            class={cn("nav-link", variant === "line" ? "type-meta min-h-8 underline-offset-[0.3em]" : "font-medium")}
+          >
+            {language.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>

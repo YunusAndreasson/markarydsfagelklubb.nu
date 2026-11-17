@@ -13,6 +13,7 @@ import AppLinks from "@/components/site/AppLinks.astro"
 import EmailLink from "@/components/site/EmailLink.astro"
 import SiteHeader from "@/components/site/SiteHeader.astro"
 import BaseLayout from "@/layouts/base.astro"
+import type { Alternate, SiteLang } from "@/lib/languages"
 import type { MenuEntry } from "@/lib/page-tree"
 import { SITE_FALLBACK_MENU } from "@/lib/site-menu"
 
@@ -28,6 +29,9 @@ interface Props {
   /** For a shared link's preview; see base.astro. */
   image?: string
   type?: "website" | "article"
+  /** The page's language and its other-language versions; see base.astro. */
+  lang?: SiteLang
+  alternates?: readonly Alternate[]
 }
 
 const SITE_NAME = "Markaryds Fågelklubb"
@@ -40,8 +44,20 @@ const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
  */
 const JOIN_PATH = "/om-foreningen/medlemskap"
 
-const { title, description, menu: loaded, image, type } = Astro.props
+const { title, description, menu: loaded, image, type, lang = "sv", alternates } = Astro.props
 const menu = loaded.length > 0 ? loaded : SITE_FALLBACK_MENU
+
+/**
+ * On a visitor page (docs/design.md, "Besökare") the header and footer stay
+ * Swedish, so they say so, and a screen reader reads them in Swedish (WCAG
+ * 3.1.2). The skip link is the page's own first words, in its language.
+ */
+const chromeLang = lang === "sv" ? undefined : "sv"
+const SKIP_LINK: Record<SiteLang, string> = {
+  sv: "Gå direkt till innehållet",
+  en: "Skip to content",
+  de: "Zum Inhalt springen",
+}
 
 /**
  * The footer's links (docs/design.md, "Footer"): only routes that live in code,
@@ -76,18 +92,25 @@ const footerGroups = [
 ]
 ---
 
-<BaseLayout title={title ? `${title} · ${SITE_NAME}` : SITE_NAME} description={description ?? TAGLINE} image={image} type={type}>
+<BaseLayout
+  title={title ? `${title} · ${SITE_NAME}` : SITE_NAME}
+  description={description ?? TAGLINE}
+  image={image}
+  type={type}
+  lang={lang}
+  alternates={alternates}
+>
   <a
     href="#innehall"
     class="bg-background focus:ring-ring sr-only z-30 rounded-md px-4 py-3 focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:ring-2"
   >
-    Gå direkt till innehållet
+    {SKIP_LINK[lang]}
   </a>
 
   {/* A column the height of the window, so the footer sits at the bottom of a
       short page instead of halfway up it. */}
   <div class="flex min-h-svh flex-col">
-    <SiteHeader siteName={SITE_NAME} menu={menu} joinPath={JOIN_PATH} />
+    <SiteHeader siteName={SITE_NAME} menu={menu} joinPath={JOIN_PATH} pageLang={lang} />
 
     <main id="innehall" class="flex flex-1 flex-col">
       {/* Full width above the container: the home page's day list. */}
@@ -97,7 +120,7 @@ const footerGroups = [
       </div>
     </main>
 
-    <footer class="surface-gran">
+    <footer class="surface-gran" lang={chromeLang}>
       <div class="mx-auto grid w-full max-w-page grid-cols-2 gap-x-6 gap-y-10 px-4 pt-12 pb-14 sm:gap-x-8 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-x-20 md:pt-14 md:pb-16">
         <div class="col-span-2 flex items-start gap-3 md:col-span-1">
           <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" class="size-10 shrink-0" />

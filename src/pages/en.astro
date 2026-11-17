@@ -1,0 +1,45 @@
+---
+export const prerender = false
+
+import VisitorGuide from "@/components/site/VisitorGuide.astro"
+import SiteLayout from "@/layouts/site.astro"
+import { VISITOR_ALTERNATES, type VisitorLang } from "@/lib/languages"
+import { obsarStore, store } from "@/lib/obsar-data"
+import { listPublicLokaler } from "@/lib/public-alerts"
+import { loadNavigation } from "@/lib/public-content"
+import { GUIDE } from "@/lib/visitor-guide"
+
+/**
+ * The visitor page in English (docs/design.md, "Besökare"); /de is its twin.
+ * It reads the lokaler with their larm tally (no member data) and the
+ * kommun's all-time species count, the figure Markarydslistan opens with.
+ * Neither is needed: without them the page leaves out the map, the recent
+ * alerts or the count, and says the rest.
+ */
+const LANG: VisitorLang = "en"
+
+const { db } = Astro.locals
+if (!db) return new Response(null, { status: 500 })
+
+const kv = obsarStore()
+const [navigation, lokaler, allTime] = await Promise.all([
+  loadNavigation(db),
+  listPublicLokaler(),
+  kv ? store.readAllTime(kv).catch(() => null) : null,
+])
+const copy = GUIDE[LANG]
+---
+
+<SiteLayout
+  title={copy.title}
+  description={copy.description}
+  menu={navigation.menu}
+  lang={LANG}
+  alternates={VISITOR_ALTERNATES}
+>
+  <VisitorGuide
+    lang={LANG}
+    lokaler={lokaler.ok ? lokaler.value : null}
+    speciesCount={allTime ? allTime.taxa.length : null}
+  />
+</SiteLayout>

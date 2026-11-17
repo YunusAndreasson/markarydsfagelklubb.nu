@@ -62,6 +62,9 @@ const FIXED_PATHS = [
   "/lokaler",
   "/om-foreningen/anvandarvillkor-markaryds-fagelklubb-appen",
   "/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen",
+  // The visitor pages, which name each other with hreflang in their heads.
+  "/en",
+  "/de",
 ]
 
 /** Page-tree pages whose route adds live data to the body (see above). */

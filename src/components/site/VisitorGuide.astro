@@ -1,0 +1,160 @@
+---
+import Aside from "@/components/site/Aside.astro"
+import AsideNote from "@/components/site/AsideNote.astro"
+import EmailLink from "@/components/site/EmailLink.astro"
+import LanguageLinks from "@/components/site/LanguageLinks.astro"
+import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
+import MarginDate from "@/components/site/MarginDate.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
+import SubpageList from "@/components/site/SubpageList.astro"
+import VisitorProse from "@/components/site/VisitorProse.astro"
+import { DIPPER_PHOTO } from "@/lib/dipper-photo"
+import type { VisitorLang } from "@/lib/languages"
+import type { LokalSummary } from "@/lib/lokal"
+import { isoDateTime } from "@/lib/stockholm-time"
+import {
+  GUIDE,
+  recentlyAlerted,
+  recommendedSites,
+  visitorDay,
+  visitorNumber,
+  visitorPins,
+} from "@/lib/visitor-guide"
+
+/**
+ * A visitor page, `/en` or `/de` (docs/design.md, "Besökare"): the same page in
+ * either language, built from the site's own pieces. The map of the club's
+ * lokaler is its one loud thing, as on /lokaler, since "where" is what a
+ * visitor came to ask; the rest is quiet text.
+ *
+ * Live data only adds: without the larm read there is no map and no list of
+ * recent alerts, without the statistics no species count, and the page still
+ * says everything else.
+ */
+interface Props {
+  lang: VisitorLang
+  /** The club's lokaler with their larm tally, or null when the read failed. */
+  lokaler: LokalSummary[] | null
+  /** Bird species ever reported in the kommun, or null without the statistics. */
+  speciesCount: number | null
+}
+
+const { lang, lokaler, speciesCount } = Astro.props
+const copy = GUIDE[lang]
+const pins = lokaler ? visitorPins(lokaler) : []
+const sites = lokaler ? recommendedSites(lokaler, lang) : []
+const alerted = lokaler ? recentlyAlerted(lokaler) : null
+const now = new Date()
+---
+
+<article class="page-stack">
+  {/* No note beside the title: from md the header's strip is the language
+      switch, and a second one in green outweighed the title. On a phone, where
+      the strip is in the menu, the same quiet switch follows the ingress. */}
+  <PageHeader title={copy.title} ingress={copy.ingress}>
+    <Fragment slot="after">
+      <LanguageLinks variant="menu" current={lang} class="md:hidden" />
+    </Fragment>
+  </PageHeader>
+
+  {
+    pins.length > 0 && (
+      <figure class="flex flex-col gap-2">
+        <LokalMapFrame pins={pins} fallback={copy.map.fallback} class="aspect-square md:aspect-3/2" />
+        <figcaption class="type-caption at-text measure">{copy.map.caption}</figcaption>
+      </figure>
+    )
+  }
+
+  {
+    sites.length > 0 && (
+      <Section id="sites" title={copy.sites.title}>
+        <Fragment slot="lead">{copy.sites.lead}</Fragment>
+        <SubpageList
+          pages={sites.map((site) => ({
+            href: `/lokaler/${site.slug}`,
+            hreflang: "sv",
+            title: site.name,
+            description: site.line,
+            action: { href: site.mapUrl, label: copy.sites.mapLink, note: copy.sites.elsewhere },
+          }))}
+        />
+      </Section>
+    )
+  }
+
+  {
+    alerted && (
+      <Section id="alerts" title={copy.alerts.title} dated>
+        <Fragment slot="lead">{alerted.length > 0 ? copy.alerts.lead : copy.alerts.empty}</Fragment>
+        {alerted.length > 0 && (
+          <ul class="flex flex-col gap-4">
+            {alerted.map((lokal) => (
+              <li class="margined gap-y-1">
+                <MarginDate
+                  datetime={isoDateTime(lokal.lastAlertAt)}
+                  parts={[visitorDay(lokal.lastAlertAt, lang, now)]}
+                  class="md:in-margin"
+                />
+                <a href={`/lokaler/${lokal.slug}`} hreflang="sv" class="type-item title-link w-fit md:in-text">
+                  {lokal.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Fragment slot="foot">
+          <a href="/larm" hreflang="sv" class="action-link at-text">
+            {copy.alerts.all}
+          </a>
+        </Fragment>
+      </Section>
+    )
+  }
+
+  <Section id="report" title={copy.report.title}>
+    <VisitorProse paragraphs={copy.report.paragraphs} elsewhere={copy.sites.elsewhere} />
+  </Section>
+
+  <Section id="nature" title={copy.access.title}>
+    <VisitorProse paragraphs={copy.access.paragraphs} elsewhere={copy.sites.elsewhere} />
+  </Section>
+
+  <Section id="club" title={copy.club.title} layout="spread">
+    <div class="in-text flex flex-col gap-6">
+      <figure class="flex flex-col gap-2">
+        <img
+          src={DIPPER_PHOTO.src}
+          srcset={DIPPER_PHOTO.srcset}
+          sizes="(min-width: 48rem) 38rem, 100vw"
+          width={DIPPER_PHOTO.width}
+          height={DIPPER_PHOTO.height}
+          alt={copy.club.photoAlt}
+          loading="lazy"
+          class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+        />
+        <figcaption class="type-caption">
+          {`${copy.club.photoCaption} ${copy.club.photoBy}: ${DIPPER_PHOTO.photographer}.`}
+        </figcaption>
+      </figure>
+      <VisitorProse paragraphs={copy.club.paragraphs} elsewhere={copy.sites.elsewhere} />
+    </div>
+    <Aside label={copy.club.asideLabel} first={false}>
+      <AsideNote label={copy.club.contactLabel} kind="note">
+        <p class="type-fact [overflow-wrap:anywhere]">
+          <EmailLink address="webmaster@markarydsfagelklubb.nu" class="link" />
+        </p>
+        <p class="text-muted-foreground">{copy.club.contactNote}</p>
+      </AsideNote>
+      {
+        speciesCount !== null && speciesCount > 0 && (
+          <AsideNote label={copy.club.speciesLabel}>
+            <p>{copy.club.species(visitorNumber(speciesCount, lang))}</p>
+            <p class="type-caption">{copy.club.speciesSource}</p>
+          </AsideNote>
+        )
+      }
+    </Aside>
+  </Section>
+</article>

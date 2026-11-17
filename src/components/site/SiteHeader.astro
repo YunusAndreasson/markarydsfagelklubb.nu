@@ -1,9 +1,11 @@
 ---
 import { ArrowUpRight, ChevronDown, Search } from "lucide-react"
 import logo from "@/assets/logo.webp"
+import LanguageLinks from "@/components/site/LanguageLinks.astro"
 import SearchForm from "@/components/site/SearchForm.astro"
 import SectionPanel from "@/components/site/SectionPanel.astro"
 import { buttonVariants } from "@/components/ui/button"
+import type { SiteLang } from "@/lib/languages"
 import { isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
 import { isCurrentChild, SEARCH_SHORTCUTS } from "@/lib/site-menu"
 import { cn } from "@/lib/utils"
@@ -17,6 +19,13 @@ import { cn } from "@/lib/utils"
  * Below lg, "Meny" is a `<details>` with the whole menu, and search is one tap
  * away in the bar.
  *
+ * The visitor pages (docs/design.md, "Besökare") are a strip above the bar from
+ * md, at the top right where a tourist looks for another language: the bar has
+ * no room for two more words at 1024 or at 360 px, and a second tier inside it
+ * pulled the menu off the name's line. A hairline makes the strip its own band,
+ * and the bar below it is the bar it always was. On a phone the languages are
+ * the first row of the menu, under "Bli medlem".
+ *
  * The header's `view-transition-name` makes it a stacking context, so the
  * panels' own z-index only counts inside it. The header itself is `z-20`, or
  * anything later on the page that is also a stacking context (the photos, which
@@ -26,9 +35,13 @@ interface Props {
   siteName: string
   menu: MenuEntry[]
   joinPath: string
+  /** The page's language, for the language switch. */
+  pageLang: SiteLang
 }
 
-const { siteName, menu, joinPath } = Astro.props
+const { siteName, menu, joinPath, pageLang } = Astro.props
+// On a page in another language the header stays Swedish, and says so (WCAG 3.1.2).
+const lang = pageLang === "sv" ? undefined : "sv"
 const { pathname } = Astro.url
 const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" : undefined)
 const panelId = (entry: MenuEntry) => `meny-${entry.href.slice(1).replace(/[^\w-]/g, "-")}`
@@ -42,7 +55,14 @@ const chevron =
   "size-4 transition-transform group-aria-expanded/toggle:rotate-180 motion-reduce:transition-none"
 ---
 
-<header class="relative z-20 border-b [view-transition-name:site-header]" data-site-header>
+<header lang={lang} class="relative z-20 border-b [view-transition-name:site-header]" data-site-header>
+  {/* The languages' strip, from md: a band of its own above the bar, so the bar
+      keeps its one centre line (emblem, name, menu, Bli medlem). */}
+  <div class="hidden border-b md:block">
+    <div class="mx-auto flex w-full max-w-page justify-end px-4 sm:px-6">
+      <LanguageLinks variant="line" current={pageLang} />
+    </div>
+  </div>
   <div class="mx-auto flex w-full max-w-page items-center justify-between gap-6 px-4 py-3 sm:px-6">
     <div class="flex items-center gap-3">
       <a href="/" tabindex="-1" aria-hidden="true" class="shrink-0">
@@ -148,6 +168,7 @@ const chevron =
         </summary>
         <nav aria-label="Huvudmeny" class="bg-background absolute inset-x-0 top-full z-20 border-b px-4 pt-2 pb-6 sm:px-6">
           <a href={joinPath} class={cn(buttonVariants(), "focus-strong mt-2 mb-3 flex h-12 w-full text-base md:hidden")}>Bli medlem</a>
+          <LanguageLinks variant="menu" current={pageLang} class="border-b md:hidden" />
           <ul class="flex flex-col">
             {
               menu.map((entry) => {

@@ -7,6 +7,8 @@ import alegreyaLatin from "@fontsource-variable/alegreya/files/alegreya-latin-wg
 import interLatin from "@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2"
 import appleTouchIcon from "@/assets/apple-touch-icon.png"
 import icon from "@/assets/icon-64.png"
+import { SITE_ORIGIN } from "@/lib/canonical-host"
+import { type Alternate, ogLocale, type SiteLang } from "@/lib/languages"
 import "@/styles/global.css"
 
 interface Props {
@@ -18,11 +20,21 @@ interface Props {
    */
   image?: string
   type?: "website" | "article"
+  /** The page's language: Swedish but for the visitor pages (docs/design.md, "Besökare"). */
+  lang?: SiteLang
+  /** The same page in other languages, itself included, for hreflang. */
+  alternates?: readonly Alternate[]
 }
 
-const { title, description, image, type = "website" } = Astro.props
+const { title, description, image, type = "website", lang = "sv", alternates = [] } = Astro.props
 // Prerendered pages have no request to resolve against, and pass no image.
 const imageUrl = image ? new URL(image, Astro.url).href : null
+// hreflang wants absolute URLs, and the canonical ones, as the sitemap lists
+// them: the apex over https, whichever host or scheme the request came on.
+const alternateLinks = alternates.map((one) => ({
+  ...one,
+  url: new URL(one.href, SITE_ORIGIN).href,
+}))
 
 const notAPage = {
   not: {
@@ -44,11 +56,11 @@ const SPECULATION_RULES = {
 }
 ---
 
-<html lang="sv">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    {/* The Latin subset carries every Swedish page; the stylesheet only asks
+    {/* The Latin subset carries every page, Swedish, English and German; the stylesheet only asks
         for it once it has downloaded and parsed. Preloading starts it next to
         the CSS, which shortens the swap from the fallback face. It is the
         same hashed file global.css's @font-face points at, so it downloads
@@ -70,7 +82,13 @@ const SPECULATION_RULES = {
     <link rel="alternate" type="application/rss+xml" title="Markaryds Fågelklubb" href="/feed" />
     {/* How a link looks when it's shared, in Facebook groups above all. */}
     <meta property="og:site_name" content="Markaryds Fågelklubb" />
-    <meta property="og:locale" content="sv_SE" />
+    <meta property="og:locale" content={ogLocale(lang)} />
+    {
+      alternateLinks
+        .filter((one) => one.lang !== lang)
+        .map((one) => <meta property="og:locale:alternate" content={ogLocale(one.lang)} />)
+    }
+    {alternateLinks.map((one) => <link rel="alternate" hreflang={one.lang} href={one.url} />)}
     <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}

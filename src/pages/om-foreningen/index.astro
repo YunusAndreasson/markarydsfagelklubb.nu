@@ -8,6 +8,7 @@ import PageHeader from "@/components/site/PageHeader.astro"
 import SubpageList from "@/components/site/SubpageList.astro"
 import { buttonVariants } from "@/components/ui/button"
 import SiteLayout from "@/layouts/site.astro"
+import { DIPPER_PHOTO } from "@/lib/dipper-photo"
 import { loadMembership } from "@/lib/membership"
 import { hrefOf, resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
@@ -19,8 +20,6 @@ import { cn } from "@/lib/utils"
 // The text is the page's body in /admin, where each "## Rubrik" becomes the
 // word in the margin (`.content-register`); the fee line comes from
 // membership_settings, so it changes when the fee does.
-const DIPPER =
-  "https://zgnmajovyqibgxlcomvb.supabase.co/storage/v1/object/public/site-media/2025/10/93398403-259e-5fed-b5f8-6d82268fbbfa"
 
 const { db } = Astro.locals
 if (!db) return new Response(null, { status: 500 })
@@ -46,17 +45,17 @@ const joinHref =
         about fees. From the article "Strömstarens ankomst". */}
     <figure class="-mx-4 flex flex-col gap-2 sm:mx-0">
       <img
-        src={`${DIPPER}/960.webp`}
-        srcset={`${DIPPER}/480.webp 480w, ${DIPPER}/960.webp 960w, ${DIPPER}/1600.webp 1600w`}
+        src={DIPPER_PHOTO.src}
+        srcset={DIPPER_PHOTO.srcset}
         sizes="(min-width: 72rem) 69rem, 100vw"
-        width="1657"
-        height="1105"
+        width={DIPPER_PHOTO.width}
+        height={DIPPER_PHOTO.height}
         alt="En strömstare på en mossig sten vid forsande vatten."
         fetchpriority="high"
         class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-2/1"
       />
       <figcaption class="type-caption at-text px-4 sm:px-0">
-        Strömstaren, klubbens emblemfågel sedan 1986. Foto: Lars-Erik Andréasson.
+        Strömstaren, klubbens emblemfågel sedan 1986. Foto: {DIPPER_PHOTO.photographer}.
       </figcaption>
     </figure>
 

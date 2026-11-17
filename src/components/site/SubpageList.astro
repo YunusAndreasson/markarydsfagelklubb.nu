@@ -1,14 +1,28 @@
 ---
+import { ArrowUpRight } from "lucide-react"
+
 /**
  * A section's pages: each title in ink, green only on hover, with its one-line
  * description under it (Klubben's "Mer om klubben", a page's "Här hittar du",
  * the Obsar hub, search hits). A column of green underlined links read as a
  * sitemap.
+ *
+ * An entry may add one action under its description, a link that leaves the
+ * site (a visitor page's "On OpenStreetMap"), with the outbound arrow the
+ * header's panels use.
  */
 export interface Subpage {
   href: string
   title: string
   description?: string | null
+  /** The language of the page the title opens, when it isn't the list's (a visitor page's Swedish links). */
+  hreflang?: string
+  action?: {
+    href: string
+    label: string
+    /** Read after the label by a screen reader: "(another website)". */
+    note: string
+  }
 }
 
 interface Props {
@@ -26,11 +40,18 @@ const Title = headingLevel ? "h3" : "p"
     pages.map((page) => (
       <li class="flex flex-col gap-0.5">
         <Title class="type-item">
-          <a href={page.href} class="title-link">
+          <a href={page.href} hreflang={page.hreflang} class="title-link">
             {page.title}
           </a>
         </Title>
         {page.description && <p class="text-muted-foreground">{page.description}</p>}
+        {page.action && (
+          <a href={page.action.href} class="action-link gap-1">
+            {page.action.label}
+            <ArrowUpRight aria-hidden="true" className="size-4" />
+            <span class="sr-only">{page.action.note}</span>
+          </a>
+        )}
       </li>
     ))
   }

@@ -1,0 +1,38 @@
+---
+import type { Paragraph } from "@/lib/visitor-guide"
+
+/**
+ * A visitor page's running text (docs/design.md, "Besökare"): paragraphs of
+ * plain runs, links and scientific names, from `src/lib/visitor-guide.ts`. A
+ * link into the Swedish site carries `hreflang="sv"`; one that leaves the site
+ * tells a screen reader so, as the header's panels do.
+ */
+interface Props {
+  paragraphs: readonly Paragraph[]
+  /** "(another website)", in the page's language. */
+  elsewhere: string
+}
+
+const { paragraphs, elsewhere } = Astro.props
+---
+
+<div class="measure flex flex-col gap-4">
+  {
+    paragraphs.map((paragraph) => (
+      <p class="text-pretty">
+        {paragraph.map((part) =>
+          typeof part === "string" ? (
+            part
+          ) : "latin" in part ? (
+            <i class="type-latin">{part.latin}</i>
+          ) : (
+            <a href={part.href} hreflang={part.hreflang} class="link">
+              {part.text}
+              {part.external && <span class="sr-only"> {elsewhere}</span>}
+            </a>
+          )
+        )}
+      </p>
+    ))
+  }
+</div>

@@ -18,6 +18,8 @@ export const RESERVED_TOP_LEVEL_SLUGS: ReadonlySet<string> = new Set([
   "api",
   "arter",
   "artiklar",
+  "de",
+  "en",
   "kalender",
   "larm",
   "lokaler",
