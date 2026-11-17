@@ -44,6 +44,17 @@ component.
   `in-wide` / `in-full` (and `margined`, `at-text`, `measure`), never on
   hand-written `7rem`/`38rem` classes; facts about the page go in
   `Aside.astro` (docs/design.md, "Uppslaget").
+- **Build from the named roles and pieces** (docs/design.md, "Linjalen"). A page
+  says what a thing is, never how big or how far apart:
+  - type: `type-label` (not `type-meta text-muted-foreground`), `type-fact`,
+    `type-caption`, `type-latin`; no raw `text-sm`/`text-lg` on public pages;
+  - links: `link` in a sentence, `action-link` standing alone, `title-link` on a
+    title, `nav-link` in navigation;
+  - rhythm: `page-stack` on the page, `Section` for a heading and its content;
+    no `mt-*`/`gap-*` between a page's sections and no `md:pt-[…]` nudges (rows
+    align on their first baseline);
+  - pieces: `PageHeader`, `Section`, `MarginDate`, `Print`, `SubpageList`,
+    `EmptyNote`, `Pager`, `Disclosure`, `SearchForm`, `LarmTitle`.
 - **Swedish copy**, written for club members: plain, warm, no jargon. Dates
   use `sv-SE`.
 - **Mobile first**: design at 360 px, touch targets ≥ 44 px, and no horizontal

@@ -1,8 +1,9 @@
 # Design: the public site
 
-**Read [Kontaktark](#kontaktark-2026-11-14), [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14) first, then
-[Dagslistan](#dagslistan-2026-10-31) with its "Larmbandet" correction.** Lupen is the newest
-pass (photos and motion between pages); Uppslaget sets the grid every page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
+**Read [Linjalen](#linjalen-2026-11-17) first: it names the roles and components every
+public page is built from.** Then [Kontaktark](#kontaktark-2026-11-14), [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14), then
+[Dagslistan](#dagslistan-2026-10-31) with its "Larmbandet" correction. Lupen is the
+photos and motion between pages; Uppslaget sets the grid every page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
 and the header.
 
 The design plan for mafk-web's public pages, written in step 3 with the
@@ -34,6 +35,153 @@ A birder's field notebook works the same way: each entry is dated in the
 margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
+
+## Linjalen (2026-11-17)
+
+The sixth pass, asked for as a consistency review: every page balanced, a clear
+hierarchy, fonts and colours used for what they mean, and DRY. Reviewed in Gecko at
+1280 and 360 px, page by page, with two code audits.
+
+**What was wrong was drift, not design.** Every page looked right on its own and was
+built by hand, so the same role existed in many slightly different copies:
+
+- 18 page headers, with title–ingress gaps of 3, 4 or 5 units;
+- gaps between sections of 2, 2.5, 3, 3.5, 4 and 6rem;
+- six hand-tuned offsets (`md:pt-[0.125rem]` … `pt-[1.15rem]`) to put a date level
+  with a title;
+- an aside fact at 16 px on one page and 18 on the next;
+- four caption styles;
+- scientific names in Inter on title pages and Alegreya in registers.
+
+Read together, that is what looked "not quite balanced".
+
+**The principle: one name per role, one place per rule.** A page says *what* a thing
+is; a utility or a component decides how it looks. No new colour, typeface or motion.
+
+**Type roles** (`global.css`, beside `type-display` … `type-meta`):
+
+| Role | Is | For |
+|---|---|---|
+| `type-label` | `type-meta` in Blyerts | dates, a note's label, a count, the crumb, a row's place and observer |
+| `type-fact` | Inter 1.125rem / 1.5 / 400 | what an aside note states: a place, a day, whom to call, a price |
+| `type-caption` | 0.875rem / 1.45 / 400, Blyerts | under a photo, a footnote, a source line; also `.content figcaption` |
+| `type-latin` | Alegreya italic, the face only | a scientific name, at the size of the role it sits in |
+| `type-item-aside` | `type-item` a step down | an entry's title in the aside ("Mer i …") |
+| `type-day` | Alegreya 2.25rem, ink | the programme's day of the month, its own device |
+
+A chart's caption stays body size: it carries the finding.
+
+**Link roles**, the three kinds of "Colour" as utilities:
+
+- `link`: in a sentence, at the sentence's weight.
+- `action-link`: an action or a destination standing alone; a 44 px target, weight
+  500, as wide as its words.
+- `title-link`: an ink title with a green underline on hover.
+- `nav-link`: navigation in Blyerts; the current page is ink with a 2 px green
+  underline. The menu, tabs and year strips use it.
+
+**Rhythm.**
+
+- `page-stack` spaces a page's sections: 3rem, 4.5rem from md. Every page uses it,
+  the home page included; the home page had its own 4/6rem.
+- The page's header marks itself (`data-page-header`) and sits closer to what
+  follows: 2rem, 2.5rem from md.
+- Within a section the heading sits 1.5rem above its content, so a group heading is
+  always at least twice as close to its own entries as to the group above it. The
+  programme's months used to float midway between two months.
+
+**The first baseline.** `margined` rows align on their first baseline, so a 14 px
+date in the margin lines up with the 21 px title beside it, or a margin label with
+body text, in either face and with no offset. A photo in such a row takes
+`self-start`. The programme keeps its big day number and its own offset, the one
+row that opts out (`items-start`).
+
+**The pieces** (`src/components/site/`):
+
+- **`PageHeader`** heads every public page but the home page; it replaced
+  `ObsarHeader`. It holds:
+  - crumbs, the title, and an optional note in the title ("3 ex.");
+  - the scientific name and the ingress;
+  - an `after` slot for tabs, a year strip or the search field;
+  - an `aside` slot, level with the title rather than the crumb.
+
+  `wide` starts it at the margin's edge; `hang` gives the aside no height from lg
+  (the programme).
+- **`Section`**: a heading (`SectionHeading`) and its content. It replaced
+  `HomeSection` and `ObsarSection`.
+  - `stack` sits at the text's edge. It takes `wide`, `nested`, `measure`, and
+    `dated` for rows that use the margin, where only the heading moves to the text's
+    edge.
+  - `spread` makes the section a spread whose children choose their tracks.
+- **`SectionHeading`** has a `lead` slot for the short muted line under a heading
+  and a `note` beside it. On a phone its "Alla …" link always sits under the heading.
+- **Small pieces:**
+  - `Crumbs`;
+  - `MarginDate`, the date in the margin, on one line on a phone;
+  - `LarmTitle`: species, count, chip, rarity word;
+  - `RarityNote`;
+  - `Print`, the 3:2 list photo with its transition name;
+  - `SubpageList`, title and description (Klubben, a page's subpages, search hits,
+    the Obsar hub);
+  - `EmptyNote` and `Pager`;
+  - `Disclosure`, used by LarmFold, TableTwin and the year strip's "Alla år";
+  - `SearchForm` and `MapBox`.
+- **`AsideNote`** sets its content as a `fact` (`type-fact`) unless it is a `note`
+  (a sentence with a link, the store badges, a list).
+
+**Visible changes**, besides the rhythm:
+
+- **The larm log keeps one left edge.** A larm with a photo had the print first and
+  the species beside it, so the names zigzagged between two edges down the log. Now
+  time, species, place and observer always start at the margin's and text's edges, and
+  the print (15rem) sits at the end of the text track beside its caption (the user's
+  choice). The print links to the larm, as an article's does.
+- **Article rows keep one rhythm.** The print is 8rem, about as tall as a title and
+  two lines of excerpt, so a row with a photo is no taller than one without. It was
+  12rem, half as tall again as the text beside it.
+- **The aside's "Mer i …" keeps one edge.** An article without a photo leaves the
+  print's place empty; its title used to start at the aside's edge.
+- **Green leaves the charts' data** (the user's choice).
+  - Ordinary marks are a mid tint of Gran (`ink.tint`), and the one pointed out is
+    full ink (`ink.mark`).
+  - That covers this week on a species page, this year's arrival, and today and this
+    year's arrivals in Flyttfåglarnas år, ringed in white to hold on the darkest
+    cells.
+  - Green is the pointer's only. The lokal map's green pins stay: they are controls.
+- **The Obsar hub's two Gran cards became a plain list** (the user's choice), the
+  same as Klubben's "Mer om klubben". They were the only boxes on the public site and
+  diluted the jubilee band as the one Gran figure on the page.
+- **Smaller fixes:**
+  - "Idag"/"Pågår" in ink, not green.
+  - LokalPoints and the flight tables' species are ink titles, not green links.
+  - Scientific names in Alegreya italic everywhere.
+  - The /40-ar header no longer leaves an empty element, which made a phantom 4rem
+    gap under the band.
+  - Lokal's crumb no longer repeats the page, and the Obsar crumb is the site's
+    crumb.
+  - "Här hittar du" outranks its entries.
+  - Register notes are `type-label`, one 14 px weight as Hierarki asked.
+  - The steps on Bli medlem are body text, not 18 px.
+
+**DRY in `src/lib`:**
+
+- `capitalize` and `rapporter` (`text.ts`).
+- `monthTitle` (`event-month.ts`).
+- `yearUnlessThis` and `listYear` (`stockholm-time.ts`), replacing six copies of "the
+  year unless it is this one".
+- `takenTransitionNames` and `SEARCH_SHORTCUTS`.
+- Three helpers called `dayMonth` meant different things; they are now
+  `dayOfYearLabel`, `longDay` and private formatters. The chart axis's `dayLabel` is
+  `dayIndexLabel`.
+- `--track-margin` and `--track-text` hold 7rem and 38rem; the grid utilities,
+  `content.css` and the photo viewer read them.
+
+**Left as they are, on purpose:**
+
+- `MarginGroup`'s Alegreya labels, which sit beside their entries, not over them.
+- The green shortcut links on /sok and /obsar: there they are destinations on a page,
+  while the header's panel is navigation.
+- The header's wordmark, the footer's small print and the form controls' sizes.
 
 ## Kontaktark (2026-11-14)
 
@@ -167,8 +315,8 @@ there's nothing to say.
   with the text beside those labels. A page with **nothing in the margin** starts
   everything at the margin's edge, in line with the logo: title, crumb, ingress, section
   headings, figures and the source note. Those are a species page, a larm's page,
-  /lokaler, /obsar, Ligan and 40 år (`wide` on `ObsarHeader`, `ObsarSection`,
-  `ObsarPair` and `SourceNote`; `in-wide` on a spread's header). Before this, those
+  /lokaler, /obsar, Ligan and 40 år (`wide` on `PageHeader`, `Section`,
+  `ObsarPair` and `SourceNote`). Before this, those
   pages either left the margin empty, so they read as a narrow page inside the page, or
   set the title at one edge and the sections at the other.
 
@@ -188,9 +336,10 @@ there's nothing to say.
 - **Article:** "Mer i <kategori>" moved from tiles at the foot into the aside: three
   articles, a 5.5rem print and the title each, beside the cover and the text, after the
   text on a phone.
-- **Larm log:** a larm with a photo is a **captioned print**: from `md` the photo at the
-  start of the text track with species, place and observer beside it. They used to sit
-  at opposite edges of 145 px rows. The store badges are in the header's aside.
+- **Larm log:** a larm with a photo is a **captioned print**: from `md` the photo in the
+  text track beside species, place and observer. They used to sit at opposite edges
+  of 145 px rows. Since Linjalen the caption comes first and the print after it, so
+  the species keep one edge. The store badges are in the header's aside.
 - **Larm:** the photo across margin and text; När, Prefix, Plats with its map, and
   Rapporterat av in the aside beside it. On a phone the photo comes first (since
   2026-11-14): it is why a reader opened the larm, and stacking the facts and the
@@ -401,7 +550,7 @@ edge with their links at the far right, Fynd was three equal columns ignoring th
 the gaps between sections were 80 px in one place and 96 in the others, and a date read
 "11 sep.", "nov." or "11 nov" depending on the section.
 
-**One rule for every section** (`HomeSection.astro`):
+**One rule for every section** (`HomeSection.astro`, since Linjalen `Section layout="spread" wide`):
 
 - the heading starts at the container's left edge, where the section's content starts
   (a register's dates, the article tiles, the year's figures), and its one "all of it"
@@ -411,6 +560,7 @@ the gaps between sections were 80 px in one place and 96 in the others, and a da
   Obsar's lists) go in the aside; only pictures (the lead photo, the article tiles, the
   jubilee chart) take the full width;
 - 96 px between sections from `md`, 64 on a phone, set by the component, never the page.
+  (Linjalen: 72 and 48, the site's one rhythm, set by `page-stack`.)
 
 **The order** (2026-11-15): the larm band, the lead article, the programme, then *Fler
 artiklar*, so the club's own news stays together; then the kommun's birds in time order:
@@ -673,14 +823,20 @@ The site has one theme, light, since 2026-10-24 (the user's call: simpler, and
 done properly). The dark theme, its tokens and the script that switched to it
 are gone.
 
+The values as they stand in `global.css` (the tinted neutrals since Dagslistan,
+2026-10-31; the paragraphs under the table record how they got there):
+
 | Name | Value | Contrast on Papper | Use |
 |---|---|---|---|
 | Papper (background) | `#FFFFFF` | | page |
-| Bläck (foreground) | `#0A0A0A` | 19.8:1 | text |
+| Bläck (foreground) | `#17201D` | 16.7:1 | text |
 | Markarydsgrön (primary) | `#137D41` | 5.2:1; white on it 5.0:1 | links, the one button, focus |
-| Blyerts (muted-foreground) | `#585858` | 7.1:1 (AAA), APCA Lc 85; 6.5:1 on `muted` | dates, ingress, excerpts, meta |
+| Blyerts (muted-foreground) | `#53605B` | 6.6:1; 5.9:1 on Is | dates, ingress, excerpts, meta (`type-label`) |
+| Is (muted) | `#EEF3F1` | | pale surfaces, a photo's placeholder |
+| Gran | `#14302A` | white on it 14.1:1 | the bands: day list, jubilee, footer (`surface-gran`) |
+| Reflex | `#F2C230` | 8.4:1 on Gran | status on Gran only, never text on white |
 | Larmrött (rarity) | `#C42A20` | 5.7:1 | the two rarest levels |
-| Linje (border) | `#E5E5E5` | 1.3:1 | the header rule, tables (decoration) |
+| Linje (border) | `#DDE5E1` | | the header rule, tables (decoration) |
 
 - **Blyerts differs from the app.** It was the app's `#737373`: 4.7:1 on
   white passes AA, but the public site sets places, observers and dates in it
@@ -715,7 +871,30 @@ public site is green unless it is a link or a control.
   the last fortnight; the pins are controls, and the ingress says what green
   means.
 
-### Type: Inter with its optical-size axis
+### Type: Alegreya for titles, Inter for reading
+
+The roles as they stand in `global.css` (Alegreya since Dagslistan, the
+`type-label` … `type-day` roles since Linjalen). Alegreya's small x-height sets a
+step larger than Inter would.
+
+| Role | Face | Size | Weight | Leading | For |
+|---|---|---|---|---|---|
+| `type-display` | Alegreya | `clamp(2.5rem, 1.75rem + 3.2vw, 3.75rem)` | 700 | 1.04 | the lead story |
+| `type-title` | Alegreya | `clamp(2.25rem, 1.8rem + 1.8vw, 3rem)` | 700 | 1.08 | a page's h1 |
+| `type-section` | Alegreya | 1.75rem | 700 | 1.15 | a section's heading, a body's h2 |
+| `type-item` | Alegreya | 1.3125rem | 700 | 1.25 | an entry's title in every list |
+| `type-item-aside` | Alegreya | 1.0625rem | 700 | 1.3 | an entry's title in the aside |
+| `type-day` | Alegreya | 2.25rem | 700 | 1.05 | the programme's day of the month |
+| `type-ingress` | Inter | 1.1875rem | 400, muted | 1.5 | a page's ingress, a section's lead sentence |
+| `type-fact` | Inter | 1.125rem | 400 | 1.5 | an aside note's fact |
+| Body | Inter | 1rem → 1.0625rem (`.content`) | 400 | 1.65 | running text |
+| `type-meta` / `type-label` | Inter | 0.875rem, tabular | 500 | 1.4 | dates, labels, a row's place (`type-label` in Blyerts) |
+| `type-caption` | Inter | 0.875rem | 400, muted | 1.45 | photo captions, footnotes, sources |
+| `type-latin` | Alegreya italic | the role's | 400 | the role's | scientific names |
+
+The Inter-only scale this section was first written for, kept for the record:
+
+#### Inter with its optical-size axis (2026-09-19 to 2026-10-31)
 
 `@fontsource-variable/inter/opsz.css` replaces the plain variable file: +25 KB
 for the Latin subset, which covers å, ä and ö. With `font-optical-sizing: auto`,
@@ -757,7 +936,8 @@ joins. The scale roughly follows a classic progression (16 · 18 · 21 · 24 · 
 ### Space and shape
 
 - A 4 px base. Sections are separated by **space**, not rules: 3rem on mobile,
-  4.5rem on desktop.
+  4.5rem from md, on every page (`page-stack`, since Linjalen); a page's header
+  sits 2rem / 2.5rem above what follows, and a heading 1.5rem above its content.
 - There's one rule on the whole page, under the header.
 - Radius by role, not one radius for everything:
   - photos 4 px, so they read as prints;
@@ -1235,7 +1415,7 @@ När den kommer
 I år kom den första 7 maj, som vanligt. Tidigast: 29 apr 2007.
 
 Över året
-[ staplar per vecka, alla år; den här veckan grön ]
+[ staplar per vecka, alla år; den här veckan i bläck, de andra i en ljus ton ]
 Flest rapporter kommer i maj. Den här veckan brukar den inte synas.
 
 Larm
@@ -1243,7 +1423,7 @@ Larm
 ```
 
 - **The width of the page (2026-11-17).** The whole page starts at the margin's
-  edge, in line with the logo, as on the home page (`ObsarSection wide`,
+  edge, in line with the logo, as on the home page (`Section wide`,
   `SourceNote wide`): the page has no dates or labels for the margin, so at the
   text's edge every section read as a narrow page inside the page. The figures run to
   the page's edge, the larm dates sit in the margin as on /larm, and captions keep
@@ -1256,7 +1436,7 @@ Larm
   migration season has no "När den kommer" section at all. A summer bird's leaving
   is left out: its median last report is when it goes quiet (gök: early July).
 - **The figures use the whole track**, from the text's edge to the page's
-  (`ObsarSection`, as the Obsar charts), because the user found the page tight
+  (`Section`, as the Obsar charts), because the user found the page tight
   with everything in the 38rem text track and the aside empty below the facts.
   Captions keep the measure.
 - **Each larm once.** A first build put the photo larm in a rail above the list
@@ -1600,7 +1780,9 @@ meaning on Gran, a mark to look at; here it marks the two years the club counts 
   to see in them, so they read with no script and to a screen reader (the caption
   holds the finding, and the data is in the list beside it).
 - **Colour in charts:** marks in Gran on white; a sequence from Is to Gran for
-  heatmaps (cool water tones, one hue); Markarydsgrön only for what the pointer is
+  heatmaps (cool water tones, one hue); where a chart points one mark out (this
+  week, this year, today), the others take a mid tint (`ink.tint`) and that one full
+  ink (`ink.mark`), since Linjalen; Markarydsgrön only for what the pointer is
   on, since green means "you can act on this"; Blyerts for axes and labels, Inter
   13 px, tabular figures, Swedish months. No legends where a label can sit on the line.
 - **Interaction answers the reader:** tooltips, a year switcher, a play button on
@@ -1623,8 +1805,8 @@ The Obsar pages now use the site's own grid, and only through components
 | Track | Width (from `md`) | Holds |
 |---|---|---|
 | Margin | 7rem | a date; a group's label (month, decade, day), sticky beside its register (`MarginGroup`) |
-| Content | the rest of the 64rem container | figures, registers, paired sections (`ObsarSection`, `ObsarPair`) |
-| Measure | 38rem, inside content | running text, ingresses, captions, tables (`ObsarSection measure`, `StatTable`) |
+| Content | the rest of the container | figures, registers, paired sections (`Section`, `ObsarPair`) |
+| Measure | 38rem, inside content | running text, ingresses, captions, tables (`Section measure`, `StatTable`) |
 
 - **Registers** (`Register` + `Entry`) are long lists in columns, top to bottom then
   across, as the lokal register is: one on a phone, two from `sm`, three from `lg`.
