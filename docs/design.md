@@ -1,7 +1,8 @@
 # Design: the public site
 
 **Read [Linjalen](#linjalen-2026-11-17) first: it names the roles and components every
-public page is built from.** [Spalterna](#spalterna-2026-11-17) adds the home page's
+public page is built from.** [Besökare](#besökare-2026-11-17) is the two pages that
+aren't Swedish, and the header's language line. [Spalterna](#spalterna-2026-11-17) adds the home page's
 second grid, the trio, and makes the shared pieces follow their own width. Then [Kontaktark](#kontaktark-2026-11-14), [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14), then
 [Dagslistan](#dagslistan-2026-10-31) with its "Larmbandet" correction. Lupen is the
 photos and motion between pages; Uppslaget sets the grid every page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
@@ -36,6 +37,110 @@ A birder's field notebook works the same way: each entry is dated in the
 margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
+
+## Besökare (2026-11-17)
+
+One page in English and one in German for visitors, asked for as "single pages for
+english and german according to best practice", relevant to "someone visiting as a
+tourist or similar in Markaryd", reusing what the site has, "easy to find from top
+menu". The rest of the site stays Swedish.
+
+**Audience and job.** Someone in Markaryd who reads no Swedish: a tourist with
+binoculars, a German family at a summer cottage. On a phone, most of them. The page
+answers four questions in order: where can I watch birds, has anything turned up
+lately, how do I report what I see, who are you.
+
+**Where it is** (the user's choice of three):
+
+```
+md and up
+                                                                    ◍ English   Deutsch
+──────────────────────────────────────────────────────────────────────────────────────
+( ◉ ) Markaryds Fågelklubb   Artiklar  Larm  Program  Obsar ⌄  Lokaler  Klubben ⌄  Sök  [Bli medlem]
+──────────────────────────────────────────────────────────────────────────────────────
+
+phone, Meny open
+[ Bli medlem                    ]
+◍ English    Deutsch
+──────────────────────────────────
+Artiklar
+```
+
+- **A strip above the bar from md**, right-aligned, Blyerts, 14 px, 32 px targets as
+  the footer has from md, with a hairline under it. The bar has no room for two more
+  words: about 40 px are free at 1024 and 24 at 360. **The bar itself is unchanged**:
+  emblem, name, menu and Bli medlem stay on one centre line. Two other placements were
+  tried and dropped the same day: the line flush on the bar (`pt-0`) left the emblem low
+  and the current language's underline touching Bli medlem; a second tier in the bar's
+  right column centred the emblem but pulled the menu off the name's line, which the
+  user called "very unaligned". The header grows 33 px from md.
+- **On a phone, the first row of Meny**, under "Bli medlem", at the menu's 44 px. A
+  line above the bar there would cost 44 px on every page for every member.
+- A globe, then each language **named in itself** with `lang` and `hreflang`. No flags
+  (a flag is a country) and no redirect by `Accept-Language` or IP.
+  `LanguageLinks.astro`.
+- **It lists the languages you can switch to**, in one order: "English, Deutsch" on a
+  Swedish page, "Svenska, Deutsch" on /en, "Svenska, English" on /de; Svenska is the
+  home page. That is the Swedish convention ("In English" / "På svenska"), and it needs
+  no mark for the current language, so the strip stays Blyerts and the bar's button is
+  the header's one green. A first build marked "English" with the nav's green
+  underline, right above "Bli medlem".
+
+**Best practice, as built.**
+
+- `/en` and `/de`, a language subdirectory each; both reserved slugs.
+- `<html lang>` is the page's; the header and footer, still Swedish, carry `lang="sv"`
+  (WCAG 3.1.2), and the skip link is in the page's language.
+- The two pages name each other and themselves with `<link rel="alternate" hreflang>`,
+  absolute and canonical (`SITE_ORIGIN`). No Swedish page has an equivalent, so none
+  carries hreflang, and there is no `x-default`.
+- `og:locale` is `en_GB` / `de_DE`, the other as `og:locale:alternate`. Both are in the
+  sitemap.
+- British English. German says **Sie**. Place names stay Swedish; the emblem bird is
+  the White-throated Dipper / Wasseramsel with *Cinclus cinclus* in `type-latin`.
+
+**The page** (`VisitorGuide.astro`, copy in `src/lib/visitor-guide.ts`):
+
+```
+Birdwatching in Markaryd
+ingress: who we are, what this page is for,
+"the rest of the site is in Swedish"
+◍ Svenska   Deutsch                            (phone only: the strip is in Meny there)
+[ the lokal map, the container's width ]
+caption: green = alerted in the past two weeks
+Where to watch birds         four sites, one translated line each, OpenStreetMap ↗
+Recent bird alerts           date in the margin │ the lokal, newest first; All alerts
+Report what you see          Artportalen (has English), the club's statistics
+Out in nature                allemansrätten, nests, sanctuaries; Naturvårdsverket
+The club                     the dipper photo, 1986, ~90 members, the programme
+                             aside: Kontakt (sv, en, de), N bird species
+```
+
+- **The title stands alone**, as on every page without facts beside it. A "Language"
+  note in the aside with two green links was built first and dropped: from md it
+  repeated the strip, and its green, with the strip's underline and "Bli medlem" above
+  it, stacked four green marks down the right and outweighed the title. On a phone the
+  strip's switch follows the ingress instead, in the same Blyerts.
+- **The map is the one loud thing**, as on /lokaler: "where" is what a visitor came to
+  ask. Its tooltips show the place's name only; `visitorPins` drops the Swedish "Nyss:"
+  species line.
+- **Facts only from the club.** The four sites are the lokaler with a
+  `locations.description` (2026-11-17: Altaböke sjö, Lokasjöområdet, Köphultasjön,
+  Skararps ängar), translated and joined **by id**; a changed description wants a
+  changed line in `RECOMMENDED_SITES`. The club's facts are the Klubben page's. The page
+  **promises nothing about guests on excursions** (the user's choice) and says visitors
+  may write in Swedish, English or German (the user's answer).
+- **Live data only adds.** Without the larm read there is no map and no alert list,
+  without KV no species count (Markarydslistan's all-time figure); the text stands.
+- Every link into the Swedish site says `hreflang="sv"`, and the text says where a
+  page is in Swedish. A link off the site tells a screen reader so.
+- Reused: `PageHeader`, `Section`, `Aside`/`AsideNote`, `LokalMapFrame`,
+  `SubpageList` (which gained an optional `action` per entry), `MarginDate`,
+  `EmailLink`, and Klubben's dipper photo (`src/lib/dipper-photo.ts`).
+
+**Not done, on purpose:** no footer link (the header has it), search stays Swedish, no
+other pages translated. A German-speaking member should read the German before it
+ships.
 
 ## Spalterna (2026-11-17)
 
@@ -1193,6 +1298,9 @@ desktop ≥ 768 px
   stay on /obsar and in the desktop panel, or they push Lokaler and Klubben below
   the fold.
 - The current section is marked with `aria-current` and underlined in green.
+- **Languages (2026-11-17):** a strip above the bar from md, "English" and
+  "Deutsch" beside a globe, and the first row of Meny on a phone. See
+  [Besökare](#besökare-2026-11-17).
 
 ### Sponsorer (2026-10-24)
 

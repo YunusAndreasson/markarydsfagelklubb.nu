@@ -56,7 +56,9 @@ component.
   - pieces: `PageHeader`, `Section`, `MarginDate`, `Print`, `SubpageList`,
     `EmptyNote`, `Pager`, `Disclosure`, `SearchForm`, `LarmTitle`.
 - **Swedish copy**, written for club members: plain, warm, no jargon. Dates
-  use `sv-SE`.
+  use `sv-SE`. The one exception is the visitor pages, `/en` and `/de`
+  (British English, German with *Sie*; copy in `src/lib/visitor-guide.ts`,
+  docs/design.md "Besökare").
 - **Mobile first**: design at 360 px, touch targets ≥ 44 px, and no horizontal
   scroll.
 - Verify visible changes with `pnpm preview` **in Zen**. The site is light

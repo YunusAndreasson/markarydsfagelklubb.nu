@@ -2,8 +2,10 @@
 
 The website for **Markaryds Fågelklubb**. It replaces the WordPress site at
 markarydsfagelklubb.nu with a public site and an admin area (the CMS). All UI
-copy is **Swedish** (`<html lang="sv">`, no English fallbacks). Code,
-comments and docs are English.
+copy is **Swedish** (`<html lang="sv">`, no English fallbacks), with one
+exception: the visitor pages `/en` and `/de` (copy in `src/lib/visitor-guide.ts`,
+docs/design.md "Besökare"), which the header links to. Code, comments and docs
+are English.
 
 **Status: step 5 — kalender.** On top of the stack, the Supabase wiring,
 CI, local shipping and the gated `/admin` that exactly one administrator signs
