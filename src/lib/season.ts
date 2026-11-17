@@ -1,6 +1,10 @@
 import { dayOfYear } from "./artportalen/aggregate"
-import type { Season, SeasonTaxon, YearStats } from "./artportalen/types"
-import { toStockholmInputValue } from "./stockholm-time"
+import { seasonWindow, windowWeeks } from "./artportalen/taxa"
+import type { Season, SeasonTaxon, TaxonIndex, YearStats } from "./artportalen/types"
+import type { MigrationRow } from "./charts/options"
+import { speciesHref } from "./species"
+import { dayMonth, MONTH_NAMES, NOT_IN_SPRING, weekOfDay } from "./species-page"
+import { stockholmYear, toStockholmInputValue } from "./stockholm-time"
 
 /**
  * "Så här års" (docs/design.md, "Så här års"): which birds usually
@@ -93,4 +97,89 @@ export function thisWeek(season: Season | null, now: Date, current: YearStats | 
       .slice(0, MAX_PER_LIST)
 
   return { arriving: pick("arrival"), leaving: pick("departure") }
+}
+
+/**
+ * "Flyttfåglarnas år" (docs/design.md, "Obsar och statistik"): every bird with
+ * a season, its usual year as reports per week over the twenty-year window, in
+ * the order the birds come. The whole year behind "Så här års".
+ */
+export type Migration = {
+  /** Summer birds by usual arrival, then winter guests by their autumn return. */
+  summer: MigrationRow[]
+  winter: MigrationRow[]
+  /** How many years the weeks are summed over. */
+  years: number
+  /** The week bin today falls in. */
+  today: number
+  /** The month most summer birds arrive in, and how many of them do. */
+  busiest: { month: string; count: number } | null
+}
+
+const monthOfDay = (day: number) => new Date(Date.UTC(2025, 0, day)).getUTCMonth()
+
+/** The first week a bird is usually reported, for one with no usual day to sort by. */
+const firstWeekDay = (weeks: readonly number[]) => {
+  const week = weeks.findIndex((count) => count > 0)
+  return week < 0 ? 366 : week * 7 + 4
+}
+
+export function migration(
+  season: Season | null,
+  index: TaxonIndex | null,
+  current: YearStats | null,
+  slugs: Map<number, string>,
+  now: Date
+): Migration | null {
+  if (!season || !index) return null
+  const today = dayOfYear(toStockholmInputValue(now).slice(0, 10))
+  const thisYear = stockholmYear(now)
+  const window = seasonWindow(index.years, thisYear)
+  const seen = new Map(
+    current?.year === thisYear ? current.species.map((one) => [one.id, one]) : []
+  )
+
+  const rows = season.taxa.flatMap((taxon) => {
+    const entry = index.taxa[taxon.id]
+    if (!entry) return []
+    const weeks = windowWeeks(entry, window)
+    if (!weeks.some((count) => count > 0)) return []
+    const slug = slugs.get(taxon.id)
+    // A summer bird's arrival, as the species page reads it: not a January
+    // report of one that wintered, and not a first report long after the
+    // usual day, which is no arrival (`NOT_IN_SPRING`).
+    const year = taxon.kind === "summer" ? seen.get(taxon.id) : undefined
+    const came = year ? (year.arrival ?? year.first) : null
+    const late =
+      came !== null && taxon.arrival !== null && dayOfYear(came) - taxon.arrival >= NOT_IN_SPRING
+    const day = came && !late ? dayOfYear(came) : null
+    const row: MigrationRow = {
+      name: taxon.name,
+      href: slug ? speciesHref(slug) : null,
+      weeks,
+      arrival: taxon.arrival === null ? null : dayMonth(taxon.arrival),
+      departure: taxon.departure === null ? null : dayMonth(taxon.departure),
+      thisYear: day === null ? null : { week: weekOfDay(day), day: dayMonth(day) },
+    }
+    return [
+      { row, kind: taxon.kind, usual: taxon.arrival, order: taxon.arrival ?? firstWeekDay(weeks) },
+    ]
+  })
+  rows.sort((a, b) => a.order - b.order || a.row.name.localeCompare(b.row.name, "sv"))
+
+  const summer = rows.filter((one) => one.kind === "summer")
+  const months = Array.from({ length: 12 }, () => 0)
+  for (const { usual } of summer) {
+    if (usual !== null) months[monthOfDay(usual)] = (months[monthOfDay(usual)] ?? 0) + 1
+  }
+  const top = Math.max(...months)
+  const month = months.indexOf(top)
+
+  return {
+    summer: summer.map((one) => one.row),
+    winter: rows.filter((one) => one.kind === "winter").map((one) => one.row),
+    years: window.length,
+    today: weekOfDay(today),
+    busiest: top > 0 ? { month: MONTH_NAMES[month] ?? "", count: top } : null,
+  }
 }

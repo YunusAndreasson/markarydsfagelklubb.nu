@@ -10,18 +10,31 @@ interface Props {
   id: string
   href?: string
   link?: string
+  /**
+   * Keep the link's row height with no link, so two sections side by side
+   * (`ObsarPair`) start their lists on one line whether or not each has a link.
+   */
+  reserveLink?: boolean
 }
 
-const { id, href, link } = Astro.props
+const { id, href, link, reserveLink = false } = Astro.props
 ---
 
 <div class="flex flex-wrap items-baseline justify-between gap-x-6">
   <h2 id={id} class="type-section"><slot /></h2>
   {
-    href && link && (
+    href && link ? (
       <a href={href} class="link flex min-h-11 items-center font-medium">
         {link}
       </a>
+    ) : (
+      /* The link's box with nothing in it, so the heading sits where a link
+         beside it would put it. */
+      reserveLink && (
+        <span aria-hidden="true" class="invisible flex min-h-11 items-center font-medium">
+          &nbsp;
+        </span>
+      )
     )
   }
 </div>

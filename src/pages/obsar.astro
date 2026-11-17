@@ -19,7 +19,7 @@ import YearWatch from "@/components/site/species/YearWatch.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { dayOfYear } from "@/lib/artportalen/aggregate"
 import { seasonWindow } from "@/lib/artportalen/taxa"
-import { bandColor } from "@/lib/charts/options"
+import { bandColor, migrationHeight } from "@/lib/charts/options"
 import { linesSvg } from "@/lib/charts/svg"
 import { ink, sequence } from "@/lib/charts/theme"
 import { groupObsar, obsarDescription } from "@/lib/obsar"
@@ -33,7 +33,7 @@ import {
   yearHeadline,
 } from "@/lib/obsar-stats"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
-import { thisWeek } from "@/lib/season"
+import { migration, thisWeek } from "@/lib/season"
 import { buildSpecies, taxonSlugs } from "@/lib/species"
 import { countWord } from "@/lib/species-page"
 import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
@@ -88,6 +88,16 @@ const watchWindow = taxa ? seasonWindow(taxa.years, year) : []
 const dayNow = dayOfYear(today)
 const missing = taxa ? missingBirds(taxa, watchWindow, year, dayNow) : []
 const { more, less } = taxa ? unusualBirds(taxa, watchWindow, year, dayNow) : { more: [], less: [] }
+
+// "Flyttfåglarnas år" (docs/design.md): the whole year behind "Så här års".
+const flight = migration(season, taxa, stats, seasonSlugs, now)
+const flightPanels = flight
+  ? [
+      { label: "Flyttfåglar", kind: "summer" as const, rows: flight.summer },
+      { label: "Vintergäster", kind: "winter" as const, rows: flight.winter },
+    ].filter((panel) => panel.rows.length > 0)
+  : []
+const flightYears = flight?.years === 20 ? "tjugo" : countWord(flight?.years ?? 0)
 
 const curves = history ? speciesCurves(history, year, today) : null
 const pace = curves ? paceAgainstAverage(curves) : null
@@ -236,6 +246,39 @@ const paceSentence =
             </ObsarSection>
           )}
 
+          {flight && flightPanels.length > 0 && (
+            <ObsarSection wide id="flytt" title="Flyttfåglarnas år">
+              <ChartFigure
+                chart={{ kind: "migration", data: { panels: flightPanels, years: flight.years, today: flight.today } }}
+                height={`${migrationHeight({ panels: flightPanels })}px`}
+              >
+                Fåglarna står i den ordning de brukar komma till kommunen, och varje rad är mörkast de veckor arten brukar
+                rapporteras mest, räknat på de senaste {flightYears} åren.
+                {flight.busiest && ` Flest flyttfåglar kommer i ${flight.busiest.month}, ${flight.busiest.count} av de ${flight.summer.length}.`}{" "}
+                Det gröna strecket är i dag, och de gröna prickarna visar när varje flyttfågel kom i år.
+                {flight.winter.length > 0 && " Vintergästerna står i den ordning de brukar komma tillbaka på hösten."}
+              </ChartFigure>
+              <TableTwin label="Visa datumen">
+                <div class="flex flex-col gap-6">
+                  {flight.summer.length > 0 && (
+                    <StatTable
+                      columns={[{ label: "Flyttfågel", rowHeader: true }, { label: "Brukar komma" }, { label: "Brukar lämna" }, { label: "I år" }]}
+                      rows={flight.summer.map((row) => [row.name, row.arrival ?? "–", row.departure ?? "–", row.thisYear?.day ?? "–"])}
+                      links={flight.summer.map((row) => row.href)}
+                    />
+                  )}
+                  {flight.winter.length > 0 && (
+                    <StatTable
+                      columns={[{ label: "Vintergäst", rowHeader: true }, { label: "Kommer tillbaka" }, { label: "Lämnar" }]}
+                      rows={flight.winter.map((row) => [row.name, row.arrival ?? "–", row.departure ?? "–"])}
+                      links={flight.winter.map((row) => row.href)}
+                    />
+                  )}
+                </div>
+              </TableTwin>
+            </ObsarSection>
+          )}
+
           {(missing.length > 0 || more.length > 0 || less.length > 0) && (
             <ObsarSection wide id="hittills" title="Året så här långt">
               <YearWatch missing={missing} more={more} less={less} slugs={seasonSlugs} headingId="hittills" />
@@ -269,7 +312,7 @@ const paceSentence =
                 items={places.map((one) => ({
                   name: one.name.replace(/, Sm$/, ""),
                   value: one.reports.toLocaleString("sv-SE"),
-                  note: one.reports === 1 ? "rapport" : "rapporter",
+                  note: `${one.reports === 1 ? "rapport" : "rapporter"}, ${arter(one.species, { digits: true })}`,
                 }))}
               />
             </ObsarSection>

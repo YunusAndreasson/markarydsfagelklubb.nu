@@ -28,7 +28,7 @@ const { id, title, href, link, measure = false, nested = false, wide = false } =
   <div class:list={["flex flex-col gap-5", measure && "measure"]}>
     {
       title && id && (
-        <SectionHeading id={id} href={href} link={link}>
+        <SectionHeading id={id} href={href} link={link} reserveLink={nested}>
           {title}
         </SectionHeading>
       )

@@ -2,7 +2,8 @@
 /**
  * A plain figures table at the reading measure (docs/design.md, "Obsar och
  * statistik", "Grid"): a rule under the head and between rows, figures
- * right-aligned in tabular numerals. Used by the league and the decades.
+ * right-aligned in tabular numerals. Used by the league, the decades and the
+ * figures' table twins.
  */
 type Column = {
   label: string
@@ -19,9 +20,11 @@ type Column = {
 interface Props {
   columns: Column[]
   rows: (string | number)[][]
+  /** A link per row for its row-header cell, e.g. a bird's species page. */
+  links?: (string | null)[]
 }
 
-const { columns, rows } = Astro.props
+const { columns, rows, links } = Astro.props
 const cell = (column: Column) => [
   "py-2",
   column.numeric && "pl-4 text-right tabular-nums",
@@ -44,14 +47,20 @@ const cell = (column: Column) => [
   </thead>
   <tbody>
     {
-      rows.map((row) => (
+      rows.map((row, rowIndex) => (
         <tr class="border-border border-b last:border-0">
           {row.map((value, index) => {
             const column = columns[index] ?? { label: "" }
             const text = typeof value === "number" ? value.toLocaleString("sv-SE") : value
             return column.rowHeader ? (
               <th scope="row" class:list={[...cell(column), "font-medium"]}>
-                {text}
+                {links?.[rowIndex] ? (
+                  <a href={links[rowIndex]} class="link">
+                    {text}
+                  </a>
+                ) : (
+                  text
+                )}
               </th>
             ) : (
               <td class:list={cell(column)}>{text}</td>

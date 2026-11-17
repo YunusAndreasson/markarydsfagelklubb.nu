@@ -14,6 +14,7 @@ import {
   summerGap,
   typicalDays,
   weeksTotal,
+  windowWeeks,
 } from "./taxa"
 import type { SpeciesYear, TaxonEntry, YearStats } from "./types"
 
@@ -310,6 +311,32 @@ describe("weeksTotal and arrivals", () => {
       [1, 2],
       [3, 1],
     ])
+  })
+})
+
+describe("windowWeeks", () => {
+  it("sums the week bins over the window's years only", () => {
+    const entry: TaxonEntry = {
+      name: "gök",
+      sci: "Cuculus canorus",
+      years: {
+        2004: { f: "04-20", l: "07-01", r: 9, w: [[16, 9]] },
+        2024: {
+          f: "04-20",
+          l: "07-01",
+          r: 3,
+          w: [
+            [16, 2],
+            [17, 1],
+          ],
+        },
+        2025: { f: "04-22", l: "07-04", r: 4, w: [[16, 4]] },
+      },
+    }
+    const sum = windowWeeks(entry, [2024, 2025])
+    expect(sum).toHaveLength(53)
+    expect(sum[16]).toBe(6)
+    expect(sum[17]).toBe(1)
   })
 })
 

@@ -1283,6 +1283,14 @@ Larm
   chip, the year it was first seen and the larm count), switched by two plain links.
   `/arter` 301s to the A–Ö order, and a species page's crumb leads back to it.
 
+- **No "Genom åren" (2026-11-17).** Bars of the bird's share of each year's reports,
+  2001–2025, were built and dropped the same day. On the live data the share mixes
+  how people report with how the bird does: from 2007–11 to 2021–25 it rose for
+  garden birds (koltrast ×1.8, talgoxe ×1.45) and fell for birds people stop noting
+  once they are common (trana ×0.65, though it has grown), and a real decline
+  (tofsvipa, gulsparv) looks the same. Opportunistic reports give a bird's season,
+  not its trend.
+
 ### Så här års
 
 Which birds usually arrive in the kommun, or leave it, within two weeks of today,
@@ -1314,6 +1322,33 @@ status under each bird. Hidden when nothing falls in the window.
 - **Two weeks either way, "så här års"**: a ten-day window left the block empty for
   weeks in late autumn, when little moves.
 
+### Flyttfåglarnas år
+
+The whole year behind "Så här års" (2026-11-17, `migration` in `src/lib/season.ts`,
+chart kind `migration`), on Obsar's Översikt right after it: every bird the `season`
+key holds (65 summer birds and 10 winter guests that day), each a heatmap row of its
+weekly reports over the twenty-year window.
+
+- **A heatmap, not bars from arrival to departure.** Half the summer birds have no
+  departure (gök goes quiet in July: its last reports are the last songs), and a bar
+  would invent one. The rows show where the reports fall, each scaled to the bird's
+  own busiest week, as in Årets rytm.
+- **In the order they come**: summer birds by usual arrival, so the spring runs down
+  the figure as a diagonal; the winter guests in a second panel, by their autumn
+  return. Every bird is named: ECharts drops every other category label unless told
+  not to (`interval: 0`).
+- **Now is green, as on a species page**: today is a solid green rule, labelled
+  "I dag" under the figure (the y axis is inverted, so the line's end is at the
+  bottom, clear of the months), and this year's arrival a green dot with a white ring,
+  so it reads on a dark cell. A first report two months or more after the usual day
+  gets no dot (`NOT_IN_SPRING`).
+- **A row or a name opens the bird's page** (`chartHref`). "Visa datumen" under it
+  lists every bird with its usual days and this year's, linked, for a keyboard, a
+  screen reader and no script. Like the other heatmaps it has no SVG first paint, but
+  its box is sized from the row count (16 px a row), so nothing moves when it draws.
+- Hornuggla sorts last, "arriving" in mid-June: few report it before its young beg.
+  That is what the reports say, and its row shows why.
+
 ### I backspegeln
 
 Named "Förr om åren" until 2026-11-16; "I backspegeln" is what birders call it (Club300's
@@ -1344,7 +1379,7 @@ under it ("13 nov, även 16 nov 1986"). Hidden when nothing qualifies.
 ### Året så här långt
 
 This year against the same point in the last twenty (2026-11-15,
-`src/lib/year-watch.ts`), on Översikt after "Så här års" and as an "I år" fact on a
+`src/lib/year-watch.ts`), on Översikt after "Flyttfåglarnas år" and as an "I år" fact on a
 species page. Read from the per-taxon index, so it moves with every fast run.
 
 - **Saknas i år**: a bird seen by today's date in at least 80 % of the window's
@@ -1551,7 +1586,7 @@ kommun's 57 years of reports as a story.
 1970 as a bar of reports, in a pale tint of white, with **1986 and 2026 in Reflex**
 and a sentence that states the totals ("Sedan klubben bildades 1986 har 77 000
 fynd av 230 arter rapporterats i kommunen."). It is the home page's only figure,
-between the lead and the articles, and it opens `/obsar/40-ar`. Reflex keeps its one
+its closing one at the foot of the page, and it opens `/obsar/40-ar`. Reflex keeps its one
 meaning on Gran, a mark to look at; here it marks the two years the club counts from.
 
 **Everything else is the notebook, quiet:**
@@ -1568,9 +1603,11 @@ meaning on Gran, a mark to look at; here it marks the two years the club counts 
   heatmaps (cool water tones, one hue); Markarydsgrön only for what the pointer is
   on, since green means "you can act on this"; Blyerts for axes and labels, Inter
   13 px, tabular figures, Swedish months. No legends where a label can sit on the line.
-- **Interaction answers the reader:** tooltips, a year switcher, zoom on the
-  40-year bars, a play button on the league's race. Nothing moves on load except
-  the chart drawing itself in once, and not under `prefers-reduced-motion`.
+- **Interaction answers the reader:** tooltips, a year switcher, a play button on
+  the league's race, and a bird's row in Flyttfåglarnas år opening its page. Nothing
+  moves on load except the chart drawing itself in once, and not under
+  `prefers-reduced-motion`. The 40-year bars have no zoom (2026-11-17): 57 bars fit,
+  and a wheel or pinch zoom would take the page's scroll.
 - **Names:** observers are named, as Artportalen names them (the user's call,
   2026-11-14). The league says it is counted from Artportalen's open data, so it can
   differ from Observatörsligan by protected sightings.

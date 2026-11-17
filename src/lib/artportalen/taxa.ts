@@ -227,10 +227,7 @@ const WINTER_MAX_SUMMER_SHARE = 0.015
  * kattuggla, tjäder and koltrast residents, with no season at all.
  */
 export function seasonKind(entry: TaxonEntry, window: readonly number[]): SeasonKind | null {
-  const weeks = Array.from({ length: 53 }, () => 0)
-  for (const year of window) {
-    for (const [week, count] of entry.years[year]?.w ?? []) weeks[week] = (weeks[week] ?? 0) + count
-  }
+  const weeks = windowWeeks(entry, window)
   const total = weeks.reduce((sum, one) => sum + one, 0)
   if (total < MIN_REPORTS) return null
   const share = (from: number, to: number) =>
@@ -251,6 +248,15 @@ export function buildSeason(index: TaxonIndex, thisYear: number, fetchedAt: stri
   }
   taxa.sort((a, b) => a.name.localeCompare(b.name, "sv"))
   return { fetchedAt, taxa }
+}
+
+/** Reports per week bin over the window's years: a bird's usual year, as its season is read. */
+export function windowWeeks(entry: TaxonEntry, window: readonly number[]): number[] {
+  const weeks = Array.from({ length: 53 }, () => 0)
+  for (const year of window) {
+    for (const [week, count] of entry.years[year]?.w ?? []) weeks[week] = (weeks[week] ?? 0) + count
+  }
+  return weeks
 }
 
 /** Reports per week bin over every year, for the "över året" figure. */

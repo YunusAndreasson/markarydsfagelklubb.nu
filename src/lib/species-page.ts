@@ -247,7 +247,7 @@ export function arrivalSentence(
 /** Week bin → month: the month its middle day falls in. */
 const monthOfWeek = (week: number) => new Date(Date.UTC(2025, 0, week * 7 + 4)).getUTCMonth()
 
-const MONTH_NAMES = [
+export const MONTH_NAMES = [
   "januari",
   "februari",
   "mars",

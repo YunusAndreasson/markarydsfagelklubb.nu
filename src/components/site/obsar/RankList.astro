@@ -1,7 +1,8 @@
 ---
 /**
  * A short ranked list for the hub: a name and its figure on one line, the
- * figure right-aligned in tabular numerals so the column reads down.
+ * figure right-aligned in tabular numerals so the column reads down. A long
+ * name wraps rather than losing its end: a place's name is the content.
  */
 interface Props {
   items: { name: string; value: string; note?: string }[]
@@ -16,8 +17,8 @@ const { items, numbered = false } = Astro.props
     items.map((item, index) => (
       <li class:list={["grid items-baseline gap-x-3", numbered ? "grid-cols-[1.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"]}>
         {numbered && <span class="type-meta text-muted-foreground tabular-nums">{index + 1}</span>}
-        <span class="min-w-0 truncate font-medium">{item.name}</span>
-        <span class="tabular-nums">
+        <span class="min-w-0 font-medium text-balance">{item.name}</span>
+        <span class="tabular-nums whitespace-nowrap">
           {item.value}
           {item.note && <span class="text-muted-foreground text-sm"> {item.note}</span>}
         </span>

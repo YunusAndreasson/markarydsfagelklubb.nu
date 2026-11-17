@@ -16,7 +16,7 @@ export function mountObsarCharts(): void {
 
 async function draw(element: HTMLElement, chart: ChartData): Promise<void> {
   // Loaded here, not at the top: ECharts stays out of every page's first load.
-  const [{ init }, { buildOption }] = await Promise.all([
+  const [{ init }, { buildOption, chartHref }] = await Promise.all([
     import("@/lib/charts/echarts-setup"),
     import("@/lib/charts/options"),
   ])
@@ -25,6 +25,15 @@ async function draw(element: HTMLElement, chart: ChartData): Promise<void> {
   const isNarrow = () => element.clientWidth < 480
   let narrow = isNarrow()
   instance.setOption(buildOption(chart, motion, narrow))
+  // A bird's row or name opens its species page; the table under the figure
+  // has the same links for a keyboard and a screen reader. On a touch screen a
+  // tap is how a cell's tooltip opens, so there only the names navigate.
+  const hovers = window.matchMedia("(hover: hover)").matches
+  instance.on("click", (params) => {
+    if (!hovers && params.componentType === "series") return
+    const href = chartHref(chart, params)
+    if (href) window.location.assign(href)
+  })
   element.closest<HTMLElement>("[data-chart]")?.setAttribute("data-ready", "")
   // A phone turned sideways crosses the threshold: rebuild, don't just stretch.
   new ResizeObserver(() => {

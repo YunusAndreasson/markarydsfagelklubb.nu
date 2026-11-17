@@ -27,11 +27,31 @@ export type AccumulationData = {
 export type HistoryData = {
   years: { year: number; reports: number; species: number; observers: number }[]
   marks: number[]
-  /** Drawn on the spruce band: light marks on dark. */
-  onGran?: boolean
 }
 
 export type SeasonsData = { years: number[]; shares: number[][] }
+
+/** One bird in "Flyttfåglarnas år" (built by `migration` in `lib/season.ts`). */
+export type MigrationRow = {
+  name: string
+  /** The species page, or null for a bird that has none. */
+  href: string | null
+  /** Reports per week bin (0–52) over the window. */
+  weeks: number[]
+  /** The usual days in words ("7 maj"), or null. */
+  arrival: string | null
+  departure: string | null
+  /** This year's arrival, a summer bird only: its week bin and its day in words. */
+  thisYear: { week: number; day: string } | null
+}
+
+export type MigrationData = {
+  panels: { label: string; kind: "summer" | "winter"; rows: MigrationRow[] }[]
+  /** How many years the weeks are summed over. */
+  years: number
+  /** The week bin today falls in. */
+  today: number
+}
 
 export type ChartData =
   | { kind: "artkurva"; data: ArtkurvaData }
@@ -40,6 +60,7 @@ export type ChartData =
   | { kind: "history"; data: HistoryData }
   | { kind: "people"; data: HistoryData }
   | { kind: "seasons"; data: SeasonsData }
+  | { kind: "migration"; data: MigrationData }
 
 const axisLabel = { color: ink.pencil, fontFamily: fontSans, fontSize: 12 }
 const axisLine = { lineStyle: { color: ink.line } }
@@ -311,51 +332,34 @@ function accumulation(data: AccumulationData, motion: boolean, narrow: boolean):
   }
 }
 
+/**
+ * The jubilee band's bars, on Gran: light marks on dark, the marked years
+ * (founding, this year) in Reflex. No zoom: 57 bars fit, and a wheel or pinch
+ * zoom would take the page's scroll.
+ */
 function history(data: HistoryData, motion: boolean, narrow: boolean): EChartsCoreOption {
-  const onGran = Boolean(data.onGran)
-  const label = { ...axisLabel, color: onGran ? "#B7CBC3" : ink.pencil }
-  const plain = onGran ? "rgba(255,255,255,0.55)" : ink.gran
-  const marked = onGran ? ink.reflex : ink.green
+  const label = { ...axisLabel, color: "#B7CBC3" }
   return {
     animation: motion,
     animationDuration: 900,
     animationEasing: "cubicOut",
     animationDelay: (index: number) => index * 12,
-    grid: { left: onGran ? 8 : 44, right: 8, top: 12, bottom: onGran ? 24 : 56 },
+    grid: { left: 8, right: 8, top: 12, bottom: 24 },
     xAxis: {
       type: "category",
       data: data.years.map((one) => one.year),
-      axisLine: { lineStyle: { color: onGran ? "rgba(255,255,255,0.2)" : ink.line } },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.2)" } },
       axisTick: { show: false },
       axisLabel: {
         ...label,
         interval: (_: number, value: string) => Number(value) % (narrow ? 20 : 10) === 0,
       },
     },
-    yAxis: { type: "value", show: !onGran, axisLabel: label, splitLine },
-    dataZoom: onGran
-      ? []
-      : [
-          { type: "inside", start: 0, end: 100 },
-          {
-            type: "slider",
-            height: 18,
-            bottom: 8,
-            borderColor: ink.line,
-            fillerColor: "rgba(19,125,65,0.12)",
-            handleStyle: { color: ink.white, borderColor: ink.green },
-            moveHandleStyle: { color: ink.green },
-            textStyle: label,
-            dataBackground: { lineStyle: { color: ink.pencil }, areaStyle: { color: ink.ice } },
-          },
-        ],
+    yAxis: { type: "value", show: false },
     tooltip: {
       ...tooltipBase,
       trigger: "axis",
-      axisPointer: {
-        type: "shadow",
-        shadowStyle: { color: onGran ? "rgba(255,255,255,0.08)" : "rgba(19,125,65,0.08)" },
-      },
+      axisPointer: { type: "shadow", shadowStyle: { color: "rgba(255,255,255,0.08)" } },
       formatter: (items: { dataIndex: number }[]) => {
         const one = data.years[items[0]?.dataIndex ?? 0]
         if (!one) return ""
@@ -370,11 +374,11 @@ function history(data: HistoryData, motion: boolean, narrow: boolean): EChartsCo
         data: data.years.map((one) => ({
           value: one.reports,
           itemStyle: {
-            color: data.marks.includes(one.year) ? marked : plain,
+            color: data.marks.includes(one.year) ? ink.reflex : "rgba(255,255,255,0.55)",
             borderRadius: [1, 1, 0, 0],
           },
         })),
-        emphasis: { itemStyle: { color: onGran ? ink.white : ink.green } },
+        emphasis: { itemStyle: { color: ink.white } },
       },
     ],
   }
@@ -515,6 +519,170 @@ function seasons(data: SeasonsData, motion: boolean): EChartsCoreOption {
   }
 }
 
+/** Pixel layout of "Flyttfåglarnas år", so the page can size the box before the script runs. */
+export const MIGRATION_LAYOUT = { row: 16, top: 28, gap: 44, bottom: 28 } as const
+
+/** The box's height in pixels for these panels. */
+export function migrationHeight(data: Pick<MigrationData, "panels">): number {
+  const { row, top, gap, bottom } = MIGRATION_LAYOUT
+  const panels = data.panels.filter((panel) => panel.rows.length > 0)
+  const rows = panels.reduce((sum, panel) => sum + panel.rows.length, 0)
+  return top + rows * row + Math.max(0, panels.length - 1) * gap + bottom
+}
+
+/** "Brukar komma 7 maj och lämna 16 aug." in a tooltip's quiet line. */
+function usualLine(kind: "summer" | "winter", row: MigrationRow): string {
+  const come = row.arrival
+    ? kind === "winter"
+      ? `Brukar komma tillbaka ${row.arrival}`
+      : `Brukar komma ${row.arrival}`
+    : null
+  const leave = row.departure ? `lämna ${row.departure}` : null
+  if (!come && !leave) return ""
+  const text = come && leave ? `${come} och ${leave}` : (come ?? `Brukar ${leave}`)
+  return `<div style="color:${ink.pencil}">${text}</div>`
+}
+
+/**
+ * "Flyttfåglarnas år": a heatmap row per bird, scaled to its own busiest week
+ * as "Årets rytm" is, summer birds and winter guests in two panels on one week
+ * axis. Today is a green rule and this year's arrivals green dots, the way the
+ * species page marks this week and this year.
+ */
+function migration(data: MigrationData, motion: boolean, narrow: boolean): EChartsCoreOption {
+  const { row: rowHeight, top, gap } = MIGRATION_LAYOUT
+  const panels = data.panels.filter((panel) => panel.rows.length > 0)
+  const left = narrow ? 104 : 140
+  let y = top
+  const grids = panels.map((panel) => {
+    const grid = { left, right: 8, top: y, height: panel.rows.length * rowHeight }
+    y += grid.height + gap
+    return grid
+  })
+  const last = panels.length - 1
+  const heatmaps = panels.map((panel, index) => ({
+    type: "heatmap",
+    name: panel.label,
+    xAxisIndex: index,
+    yAxisIndex: index,
+    data: phenologyCells({ species: panel.rows }),
+    itemStyle: { borderColor: ink.white, borderWidth: 1 },
+    emphasis: { itemStyle: { borderColor: ink.green, borderWidth: 2 } },
+    markLine: {
+      silent: true,
+      symbol: "none",
+      animation: false,
+      lineStyle: { color: ink.green, width: 1.5, type: "solid" },
+      label:
+        index === last
+          ? {
+              formatter: "I dag",
+              // The y axis is inverted, so the line's end is at the bottom, clear of the months.
+              position: "end",
+              ...axisLabel,
+              color: ink.green,
+              fontWeight: 600,
+            }
+          : { show: false },
+      data: [{ xAxis: data.today }],
+    },
+  }))
+  const first = panels[0]
+  const dots = {
+    type: "scatter",
+    name: "I år",
+    xAxisIndex: 0,
+    yAxisIndex: 0,
+    z: 3,
+    symbolSize: 7,
+    itemStyle: { color: ink.green, borderColor: ink.white, borderWidth: 1.5 },
+    data: (first?.kind === "summer" ? first.rows : []).flatMap((row, index) =>
+      row.thisYear ? [[row.thisYear.week, index]] : []
+    ),
+  }
+  return {
+    animation: motion,
+    grid: grids,
+    xAxis: panels.map((_, index) => ({
+      ...weekAxis(true, "top", narrow),
+      gridIndex: index,
+      axisLine: { show: false },
+    })),
+    yAxis: panels.map((panel, index) => ({
+      type: "category",
+      gridIndex: index,
+      inverse: true,
+      triggerEvent: true,
+      data: panel.rows.map((row) => row.name),
+      name: panel.label,
+      nameLocation: "start",
+      nameGap: 22,
+      nameTextStyle: {
+        ...axisLabel,
+        color: ink.black,
+        fontWeight: 600,
+        align: "right",
+        padding: [0, 8, 0, 0],
+      },
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        ...axisLabel,
+        color: ink.black,
+        // Every bird named: ECharts would otherwise drop every other label.
+        interval: 0,
+        width: left - 8,
+        overflow: "truncate",
+      },
+    })),
+    visualMap: {
+      show: false,
+      dimension: 2,
+      min: 0,
+      max: 1,
+      seriesIndex: panels.map((_, index) => index),
+      inRange: { color: sequence.slice(1) },
+    },
+    tooltip: {
+      ...tooltipBase,
+      formatter: (item: { seriesIndex: number; seriesType: string; value: number[] }) => {
+        if (item.seriesType === "scatter") {
+          const row = first?.rows[item.value[1] ?? -1]
+          if (!row?.thisYear) return ""
+          return `<b>${row.name}</b><div>I år kom den första ${row.thisYear.day}</div>${usualLine("summer", row)}`
+        }
+        const panel = panels[item.seriesIndex]
+        const [week = 0, index = 0, , count = 0] = item.value
+        const row = panel?.rows[index]
+        if (!panel || !row) return ""
+        return `<b>${row.name}</b><div style="color:${ink.pencil}">${weekLabel(week)}</div><div>${formatNumber(count)} ${count === 1 ? "rapport" : "rapporter"} på ${data.years} år</div>${usualLine(panel.kind, row)}`
+      },
+    },
+    series: [...heatmaps, dots],
+  }
+}
+
+/** What a click on the chart opens: a bird's row or name in "Flyttfåglarnas år". */
+export type ChartClick = {
+  componentType?: string
+  seriesIndex?: number
+  seriesType?: string
+  value?: unknown
+}
+
+export function chartHref(chart: ChartData, click: ChartClick): string | null {
+  if (chart.kind !== "migration") return null
+  const panels = chart.data.panels.filter((panel) => panel.rows.length > 0)
+  const rows = panels.flatMap((panel) => panel.rows)
+  if (click.componentType === "yAxis") {
+    return rows.find((row) => row.name === click.value)?.href ?? null
+  }
+  if (click.componentType !== "series" || !Array.isArray(click.value)) return null
+  const panel = click.seriesType === "scatter" ? panels[0] : panels[click.seriesIndex ?? -1]
+  const index = click.value[1]
+  return typeof index === "number" ? (panel?.rows[index]?.href ?? null) : null
+}
+
 /** `narrow`: the chart is under 480 px wide, so labels thin out and margins tighten. */
 export function buildOption(chart: ChartData, motion: boolean, narrow = false): EChartsCoreOption {
   switch (chart.kind) {
@@ -530,5 +698,7 @@ export function buildOption(chart: ChartData, motion: boolean, narrow = false): 
       return people(chart.data, motion, narrow)
     case "seasons":
       return seasons(chart.data, motion)
+    case "migration":
+      return migration(chart.data, motion, narrow)
   }
 }

@@ -59,7 +59,7 @@ const sentence = `Sedan klubben bildades ${FOUNDED} har ${facts.reportsSinceFoun
     {
       interactive ? (
         <ChartFigure
-          chart={{ kind: "history", data: { years: years.map(({ year, reports, species, observers }) => ({ year, reports, species, observers })), marks, onGran: true } }}
+          chart={{ kind: "history", data: { years: years.map(({ year, reports, species, observers }) => ({ year, reports, species, observers })), marks } }}
           fallback={svg}
           box="aspect-[2/1] sm:aspect-[3/1]"
           inset="12px 8px 24px 8px"
