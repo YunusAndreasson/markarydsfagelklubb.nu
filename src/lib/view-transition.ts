@@ -22,3 +22,9 @@ export function transitionName(
   taken.add(name)
   return `view-transition-name: ${name}; view-transition-class: photo`
 }
+
+/** The request's set of names already given out, created by the first list to ask. */
+export function takenTransitionNames(locals: { transitionNames?: Set<string> }): Set<string> {
+  locals.transitionNames ??= new Set()
+  return locals.transitionNames
+}

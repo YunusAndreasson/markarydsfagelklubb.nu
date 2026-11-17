@@ -5,6 +5,7 @@ import {
   monthKey,
   monthOf,
   monthRange,
+  monthTitle,
   parseMonthKey,
   shiftMonth,
 } from "./event-month"
@@ -111,5 +112,12 @@ describe("groupByMonth", () => {
 
   it("has nothing to group in an empty programme", () => {
     expect(groupByMonth([])).toEqual([])
+  })
+})
+
+describe("monthTitle", () => {
+  it("names the month for a heading", () => {
+    expect(monthTitle("2026-10")).toBe("Oktober 2026")
+    expect(monthTitle("2027-01")).toBe("Januari 2027")
   })
 })

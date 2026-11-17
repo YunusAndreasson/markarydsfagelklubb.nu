@@ -1,4 +1,5 @@
-import { startOfStockholmMonth, stockholmMonthKey } from "./stockholm-time"
+import { formatDate, startOfStockholmMonth, stockholmMonthKey } from "./stockholm-time"
+import { capitalize } from "./text"
 
 /**
  * The calendar's month pages, `/kalender/2026-10`.
@@ -80,4 +81,9 @@ export function groupByMonth<T extends { starts_at: string }>(
     else groups.push({ month, key, events: [event] })
   }
   return groups
+}
+
+/** "2026-10" as a heading or a link: "Oktober 2026". Swedish months are lower case mid-sentence. */
+export function monthTitle(key: string): string {
+  return capitalize(formatDate(`${key}-01T12:00:00Z`, "month"))
 }

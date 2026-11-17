@@ -14,7 +14,7 @@ const { id, label } = Astro.props
 ---
 
 <section aria-labelledby={id} class="flex flex-col gap-3">
-  <h3 id={id} class="type-meta text-muted-foreground">{label}</h3>
+  <h3 id={id} class="type-label">{label}</h3>
   <Register columns={1}>
     <slot />
   </Register>

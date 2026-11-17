@@ -40,7 +40,7 @@ const few = prints.length <= 2
     <section aria-labelledby="larmbandet" class="surface-gran">
       <div class:list={["mx-auto flex w-full max-w-page flex-col gap-5 px-4 py-6 sm:px-6 md:py-8", few && "md:flex-row md:items-start md:justify-between md:gap-10"]}>
         <div class:list={["flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1", few && prints.length > 0 && "md:flex-col md:justify-start"]}>
-          <h2 id="larmbandet" class="type-section text-pretty">
+          <h2 id="larmbandet" class="type-section">
             {/* One shape for every day, so the band reads the same today as in a
                 quiet week: "Larmat i dag: …", "Senast larmat i går: …". */}
             {list.isToday ? "Larmat i dag: " : `Senast larmat ${when}: `}
@@ -49,13 +49,13 @@ const few = prints.length <= 2
             {named.map((one, index) => (
               <>
                 {index > 0 && (index === named.length - 1 ? " och " : ", ")}
-                <a href={`/larm/${one.alertId}`} class:list={["underline-offset-4 hover:underline", one.notable && "text-reflex"]}>
+                <a href={`/larm/${one.alertId}`} class:list={["title-link", one.notable && "text-rarity"]}>
                   {one.name.toLocaleLowerCase("sv")}
                 </a>
               </>
             ))}.
           </h2>
-          <a href="/larm" class="link flex min-h-11 items-center font-medium">Alla larm</a>
+          <a href="/larm" class="action-link">Alla larm</a>
         </div>
         {prints.length > 0 && (
           <LarmRail alerts={prints} layout={few ? "few" : "five"} brief sizes="(min-width: 64rem) 11rem, (min-width: 48rem) 11rem, 64vw" />

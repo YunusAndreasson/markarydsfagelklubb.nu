@@ -4,11 +4,14 @@ export const prerender = false
 import AlertList from "@/components/site/AlertList.astro"
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import LarmFold from "@/components/site/LarmFold.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
 import LokalPoints from "@/components/site/LokalPoints.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { toPin } from "@/lib/lokal"
 import { ACTIVE_DAYS } from "@/lib/lokal-alerts"
@@ -20,6 +23,7 @@ import { listLokalPoints, loadNavigation } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
 import { countWord } from "@/lib/species-page"
 import { dayLabel } from "@/lib/stockholm-time"
+import { rapporter } from "@/lib/text"
 
 /**
  * One lokal: where it is, what the club says about it, and the larm from it
@@ -85,9 +89,6 @@ const reports = reportsByLokal(recent?.sightings ?? [], directory).get(lokal.id)
 const REPORTS_SHOWN = 12
 const reportsShown = reports.slice(0, REPORTS_SHOWN)
 const newestReport = reports[0] ?? null
-// A tally, in digits like the larm beside it ("3 larm", "12 rapporter"):
-// Svenska skrivregler allows figures for counts set as statistics.
-const reportWord = (count: number) => `${count}\u00a0${count === 1 ? "rapport" : "rapporter"}`
 const newestAt = at[0] ?? null
 const newestNear = near[0] ?? null
 /** The newest in full; the whole history stays here, a tap away. */
@@ -110,119 +111,85 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
   description={description ?? `Larm från ${lokal.name} i Markaryds kommun.`}
   menu={navigation.menu}
 >
-  <article class="flex flex-col gap-10">
-    <header class="spread gap-y-6">
-      <div class="in-text flex flex-col gap-4">
-        <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-          <a href="/lokaler" class="crumb">Fågellokaler</a>
-          <span aria-hidden="true"> / </span>
-          {parent && (
-            <>
-              <a href={`/lokaler/${parent.slug}`} class="crumb">{parent.name}</a>
-              <span aria-hidden="true"> / </span>
-            </>
-          )}
-          <span>{lokal.name}</span>
-        </nav>
-        <h1 class="type-title">{lokal.name}</h1>
-        {description && <p class="type-ingress text-muted-foreground">{description}</p>}
-      </div>
-      {/* The map is the page's subject: across the whole spread when it has the
-          club's numbered places, else a still in the text track. */}
-      {pin && (
-        mapPoints.length > 0 ? (
-          <LokalMapFrame pins={[pin]} points={mapPoints} fallback="Kartan behöver JavaScript. Platserna på lokalen står i listan längre ner." class="in-full aspect-square sm:aspect-3/2 lg:aspect-[21/9]" />
-        ) : (
+  <article class="page-stack">
+    <PageHeader
+      title={lokal.name}
+      crumbs={[
+        { href: "/lokaler", label: "Fågellokaler" },
+        ...(parent ? [{ href: `/lokaler/${parent.slug}`, label: parent.name }] : []),
+      ]}
+      ingress={description}
+    />
+
+    {/* The map is the page's subject: across the whole spread when it has the
+        club's numbered places, else a still in the text track. */}
+    {pin && (
+      mapPoints.length > 0 ? (
+        <LokalMapFrame pins={[pin]} points={mapPoints} fallback="Kartan behöver JavaScript. Platserna på lokalen står i listan längre ner." class="aspect-square sm:aspect-3/2 lg:aspect-[21/9]" />
+      ) : (
+        <div class="spread">
           <LokalMapFrame pins={[pin]} still fallback="Kartan behöver JavaScript." class="in-text aspect-2/1" />
-        )
-      )}
-    </header>
+        </div>
+      )
+    )}
 
     {/* The lokal's notes in the text, and what members have seen here in the
         outer margin (docs/design.md, "Uppslaget"), with a jump to the larm. */}
-    <div class="spread gap-y-10">
-      <div class="in-wide flex flex-col gap-10">
+    <div class="spread">
+      <div class="in-wide page-stack">
+        {practical.length > 0 && (
+          <Section id="bra-att-veta" title="Bra att veta" dated>
+            <LokalPoints points={practical} slugs={slugs} />
+          </Section>
+        )}
 
-    {
-      practical.length > 0 && (
-        <section aria-labelledby="bra-att-veta" class="flex flex-col gap-5">
-          <h2 id="bra-att-veta" class="type-section at-text">Bra att veta</h2>
-          <LokalPoints points={practical} slugs={slugs} />
-        </section>
-      )
-    }
+        {places.length > 0 && (
+          <Section id="platser" title="Platser på lokalen" dated>
+            <LokalPoints points={places} slugs={slugs} />
+          </Section>
+        )}
 
-    {
-      places.length > 0 && (
-        <section aria-labelledby="platser" class="flex flex-col gap-5">
-          <h2 id="platser" class="type-section at-text">Platser på lokalen</h2>
-          <LokalPoints points={places} slugs={slugs} />
-        </section>
-      )
-    }
+        {at.length === 0 && near.length === 0 && (
+          <EmptyNote>
+            Inga larm har skickats härifrån ännu. <a href="/larm" class="link">Se alla larm</a>.
+          </EmptyNote>
+        )}
 
-    {
-      at.length === 0 && near.length === 0 ? (
-        <p class="text-muted-foreground measure at-text">
-          Inga larm har skickats härifrån ännu.{" "}
-          <a href="/larm" class="link">
-            Se alla larm
-          </a>
-          .
-        </p>
-      ) : null
-    }
+        {at.length > 0 && (
+          <Section id="pa-lokalen" title="Larm på lokalen" dated>
+            <AlertList alerts={at.slice(0, AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} />
+            {at.length > AT_SHOWN && (
+              <LarmFold count={at.length - AT_SHOWN}>
+                <AlertList alerts={at.slice(AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} compact />
+              </LarmFold>
+            )}
+          </Section>
+        )}
 
-    {
-      at.length > 0 && (
-        <section aria-labelledby="pa-lokalen" class="flex flex-col gap-5">
-          <h2 id="pa-lokalen" class="type-section at-text">Larm på lokalen</h2>
-          <AlertList alerts={at.slice(0, AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} />
-          {at.length > AT_SHOWN && (
-            <LarmFold count={at.length - AT_SHOWN}>
-              <AlertList alerts={at.slice(AT_SHOWN)} headingLevel={3} years="other-years" photos={false} place={false} compact />
-            </LarmFold>
-          )}
-        </section>
-      )
-    }
+        {reports.length > 0 && (
+          <Section id="artportalen" title="Rapporterat i Artportalen">
+            <Fragment slot="lead">
+              Rapporter från högst {REPORT_KM === 1 ? "en kilometer" : `${REPORT_KM} km`} bort, de senaste{" "}
+              {recent?.days ?? 30}&nbsp;dagarna.
+              {reports.length > REPORTS_SHOWN && ` Här är de ${countWord(REPORTS_SHOWN)} senaste av ${reports.length}.`}{" "}
+              Artnamnet leder till rapporten.
+            </Fragment>
+            <Register columns={2}>
+              <SightingEntries sightings={reportsShown} brief who />
+            </Register>
+          </Section>
+        )}
 
-    {
-      reports.length > 0 && (
-        <section aria-labelledby="artportalen" class="flex flex-col gap-5 at-text">
-          <div class="flex flex-col gap-2">
-            <h2 id="artportalen" class="type-section">Rapporterat i Artportalen</h2>
-            <p class="text-muted-foreground measure">
-              Rapporter från högst {REPORT_KM === 1 ? "en kilometer" : `${REPORT_KM} km`} bort, de
-              senaste {recent?.days ?? 30}&nbsp;dagarna.
-              {reports.length > REPORTS_SHOWN && ` Här är de ${countWord(REPORTS_SHOWN)} senaste av ${reports.length}.`}
-              {" "}Artnamnet leder till rapporten.
-            </p>
-          </div>
-          <Register columns={2}>
-            <SightingEntries sightings={reportsShown} brief who />
-          </Register>
-        </section>
-      )
-    }
-
-    {
-      near.length > 0 && (
-        <section aria-labelledby="i-narheten" class="flex flex-col gap-5">
-          <div class="flex flex-col gap-2 at-text">
-            <h2 id="i-narheten" class="type-section">I närheten</h2>
-            <p class="text-muted-foreground max-w-prose">
-              {
-                near.length > NEAR_LIMIT
-                  ? `De ${countWord(NEAR_LIMIT)} senaste larmen inom tre kilometer från lokalen.`
-                  : "Larm inom tre kilometer från lokalen."
-              }
-            </p>
-          </div>
-          <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} compact />
-        </section>
-      )
-    }
+        {near.length > 0 && (
+          <Section id="i-narheten" title="I närheten" dated>
+            <Fragment slot="lead">
+              {near.length > NEAR_LIMIT
+                ? `De ${countWord(NEAR_LIMIT)} senaste larmen inom tre kilometer från lokalen.`
+                : "Larm inom tre kilometer från lokalen."}
+            </Fragment>
+            <AlertList alerts={nearShown} headingLevel={3} years="other-years" photos={false} compact />
+          </Section>
+        )}
       </div>
 
       {(newestAt || newestReport || newestNear || parent) && (
@@ -235,7 +202,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
                 {at.length} larm, senast {newestAt.species.toLocaleLowerCase("sv")}{" "}
                 {dayLabel(newestAt.observedAt)}
               </p>
-              <a href="#pa-lokalen" class="link flex min-h-11 w-fit items-center font-medium">
+              <a href="#pa-lokalen" class="action-link">
                 Se larmen
               </a>
             </AsideNote>
@@ -243,10 +210,10 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
           {newestReport && (
             <AsideNote label="I Artportalen">
               <p>
-                {reportWord(reports.length)}, senast {newestReport.name.toLocaleLowerCase("sv")}{" "}
+                {rapporter(reports.length)}, senast {newestReport.name.toLocaleLowerCase("sv")}{" "}
                 {dayLabel(newestReport.start)}
               </p>
-              <a href="#artportalen" class="link flex min-h-11 w-fit items-center font-medium">
+              <a href="#artportalen" class="action-link">
                 Se rapporterna
               </a>
             </AsideNote>
@@ -256,14 +223,14 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
               <p>
                 Senast {newestNear.species.toLocaleLowerCase("sv")} {dayLabel(newestNear.observedAt)}
               </p>
-              <a href="#i-narheten" class="link flex min-h-11 w-fit items-center font-medium">
+              <a href="#i-narheten" class="action-link">
                 I närheten
               </a>
             </AsideNote>
           )}
           {parent && (
             <AsideNote label="Del av">
-              <a href={`/lokaler/${parent.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
+              <a href={`/lokaler/${parent.slug}`} class="action-link">
                 {parent.name}
               </a>
             </AsideNote>

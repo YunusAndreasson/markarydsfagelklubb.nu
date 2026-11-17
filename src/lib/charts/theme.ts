@@ -12,6 +12,16 @@ export const ink = {
   line: "#DDE5E1",
   reflex: "#F2C230",
   white: "#FFFFFF",
+  /**
+   * Data colour (docs/design.md, "Linjalen"): a chart's ordinary marks on white
+   * are a mid tint of Gran, and the one it points out (this week, this year,
+   * today) is `mark`, full ink. Green stays for what the pointer is on, since
+   * green means "you can act on this".
+   */
+  tint: "#8FB0A4",
+  mark: "#17201D",
+  /** Ordinary marks on a Gran band; Reflex marks the ones it points out. */
+  onGran: "rgba(255,255,255,0.55)",
 } as const
 
 /** Is to Gran, one hue, for heatmaps. */

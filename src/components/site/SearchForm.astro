@@ -1,0 +1,39 @@
+---
+import { Search } from "lucide-react"
+import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+
+/**
+ * The site's search field, the same in the header's panel, on /sok and on the
+ * 404: a large field with the magnifier inside it and one button. A plain GET
+ * to /sok, so it works without JavaScript. The slot is a line under it.
+ */
+interface Props {
+  value?: string
+  /** Focus it on load: /sok while empty (with results, the keyboard would cover them on a phone). */
+  autoFocus?: boolean
+  class?: string
+}
+
+const { value, autoFocus = false, class: className } = Astro.props
+---
+
+<form action="/sok" method="get" role="search" class:list={["flex flex-col gap-2", className]}>
+  <div class="flex gap-2">
+    <div class="relative min-w-0 flex-1">
+      <Search aria-hidden="true" className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2" />
+      <Input
+        type="search"
+        name="q"
+        value={value}
+        autoFocus={autoFocus}
+        enterKeyHint="search"
+        aria-label="Sök bland artiklar, sidor och fågellokaler"
+        placeholder="En art, en plats, ett år …"
+        className="focus-strong h-12 pl-11 text-lg md:text-lg"
+      />
+    </div>
+    <button type="submit" class={buttonVariants({ className: "focus-strong h-12 px-5 text-base" })}>Sök</button>
+  </div>
+  <slot />
+</form>

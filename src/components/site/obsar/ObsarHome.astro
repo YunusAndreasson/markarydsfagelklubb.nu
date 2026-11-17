@@ -1,7 +1,7 @@
 ---
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
-import HomeSection from "@/components/site/HomeSection.astro"
+import Section from "@/components/site/Section.astro"
 import type { Recent, YearStats } from "@/lib/artportalen/types"
 import { arter, yearHeadline } from "@/lib/obsar-stats"
 import ArrivalEntries from "./ArrivalEntries.astro"
@@ -32,10 +32,10 @@ const links = [
 
 {
   (stats || sightings.length > 0) && (
-    <HomeSection id="fynd" title="Fynd i kommunen" href="/obsar" link="Allt om obsar">
+    <Section id="fynd" title="Fynd i kommunen" href="/obsar" link="Allt om obsar" layout="spread" wide>
       <div class="in-wide">
         <RegisterSet>
-          {stats && <p slot="lead" class="type-ingress measure text-pretty">{yearHeadline(stats)}</p>}
+          {stats && <p slot="lead" class="type-ingress text-muted-foreground measure">{yearHeadline(stats)}</p>}
           {stats && (
             <RegisterGroup id="fynd-nya" label="Nya för året">
               <ArrivalEntries species={stats.species} count={4} />
@@ -54,11 +54,11 @@ const links = [
         </RegisterSet>
       </div>
       <Aside label="Mer om fynden" sticky={false} first={false}>
-        <AsideNote label="Listorna" headingLevel={3}>
+        <AsideNote label="Listorna" headingLevel={3} kind="note">
           <ul class="flex flex-col">
             {links.map((one) => (
               <li>
-                <a href={one.href} class="link flex min-h-11 items-center font-medium">
+                <a href={one.href} class="action-link">
                   {one.label}
                 </a>
               </li>
@@ -66,6 +66,6 @@ const links = [
           </ul>
         </AsideNote>
       </Aside>
-    </HomeSection>
+    </Section>
   )
 }

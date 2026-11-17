@@ -5,9 +5,11 @@ import {
   dayLabel,
   formatDate,
   groupByDay,
+  listYear,
   parseStockholmInputValue,
   stockholmYear,
   toStockholmInputValue,
+  yearUnlessThis,
 } from "./stockholm-time"
 
 describe("parseStockholmInputValue", () => {
@@ -138,5 +140,44 @@ describe("groupByDay", () => {
   })
   it("has no groups for no items", () => {
     expect(groupByDay([], (date: string) => date)).toEqual([])
+  })
+})
+
+describe("yearUnlessThis", () => {
+  const now = new Date("2026-11-17T10:00:00Z")
+  it("leaves this year out", () => {
+    expect(yearUnlessThis("2026-03-01T10:00:00Z", now)).toBeNull()
+    expect(yearUnlessThis("2025-12-31T10:00:00Z", now)).toBe(2025)
+  })
+  it("reads the year in Swedish time", () => {
+    // 23:30 UTC on 31 December is already New Year's Day in Stockholm.
+    expect(yearUnlessThis("2025-12-31T23:30:00Z", now)).toBeNull()
+  })
+})
+
+describe("listYear", () => {
+  const now = new Date("2026-11-17T10:00:00Z")
+  const dates = [
+    "2026-11-01T10:00:00Z",
+    "2026-02-01T10:00:00Z",
+    "2025-12-01T10:00:00Z",
+    "2025-06-01T10:00:00Z",
+  ]
+  const at = (d: string) => d
+  it("prints the year where it changes", () => {
+    expect(dates.map((_, i) => listYear(dates, i, at, "changes", now))).toEqual([
+      2026,
+      null,
+      2025,
+      null,
+    ])
+  })
+  it("prints only other years", () => {
+    expect(dates.map((_, i) => listYear(dates, i, at, "other-years", now))).toEqual([
+      null,
+      null,
+      2025,
+      2025,
+    ])
   })
 })

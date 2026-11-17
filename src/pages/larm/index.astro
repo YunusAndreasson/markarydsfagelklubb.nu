@@ -3,9 +3,12 @@ export const prerender = false
 
 import AlertList from "@/components/site/AlertList.astro"
 import AppLinks from "@/components/site/AppLinks.astro"
-import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import LarmFold from "@/components/site/LarmFold.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Pager from "@/components/site/Pager.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { decodeAlertCursor, encodeAlertCursor } from "@/lib/alert-keyset"
 import { digestDay, pageOfDays, speciesCount } from "@/lib/larm-digest"
@@ -47,81 +50,57 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeAlertCurs
   description="Fynd som har larmats i Markaryds Fågelklubbs app."
   menu={navigation.menu}
 >
-  <div class="flex flex-col gap-10">
+  <div class="page-stack">
     {/* Where the larm come from sits in the outer margin beside the title
-        (docs/design.md, "Uppslaget"); the photos take that track below it. */}
-    <header class="spread gap-y-4">
-      <div class="in-text flex flex-col gap-3">
-        <h1 class="type-title">Larm</h1>
-        <p class="type-ingress text-muted-foreground">
-          Fynd som har larmats i appen, med karta över var fågeln sågs.
-        </p>
-      </div>
-      <Aside label="Klubbens app" sticky={false} first={false} class="lg:pt-3">
-        <AsideNote label="Larma själv och få larmen i mobilen">
-          <AppLinks sentence={false} />
-        </AsideNote>
-      </Aside>
-    </header>
+        (docs/design.md, "Uppslaget"). */}
+    <PageHeader
+      title="Larm"
+      ingress="Fynd som har larmats i appen, med karta över var fågeln sågs."
+      asideLabel="Klubbens app"
+    >
+      <AsideNote slot="aside" label="Larma själv och få larmen i mobilen" kind="note">
+        <AppLinks sentence={false} />
+      </AsideNote>
+    </PageHeader>
 
     {
       alerts.length === 0 ? (
         params.has("fore") || params.has("efter") ? (
-          <p class="text-muted-foreground at-text">
-            Det finns inga fler larm åt det hållet. <a href="/larm" class="link">Till de senaste larmen</a>
-          </p>
+          <EmptyNote>
+            Det finns inga fler larm åt det hållet. <a href="/larm" class="link">Till de senaste larmen</a>.
+          </EmptyNote>
         ) : (
-          <p class="text-muted-foreground at-text">
-            Inga larm ännu. Larmen skickas från appen och syns sedan här.
-          </p>
+          <EmptyNote>Inga larm ännu. Larmen skickas från appen och syns sedan här.</EmptyNote>
         )
       ) : (
         days.map((day, index) => {
           const { highlights, rest } = digestDay(day.items)
           const count = speciesCount(day.items)
           return (
-            <section aria-labelledby={`dag-${index}`} class="flex flex-col gap-6">
-              <div class="at-text flex flex-wrap items-baseline gap-x-3">
-                <h2 id={`dag-${index}`} class="type-section">{dayHeading(day.day, now)}</h2>
-                {rest.length > 0 && (
-                  <p class="type-meta text-muted-foreground">
-                    {day.items.length} larm om {count} {count === 1 ? "art" : "arter"}
-                  </p>
-                )}
-              </div>
+            <Section
+              id={`dag-${index}`}
+              title={dayHeading(day.day, now)}
+              note={rest.length > 0 ? `${day.items.length} larm om ${count} ${count === 1 ? "art" : "arter"}` : null}
+              dated
+            >
               <AlertList alerts={highlights} headingLevel={3} clockOnly />
               {rest.length > 0 && (
                 <LarmFold count={rest.length}>
                   <AlertList alerts={rest} headingLevel={3} clockOnly compact photos={false} />
                 </LarmFold>
               )}
-            </section>
+            </Section>
           )
         })
       )
     }
 
-    {
-      (older || newer) && (
-        <nav aria-label="Fler larm" class="at-text flex flex-wrap gap-x-8 gap-y-2">
-          {newer && (
-            <a
-              href={link("efter", newer)}
-              class="link flex min-h-11 items-center font-medium"
-            >
-              Nyare larm
-            </a>
-          )}
-          {older && (
-            <a
-              href={link("fore", older)}
-              class="link flex min-h-11 items-center font-medium"
-            >
-              Äldre larm
-            </a>
-          )}
-        </nav>
-      )
-    }
+    <Pager
+      label="Fler larm"
+      links={[
+        newer && { href: link("efter", newer), label: "Nyare larm", rel: "prev" },
+        older && { href: link("fore", older), label: "Äldre larm", rel: "next" },
+      ]}
+    />
   </div>
 </SiteLayout>

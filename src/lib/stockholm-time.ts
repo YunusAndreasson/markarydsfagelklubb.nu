@@ -6,6 +6,8 @@
  * Europe/Stockholm rules, including the summer-time changes.
  */
 
+import { capitalize } from "./text"
+
 export const TIME_ZONE = "Europe/Stockholm"
 
 type Parts = { year: number; month: number; day: number; hour: number; minute: number }
@@ -187,7 +189,7 @@ export function formatDate(value: Date | string, format: DateFormat): string {
 
 /**
  * When a larm was seen, as a member would say it: "i dag", "i går", else
- * "20 okt." — with the year when it isn't this one. Days are Stockholm days,
+ * "20 okt" — with the year when it isn't this one. Days are Stockholm days,
  * so the 25-hour night when summer time ends is still one day.
  */
 export function dayLabel(value: Date | string, now: Date = new Date()): string {
@@ -208,8 +210,7 @@ export function dayLabel(value: Date | string, now: Date = new Date()): string {
 export function dayHeading(value: Date | string, now: Date = new Date()): string {
   const label = dayLabel(value, now)
   if (label === "i dag" || label === "i går") return label === "i dag" ? "I dag" : "I går"
-  const weekday = formatDate(value, "weekday")
-  const heading = weekday.charAt(0).toUpperCase() + weekday.slice(1)
+  const heading = capitalize(formatDate(value, "weekday"))
   return stockholmYear(value) === stockholmYear(now)
     ? heading
     : `${heading} ${stockholmYear(value)}`
@@ -239,4 +240,33 @@ export function stockholmYear(value: Date | string): number {
 /** An ISO `datetime` attribute value for `<time>`. */
 export function isoDateTime(value: Date | string): string {
   return toDate(value).toISOString()
+}
+
+/**
+ * The year to print beside a short date, or null: only when it isn't this one.
+ * The site's rule everywhere a date leaves its year out ("3 nov", "3 nov 2024").
+ */
+export function yearUnlessThis(value: Date | string, now: Date = new Date()): number | null {
+  const year = stockholmYear(value)
+  return year === stockholmYear(now) ? null : year
+}
+
+/**
+ * The year to print on a dated list's row, or null. "changes": on the first row
+ * and wherever the year changes from the row above (an archive). "other-years":
+ * only on rows that aren't this year (a list that is mostly recent).
+ */
+export function listYear<T>(
+  items: readonly T[],
+  index: number,
+  dateOf: (item: T) => Date | string,
+  mode: "changes" | "other-years",
+  now: Date = new Date()
+): number | null {
+  const item = items[index]
+  if (item === undefined) return null
+  if (mode === "other-years") return yearUnlessThis(dateOf(item), now)
+  const year = stockholmYear(dateOf(item))
+  const previous = items[index - 1]
+  return previous !== undefined && stockholmYear(dateOf(previous)) === year ? null : year
 }

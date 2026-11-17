@@ -1,0 +1,17 @@
+---
+/**
+ * What a list says when it has nothing to show, or when its data couldn't be
+ * fetched: one muted line at the reading measure, where the list would start.
+ * Say what's missing and what to do; no apology (docs/design.md, "Ordval").
+ * `wide` puts it at the margin's edge, on a page with nothing in the margin;
+ * `inline` drops the offset, inside a block that is already placed.
+ */
+interface Props {
+  wide?: boolean
+  inline?: boolean
+}
+
+const { wide = false, inline = false } = Astro.props
+---
+
+<p class:list={["text-muted-foreground measure", !wide && !inline && "at-text"]}><slot /></p>

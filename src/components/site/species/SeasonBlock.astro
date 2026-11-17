@@ -4,7 +4,7 @@ import RegisterGroup from "@/components/site/obsar/RegisterGroup.astro"
 import RegisterSet from "@/components/site/obsar/RegisterSet.astro"
 import type { ThisWeek } from "@/lib/season"
 import { speciesHref } from "@/lib/species"
-import { dayMonth } from "@/lib/species-page"
+import { dayOfYearLabel } from "@/lib/species-page"
 import { formatDate } from "@/lib/stockholm-time"
 
 /**
@@ -36,7 +36,7 @@ const short = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
         <RegisterGroup id={`${headingId}-kommer`} label="Brukar komma nu">
           {arriving.map((bird) => (
             <Entry
-              when={dayMonth(bird.day)}
+              when={dayOfYearLabel(bird.day)}
               title={bird.name}
               href={slugs.has(bird.id) ? speciesHref(slugs.get(bird.id) as string) : null}
               notes={[
@@ -56,7 +56,7 @@ const short = (date: string) => formatDate(`${date}T12:00:00Z`, "short")
         <RegisterGroup id={`${headingId}-lamnar`} label="Brukar lämna nu">
           {leaving.map((bird) => (
             <Entry
-              when={dayMonth(bird.day)}
+              when={dayOfYearLabel(bird.day)}
               title={bird.name}
               href={slugs.has(bird.id) ? speciesHref(slugs.get(bird.id) as string) : null}
               notes={[bird.thisYear ? `Senast sedd i år ${short(bird.thisYear)}` : "Inte sedd i år"]}

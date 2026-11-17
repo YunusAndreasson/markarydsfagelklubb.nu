@@ -1,0 +1,76 @@
+---
+import SectionHeading from "@/components/site/SectionHeading.astro"
+
+/**
+ * A page's section (docs/design.md, "Linjalen"): a heading, then what it holds,
+ * 1.5rem apart. The space between sections is the page's (`page-stack`), never
+ * the section's.
+ *
+ * - `stack` (the default) is a column at the text's edge. `wide` starts it at
+ *   the margin's edge, for a page with nothing in the margin; `nested` drops
+ *   the offset, for a section inside one already placed (`ObsarPair`);
+ *   `measure` holds it to the reading measure, for running text and tables;
+ *   `dated` is for rows with a date in the margin (`margined`): the section
+ *   starts at the margin's edge and only its heading at the text's.
+ * - `spread` makes the section a spread: the heading across it, and the
+ *   children choose their tracks (`in-text`, `in-aside`, …), as the home page's
+ *   sections do. `wide` puts the heading at the container's edge.
+ *
+ * The heading's `lead` slot passes through: a short muted line under it.
+ */
+interface Props {
+  /** The id of the section's heading: the `title` one, or a heading in the slot. */
+  id?: string
+  title?: string
+  href?: string
+  link?: string
+  note?: string | null
+  layout?: "stack" | "spread"
+  measure?: boolean
+  nested?: boolean
+  wide?: boolean
+  dated?: boolean
+}
+
+const {
+  id,
+  title,
+  href,
+  link,
+  note,
+  layout = "stack",
+  measure = false,
+  nested = false,
+  wide = false,
+  dated = false,
+} = Astro.props
+const spread = layout === "spread"
+const lead = Astro.slots.has("lead")
+---
+
+<section
+  aria-labelledby={id}
+  class:list={[
+    spread ? "spread gap-y-6" : ["flex min-w-0 flex-col gap-6", !nested && !wide && !dated && "at-text", measure && "measure"],
+  ]}
+>
+  {
+    title && id && (
+      <div class:list={[spread && (wide ? "in-full" : "in-text"), dated && "at-text"]}>
+        {lead ? (
+          <SectionHeading id={id} href={href} link={link} note={note} reserveLink={nested}>
+            {title}
+            <Fragment slot="lead">
+              <slot name="lead" />
+            </Fragment>
+          </SectionHeading>
+        ) : (
+          <SectionHeading id={id} href={href} link={link} note={note} reserveLink={nested}>
+            {title}
+          </SectionHeading>
+        )}
+      </div>
+    )
+  }
+  <slot />
+</section>

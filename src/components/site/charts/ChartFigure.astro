@@ -34,7 +34,7 @@ const { chart, fallback, box, height, inset = "0", legend, class: className } = 
 <figure class:list={["chart-figure flex flex-col gap-3", className]}>
   {
     legend && legend.length > 0 && (
-      <ul class="type-meta text-muted-foreground flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
+      <ul class="type-label flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
         {legend.map((item) => (
           <li class="flex items-center gap-2">
             {item.kind === "band" ? (

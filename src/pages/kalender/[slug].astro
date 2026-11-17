@@ -4,10 +4,20 @@ export const prerender = false
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import Body from "@/components/site/Body.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import EventList from "@/components/site/EventList.astro"
+import MarginDate from "@/components/site/MarginDate.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Pager from "@/components/site/Pager.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { publicEventKindLabel } from "@/lib/event-kind"
-import { monthKey, monthRange, parseMonthKey, shiftMonth } from "@/lib/event-month"
+import {
+  monthKey,
+  monthTitle as monthLabel,
+  monthRange,
+  parseMonthKey,
+  shiftMonth,
+} from "@/lib/event-month"
 import {
   deadlineInstant,
   eventStatus,
@@ -37,12 +47,6 @@ import { formatDate, isoDateTime, stockholmMonthKey, stockholmYear } from "@/lib
 const slug = Astro.params.slug ?? ""
 const { db } = Astro.locals
 if (!db || !isValidSlug(slug)) return new Response(null, { status: 404 })
-
-/** "oktober 2026" as a heading: Swedish months are lower case mid-sentence. */
-const monthLabel = (key: string) => {
-  const label = formatDate(`${key}-01T12:00:00Z`, "month")
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
 
 const month = parseMonthKey(slug)
 let events: EventSummary[] = []
@@ -119,32 +123,18 @@ const description = month
 <SiteLayout title={title} description={description} menu={menu}>
   {
     month && (
-      <div class="flex flex-col gap-10">
-        <header class="at-text flex flex-col gap-5">
-          <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-            <a href="/kalender" class="crumb">Program</a>
-          </nav>
-          <h1 class="type-title">{monthTitle}</h1>
-        </header>
+      <div class="page-stack">
+        <PageHeader title={monthTitle} crumbs={[{ href: "/kalender", label: "Program" }]} />
 
-        {events.length === 0 ? (
-          <p class="at-text text-muted-foreground">
-            Inga aktiviteter den här månaden.
-          </p>
-        ) : (
-          <EventList events={events} />
-        )}
+        {events.length === 0 ? <EmptyNote>Inga aktiviteter den här månaden.</EmptyNote> : <EventList events={events} />}
 
-        {/* Side by side in the reading column, like the article paging: pushed
-            to the edges of the container they read as unrelated. */}
-        <nav aria-label="Fler månader" class="at-text flex flex-wrap gap-x-8 gap-y-2">
-          <a href={`/kalender/${previous}`} class="link flex min-h-11 items-center font-medium">
-            {monthLabel(previous)}
-          </a>
-          <a href={`/kalender/${next}`} class="link flex min-h-11 items-center font-medium">
-            {monthLabel(next)}
-          </a>
-        </nav>
+        <Pager
+          label="Fler månader"
+          links={[
+            { href: `/kalender/${previous}`, label: monthLabel(previous), rel: "prev" },
+            { href: `/kalender/${next}`, label: monthLabel(next), rel: "next" },
+          ]}
+        />
       </div>
     )
   }
@@ -156,37 +146,35 @@ const description = month
          on in the outer margin: where, until when, and whom to call. On a
          phone those facts follow the date, before the text, which is where a
          member standing in a car park looks for the number. */
-      <article class="flex flex-col gap-8">
-        <header class="spread">
-          <div class="in-text flex flex-col gap-4">
-            <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-              <a href="/kalender" class="crumb">Program</a>
-              <span aria-hidden="true"> / </span>
-              <a href={`/kalender/${eventMonth}`} class="crumb">
-                {monthLabel(eventMonth)}
-              </a>
-            </nav>
-            <h1 class="type-title">{event.title}</h1>
-            {lead && <p class="type-ingress text-muted-foreground">{lead}</p>}
-          </div>
-        </header>
+      <article class="page-stack">
+        <PageHeader
+          title={event.title}
+          crumbs={[
+            { href: "/kalender", label: "Program" },
+            { href: `/kalender/${eventMonth}`, label: monthLabel(eventMonth) },
+          ]}
+          ingress={lead}
+        />
 
         <div class="spread gap-y-8">
-          <div class="in-margin type-meta text-muted-foreground flex flex-col max-lg:-order-1 md:pt-1">
-            <time datetime={isoDateTime(event.starts_at)} class="flex flex-wrap gap-x-1 md:flex-col">
-              <span>{formatDate(event.starts_at, "weekdayName")}</span>
-              <span>{formatDate(event.starts_at, "dayMonth")}</span>
-              <span>{stockholmYear(event.starts_at)}</span>
-              {clockLabel && <span>{clockLabel}</span>}
-            </time>
-            {untilLabel && <span class="mt-1">till {untilLabel}</span>}
-            {statusLabel && <span class="text-primary mt-1 font-semibold">{statusLabel}</span>}
-            {kind && <span class="mt-1">{kind}</span>}
-          </div>
+          <MarginDate
+            datetime={isoDateTime(event.starts_at)}
+            parts={[
+              formatDate(event.starts_at, "weekdayName"),
+              formatDate(event.starts_at, "dayMonth"),
+              stockholmYear(event.starts_at),
+              clockLabel,
+            ]}
+            class="in-margin max-lg:-order-1"
+          >
+            {untilLabel && <span>till {untilLabel}</span>}
+            {statusLabel && <span class="text-foreground font-semibold">{statusLabel}</span>}
+            {kind && <span>{kind}</span>}
+          </MarginDate>
 
-          <div class="in-text flex flex-col gap-6">
+          <div class="in-text flex flex-col gap-6 self-baseline">
             {event.body_html && <Body html={event.body_html} />}
-            <a href="/kalender" class="link flex min-h-11 w-fit items-center font-medium">
+            <a href="/kalender" class="action-link">
               Hela programmet
             </a>
           </div>
@@ -196,10 +184,10 @@ const description = month
           {(event.place ||
             hasContact ||
             ((deadlineLabel || (event.registration_url && open)) && eventStatus(event, now) !== "past")) && (
-            <Aside label="Kort om dagen" class="max-md:-mt-2">
+            <Aside label="Kort om dagen">
               {event.place && (
                 <AsideNote label="Plats">
-                  <p class="text-lg leading-snug font-medium">{event.place}</p>
+                  <p>{event.place}</p>
                 </AsideNote>
               )}
               {(deadlineLabel || (event.registration_url && open)) && eventStatus(event, now) !== "past" && (
@@ -207,7 +195,7 @@ const description = month
                   {deadlineLabel && open && <p>Senast {deadlineLabel}</p>}
                   {deadlineLabel && !open && <p class="text-muted-foreground">Sista anmälningsdag var {deadlineLabel}.</p>}
                   {event.registration_url && open && (
-                    <a href={event.registration_url} class="link flex min-h-11 w-fit items-center font-medium">
+                    <a href={event.registration_url} class="action-link">
                       Anmäl dig
                     </a>
                   )}
@@ -218,7 +206,7 @@ const description = month
                   {event.contact_name && <p>{event.contact_name}</p>}
                   {event.contact_phone &&
                     (phoneHref ? (
-                      <a href={phoneHref} class="link flex min-h-11 w-fit items-center font-medium">
+                      <a href={phoneHref} class="action-link">
                         {formatPhone(event.contact_phone)}
                       </a>
                     ) : (

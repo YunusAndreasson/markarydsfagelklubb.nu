@@ -1,5 +1,6 @@
 ---
 import type { LokalMapProps } from "@/components/site/lokal-map.client"
+import MapBox from "@/components/site/MapBox.astro"
 import type { LokalPin } from "@/lib/lokal"
 import type { MapPoint } from "@/lib/lokal-points"
 // Leaflet's own sheet first, so map.css overrides it.
@@ -40,16 +41,8 @@ const {
 const props: LokalMapProps = { pins, still, points: points ?? [] }
 ---
 
-<div class:list={["bg-muted relative isolate overflow-hidden rounded-[4px]", className]}>
-  {/* Drawn by lokal-map.client.ts when it nears the screen. */}
-  <div data-lokal-map data-props={JSON.stringify(props)} class="size-full" aria-hidden="true"></div>
-
-  <noscript>
-    <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-6 text-center">
-      {fallback}
-    </p>
-  </noscript>
-</div>
+{/* Drawn by lokal-map.client.ts when it nears the screen. */}
+<MapBox kind="lokal" data={props} fallback={fallback} class={className} />
 
 <script>
   import { mountLokalMaps } from "./lokal-map.client"

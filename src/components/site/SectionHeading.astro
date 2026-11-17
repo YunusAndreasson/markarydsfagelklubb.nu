@@ -1,8 +1,13 @@
 ---
 /**
  * A section's name and, beside it, the one link to the rest of it — "Alla
- * larm", "Alla artiklar" (docs/design.md, "Tidskriften"). The size of the
+ * larm", "Hela programmet" (docs/design.md, "Tidskriften"). The size of the
  * heading carries the hierarchy; there is no label above it and no rule.
+ *
+ * On a phone the link always sits under the heading, so every section reads
+ * the same whether or not its name leaves room beside it; from sm it sits at
+ * the far edge. A `note` (a count) sits beside the heading, and the `lead`
+ * slot is the short muted line under it that says what the section holds.
  */
 
 interface Props {
@@ -10,6 +15,7 @@ interface Props {
   id: string
   href?: string
   link?: string
+  note?: string | null
   /**
    * Keep the link's row height with no link, so two sections side by side
    * (`ObsarPair`) start their lists on one line whether or not each has a link.
@@ -17,24 +23,30 @@ interface Props {
   reserveLink?: boolean
 }
 
-const { id, href, link, reserveLink = false } = Astro.props
+const { id, href, link, note, reserveLink = false } = Astro.props
 ---
 
-<div class="flex flex-wrap items-baseline justify-between gap-x-6">
-  <h2 id={id} class="type-section"><slot /></h2>
-  {
-    href && link ? (
-      <a href={href} class="link flex min-h-11 items-center font-medium">
-        {link}
-      </a>
-    ) : (
-      /* The link's box with nothing in it, so the heading sits where a link
-         beside it would put it. */
-      reserveLink && (
-        <span aria-hidden="true" class="invisible flex min-h-11 items-center font-medium">
-          &nbsp;
-        </span>
+<div class="flex flex-col gap-2">
+  <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-6">
+    <div class="flex flex-wrap items-baseline gap-x-3">
+      <h2 id={id} class="type-section"><slot /></h2>
+      {note && <p class="type-label">{note}</p>}
+    </div>
+    {
+      href && link ? (
+        <a href={href} class="action-link">
+          {link}
+        </a>
+      ) : (
+        /* The link's box with nothing in it, so the heading sits where a link
+           beside it would put it. */
+        reserveLink && (
+          <span aria-hidden="true" class="invisible hidden min-h-11 lg:flex">
+            &nbsp;
+          </span>
+        )
       )
-    )
-  }
+    }
+  </div>
+  {Astro.slots.has("lead") && <p class="text-muted-foreground measure"><slot name="lead" /></p>}
 </div>

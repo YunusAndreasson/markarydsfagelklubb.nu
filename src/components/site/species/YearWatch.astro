@@ -1,7 +1,8 @@
 ---
 import Entry from "@/components/site/obsar/Entry.astro"
 import { speciesHref } from "@/lib/species"
-import { dayMonth } from "@/lib/species-page"
+import { dayOfYearLabel } from "@/lib/species-page"
+import { capitalize, rapporter } from "@/lib/text"
 import { type MissingBird, ratioPhrase, type UnusualBird } from "@/lib/year-watch"
 
 /**
@@ -20,9 +21,7 @@ interface Props {
 }
 
 const { missing, more, less, slugs, headingId } = Astro.props
-const capital = (name: string) => name.charAt(0).toLocaleUpperCase("sv") + name.slice(1)
 const href = (id: number) => (slugs.has(id) ? speciesHref(slugs.get(id) as string) : null)
-const reports = (count: number) => (count === 1 ? "1 rapport" : `${count} rapporter`)
 const groups = [
   missing.length > 0 && { id: "saknas", title: "Saknas i år", kind: "missing" as const },
   more.length > 0 && { id: "mer", title: "Fler rapporter än vanligt", kind: "more" as const },
@@ -33,19 +32,19 @@ const groups = [
 {
   groups.length > 0 && (
     <div class="flex flex-col gap-6">
-      <p class="text-muted-foreground measure leading-relaxed">
+      <p class="text-muted-foreground measure">
         Året hittills jämfört med samma tid de senaste tjugo åren i Artportalen.
       </p>
       <div class:list={["grid gap-x-10 gap-y-8 md:grid-cols-2", groups.length > 2 && "lg:grid-cols-3"]}>
         {groups.map((group) => (
           <section aria-labelledby={`${headingId}-${group.id}`} class="flex flex-col gap-3">
-            <h3 id={`${headingId}-${group.id}`} class="type-meta text-muted-foreground">{group.title}</h3>
+            <h3 id={`${headingId}-${group.id}`} class="type-label">{group.title}</h3>
             <ul>
               {group.kind === "missing" &&
                 missing.map((bird) => (
                   <Entry
-                    when={dayMonth(bird.usual)}
-                    title={capital(bird.name)}
+                    when={dayOfYearLabel(bird.usual)}
+                    title={capitalize(bird.name)}
                     href={href(bird.id)}
                     notes={[`Sedd vid den här tiden ${bird.byNow} av ${bird.of} år, men inte i år`]}
                   />
@@ -56,15 +55,15 @@ const groups = [
                   return (
                     <li class="mb-3.5 flex break-inside-avoid flex-col">
                       {link ? (
-                        <a href={link} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
-                          {capital(bird.name)}
+                        <a href={link} class="type-item title-link w-fit">
+                          {capitalize(bird.name)}
                         </a>
                       ) : (
-                        <span class="type-item">{capital(bird.name)}</span>
+                        <span class="type-item">{capitalize(bird.name)}</span>
                       )}
-                      <span class="text-muted-foreground text-sm leading-snug text-balance">{capital(ratioPhrase(bird.ratio))}:</span>
-                      <span class="text-muted-foreground text-sm leading-snug tabular-nums">
-                        {reports(bird.count)} i år, brukar vara {bird.expected}
+                      <span class="type-label text-balance">{capitalize(ratioPhrase(bird.ratio))}:</span>
+                      <span class="type-label">
+                        {rapporter(bird.count)} i år, brukar vara {bird.expected}
                       </span>
                     </li>
                   )
@@ -73,7 +72,7 @@ const groups = [
           </section>
         ))}
       </div>
-      <p class="type-meta text-muted-foreground measure">
+      <p class="type-caption measure">
         Datumet är när arten brukar ses första gången. Jämförelsen räknar med andelen av årets rapporter, inte antalet.
       </p>
     </div>

@@ -5,9 +5,10 @@ import AlertList from "@/components/site/AlertList.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import LarmMapFrame from "@/components/site/LarmMapFrame.astro"
 import LarmRail from "@/components/site/LarmRail.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
 import PhotoViewer from "@/components/site/PhotoViewer.astro"
-import RarityChip from "@/components/site/RarityChip.astro"
-import SectionHeading from "@/components/site/SectionHeading.astro"
+import RarityNote from "@/components/site/RarityNote.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
@@ -15,9 +16,8 @@ import { splitLarm } from "@/lib/front-page"
 import { osmLink, toLarmPins } from "@/lib/larm-map"
 import { listPublicAlerts, loadPublicAlert } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
-import { isRare, rarityLabel } from "@/lib/rarity"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
-import { transitionName } from "@/lib/view-transition"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -61,8 +61,7 @@ const fallback = larm.position
   ? "Kartan behöver JavaScript. Länken under öppnar platsen i OpenStreetMap."
   : `Kartan behöver JavaScript. Larmet kom ${where}.`
 // Named before the rail's photos ask (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const photoTransition = transitionName(Astro.locals.transitionNames, "larm", larm.id)
+const photoTransition = transitionName(takenTransitionNames(Astro.locals), "larm", larm.id)
 
 import { speciesLink } from "@/lib/species"
 ---
@@ -74,33 +73,25 @@ import { speciesLink } from "@/lib/species"
   type="article"
   menu={navigation.menu}
 >
-  <div class="flex flex-col gap-16">
-    <article class="flex flex-col gap-8">
-      <header class="spread">
-        {/* The scientific name belongs to the species, so it sits under it, as
-            in a field guide, rather than among the facts about this larm. It starts
-            at the photo's edge, in line with the logo: the page has nothing for the
-            margin (docs/design.md, "Uppslaget"). */}
-        <div class="in-wide flex flex-col gap-4">
-          <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-            <a href="/larm" class="crumb">Larm</a>
-          </nav>
-          <div class="flex flex-col gap-2">
-            <h1 class="type-title">
-              {larm.species}
-              {larm.count !== null && larm.count > 1 && (
-                <span class="text-muted-foreground font-normal">{larm.count} ex.</span>
-              )}
-            </h1>
-            {larm.scientificName && <p class="text-muted-foreground text-lg italic">{larm.scientificName}</p>}
-            {larm.scientificName && (
-              <a href={speciesLink(larm.species)} class="link type-meta flex min-h-11 w-fit items-center">
-                Mer om {larm.species.toLocaleLowerCase("sv")}
-              </a>
-            )}
-          </div>
-        </div>
-      </header>
+  <div class="page-stack">
+    <article class="page-stack">
+      {/* The scientific name belongs to the species, so it sits under it, as in
+          a field guide, rather than among the facts about this larm. It starts at
+          the photo's edge, in line with the logo: the page has nothing for the
+          margin (docs/design.md, "Uppslaget"). */}
+      <PageHeader
+        title={larm.species}
+        titleNote={larm.count !== null && larm.count > 1 ? `${larm.count} ex.` : null}
+        crumbs={[{ href: "/larm", label: "Larm" }]}
+        latin={larm.scientificName}
+        wide
+      >
+        {larm.scientificName && (
+          <a slot="after" href={speciesLink(larm.species)} class="action-link">
+            Mer om {larm.species.toLocaleLowerCase("sv")}
+          </a>
+        )}
+      </PageHeader>
 
       {/* The member's photo across the margin and the text, and the facts of the
           sighting beside it in the outer margin (docs/design.md, "Uppslaget"):
@@ -125,31 +116,26 @@ import { speciesLink } from "@/lib/species"
                   alt={`Foto av ${larm.species}`}
                   decoding="async"
                   style={photoTransition}
-                  class="h-full w-full rounded-[4px] object-contain object-left-top"
+                  class="size-full rounded-[4px] object-contain object-left-top"
                 />
               </a>
             </div>
           )
         }
-        <div class:list={["flex flex-col gap-5", larm.photoUrl ? "in-aside lg:row-start-1" : "in-wide"]}>
+        <div class:list={["flex flex-col gap-6", larm.photoUrl ? "in-aside lg:row-start-1" : "in-wide"]}>
           <AsideNote label="När">
-            <time datetime={isoDateTime(observed)} class="leading-snug">
+            <time datetime={isoDateTime(observed)}>
               {formatDate(observed, "weekday")} {stockholmYear(observed)}, {formatDate(observed, "clock")}
             </time>
           </AsideNote>
-          <AsideNote label="Prefix">
-            <p class="flex items-center gap-2">
-              <RarityChip level={larm.rarity} />
-              <span class:list={[isRare(larm.rarity) && "text-rarity font-medium"]} aria-hidden="true">{rarityLabel(larm.rarity)}</span>
-            </p>
-          </AsideNote>
+          <RarityNote level={larm.rarity} />
           <AsideNote label="Plats">
             {larm.lokal ? (
-              <a href={`/lokaler/${larm.lokal.slug}`} class="text-lg leading-snug font-medium decoration-primary w-fit underline-offset-4 hover:underline">
+              <a href={`/lokaler/${larm.lokal.slug}`} class="title-link w-fit">
                 {larm.place}
               </a>
             ) : (
-              <p class="text-lg leading-snug font-medium">{larm.place}</p>
+              <p>{larm.place}</p>
             )}
           </AsideNote>
           {hasMap && (
@@ -163,7 +149,7 @@ import { speciesLink } from "@/lib/species"
                 class={larm.photoUrl ? "aspect-square w-full" : "aspect-2/1 w-full"}
               />
               {larm.position && (
-                <a href={osmLink(larm.position)} class="link type-meta flex min-h-11 w-fit items-center">
+                <a href={osmLink(larm.position)} class="action-link">
                   Öppna platsen i OpenStreetMap
                 </a>
               )}
@@ -172,7 +158,7 @@ import { speciesLink } from "@/lib/species"
           <AsideNote label="Larmat av">
             <p>{larm.observer ?? ANONYMOUS_OBSERVER}</p>
           </AsideNote>
-          <p class="text-muted-foreground text-sm leading-relaxed">
+          <p class="type-caption">
             {larm.position && "Kartan visar platsen som angavs i larmet. "}Larmet skickades från appen{" "}
             <time datetime={isoDateTime(larm.sentAt)}>{formatDate(larm.sentAt, "dateTime")}</time>.
           </p>
@@ -182,21 +168,14 @@ import { speciesLink } from "@/lib/species"
 
     {
       (prints.length > 0 || plain.length > 0) && (
-        <section aria-labelledby="fler" class="spread gap-y-6">
-          <div class="in-wide flex flex-col gap-6">
-            {/* Over a list its heading starts where the text does; over the prints, with them. */}
-            <div class:list={[prints.length === 0 && "at-text"]}>
-              <SectionHeading id="fler" href="/larm" link="Alla larm">
-                Fler larm
-              </SectionHeading>
-            </div>
-            {prints.length > 0 ? (
-              <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 64vw" />
-            ) : (
-              <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} />
-            )}
-          </div>
-        </section>
+        /* Over the prints the heading starts with them; over a list, where the text does. */
+        <Section id="fler" title="Fler larm" href="/larm" link="Alla larm" wide={prints.length > 0} dated={prints.length === 0}>
+          {prints.length > 0 ? (
+            <LarmRail alerts={prints} layout="three" sizes="(min-width: 48rem) 14rem, 64vw" />
+          ) : (
+            <AlertList alerts={plain} headingLevel={3} years="other-years" photos={false} />
+          )}
+        </Section>
       )
     }
   </div>

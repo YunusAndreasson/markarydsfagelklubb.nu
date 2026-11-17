@@ -9,7 +9,7 @@ import { MONTHS_SHORT } from "./charts/theme"
  */
 
 /** "23 apr" for a 1-based day of the year, read in a common (non-leap) year. */
-export function dayMonth(day: number): string {
+export function dayOfYearLabel(day: number): string {
   const date = new Date(Date.UTC(2025, 0, day))
   return `${date.getUTCDate()}\u00a0${MONTHS_SHORT[date.getUTCMonth()]}`
 }
@@ -160,10 +160,10 @@ export function leadSentence(
   // Only the coming: a summer bird's last report is when it goes quiet (a
   // gök's is early July), not when it leaves, and "Över året" shows the rest.
   if (kind === "summer" && arrival !== null) {
-    return `En flyttfågel som brukar komma till kommunen kring ${dayMonth(arrival)}.`
+    return `En flyttfågel som brukar komma till kommunen kring ${dayOfYearLabel(arrival)}.`
   }
   if (kind === "winter" && arrival !== null && departure !== null) {
-    return `En vintergäst som brukar komma till kommunen kring ${dayMonth(arrival)} och stanna kvar till omkring ${dayMonth(departure)}.`
+    return `En vintergäst som brukar komma till kommunen kring ${dayOfYearLabel(arrival)} och stanna kvar till omkring ${dayOfYearLabel(departure)}.`
   }
   if (windowYears < SEASON_WINDOW) return null
   if (years === 0) {
@@ -236,11 +236,11 @@ export function arrivalSentence(
     !now
       ? "I år har ingen rapporterats än."
       : now.day - typicalArrival >= NOT_IN_SPRING
-        ? `I år sågs den inte när den brukar komma, utan först ${dayMonth(now.day)}.`
-        : `I år kom den första ${dayMonth(now.day)}, ${offsetPhrase(now.day - typicalArrival)}.`
+        ? `I år sågs den inte när den brukar komma, utan först ${dayOfYearLabel(now.day)}.`
+        : `I år kom den första ${dayOfYearLabel(now.day)}, ${offsetPhrase(now.day - typicalArrival)}.`
   )
   const earliest = arrivals(entry).reduce((best, one) => (one.day < best.day ? one : best))
-  parts.push(`Tidigast: ${dayMonth(earliest.day)} ${earliest.year}.`)
+  parts.push(`Tidigast: ${dayOfYearLabel(earliest.day)} ${earliest.year}.`)
   return parts.join(" ")
 }
 

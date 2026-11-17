@@ -16,11 +16,11 @@ const { items, numbered = false } = Astro.props
   {
     items.map((item, index) => (
       <li class:list={["grid items-baseline gap-x-3", numbered ? "grid-cols-[1.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"]}>
-        {numbered && <span class="type-meta text-muted-foreground tabular-nums">{index + 1}</span>}
+        {numbered && <span class="type-label">{index + 1}</span>}
         <span class="min-w-0 font-medium text-balance">{item.name}</span>
         <span class="tabular-nums whitespace-nowrap">
           {item.value}
-          {item.note && <span class="text-muted-foreground text-sm"> {item.note}</span>}
+          {item.note && <span class="type-label"> {item.note}</span>}
         </span>
       </li>
     ))

@@ -1,0 +1,37 @@
+---
+/**
+ * A member's photo as a small print in a list (docs/design.md, "Lupen"): cropped
+ * to 3:2 so the list keeps its rhythm, with the 4 px radius that makes it read
+ * as a print. It links where its row's title does, so it is hidden from the
+ * keyboard and screen readers (the title is the link). `transition` names it
+ * for the move to its own page (lib/view-transition.ts). In a grid row, give it
+ * `self-start`: a photo has no baseline to line up on.
+ */
+interface Props {
+  href: string
+  src: string
+  srcset?: string | null
+  sizes: string
+  width?: number | string | null
+  height?: number | string | null
+  transition?: string
+  class?: string
+}
+
+const { href, src, srcset, sizes, width, height, transition, class: className } = Astro.props
+---
+
+<a href={href} tabindex="-1" aria-hidden="true" class:list={["block", className]}>
+  <img
+    src={src}
+    srcset={srcset || undefined}
+    sizes={sizes}
+    width={width || undefined}
+    height={height || undefined}
+    alt=""
+    loading="lazy"
+    decoding="async"
+    class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
+    style={transition}
+  />
+</a>

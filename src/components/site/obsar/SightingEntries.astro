@@ -24,7 +24,7 @@ const place = (one: Sighting) => one.locality?.replace(/, Sm$/, "")
 {
   sightings.map((one) => (
     <Entry
-      when={brief ? dayLabel(one.start, now).replace(".", "") : one.timed ? formatDate(one.start, "clock") : ""}
+      when={brief ? dayLabel(one.start, now) : one.timed ? formatDate(one.start, "clock") : ""}
       datetime={one.start}
       title={one.name}
       href={one.url}

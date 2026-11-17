@@ -1,10 +1,11 @@
 ---
-import RarityChip from "@/components/site/RarityChip.astro"
+import LarmTitle from "@/components/site/LarmTitle.astro"
+import Print from "@/components/site/Print.astro"
 import type { PublicAlert } from "@/lib/alert-dto"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
 import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
 import { dayLabel, formatDate, isoDateTime } from "@/lib/stockholm-time"
-import { transitionName } from "@/lib/view-transition"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
  * The newest larm photos as a row of prints, the caption under each — a
@@ -32,14 +33,15 @@ interface Props {
   layout: "five" | "three" | "few"
   /** Species and when only, for the home page's band; the place is one tap away. */
   brief?: boolean
+  /** h3 under a section heading (the default); h2 where the rail is the section's only list. */
+  headingLevel?: 2 | 3
 }
 
-const { alerts, sizes, layout, brief = false } = Astro.props
+const { alerts, sizes, layout, brief = false, headingLevel = 3 } = Astro.props
 const now = new Date()
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const taken = Astro.locals.transitionNames
+const taken = takenTransitionNames(Astro.locals)
 ---
 
 <ol
@@ -65,37 +67,31 @@ const taken = Astro.locals.transitionNames
               layout === "few" && "md:w-44",
             ]}
           >
-            <a href={`/larm/${alert.id}`} tabindex="-1" aria-hidden="true">
-              <img
-                src={alertPhotoSrc(alert.photoUrl, "480")}
-                srcset={alertPhotoSrcset(alert.photoUrl, "feed")}
-                sizes={sizes}
-                width="480"
-                height="320"
-                alt=""
-                loading="lazy"
-                decoding="async"
-                class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
-                style={transitionName(taken, "larm", alert.id)}
-              />
-            </a>
+            <Print
+              href={`/larm/${alert.id}`}
+              src={alertPhotoSrc(alert.photoUrl, "480")}
+              srcset={alertPhotoSrcset(alert.photoUrl, "feed")}
+              sizes={sizes}
+              width={480}
+              height={320}
+              transition={transitionName(taken, "larm", alert.id)}
+            />
             <div class="flex flex-col gap-0.5">
-              <h3 class="type-item flex flex-wrap items-baseline gap-x-2">
-                <a href={`/larm/${alert.id}`} class="decoration-primary underline-offset-4 hover:underline">
-                  {alert.species}
-                </a>
-                {alert.count !== null && alert.count > 1 && (
-                  <span class="text-muted-foreground font-sans text-base font-normal">{alert.count} ex.</span>
-                )}
-                <RarityChip level={alert.rarity} />
-              </h3>
+              <LarmTitle
+                species={alert.species}
+                count={alert.count}
+                rarity={alert.rarity}
+                href={`/larm/${alert.id}`}
+                level={headingLevel}
+                word={false}
+              />
               {alert.rarity <= RARITY_WORTH_SAYING && (
                 <p class:list={["type-meta", isRare(alert.rarity) ? "text-rarity" : "text-muted-foreground"]}>
                   {rarityLabel(alert.rarity)}
                 </p>
               )}
-              {!brief && <p class="type-meta text-muted-foreground">{alert.place}</p>}
-              <p class="type-meta text-muted-foreground">
+              {!brief && <p class="type-label">{alert.place}</p>}
+              <p class="type-label">
                 <time datetime={isoDateTime(alert.observedAt)}>
                   {dayLabel(alert.observedAt, now)} {formatDate(alert.observedAt, "clock")}
                 </time>

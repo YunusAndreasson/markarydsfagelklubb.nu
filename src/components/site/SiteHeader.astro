@@ -1,11 +1,11 @@
 ---
 import { ArrowUpRight, ChevronDown, Search } from "lucide-react"
 import logo from "@/assets/logo.webp"
+import SearchForm from "@/components/site/SearchForm.astro"
 import SectionPanel from "@/components/site/SectionPanel.astro"
 import { buttonVariants } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { isCurrentEntry, type MenuEntry } from "@/lib/page-tree"
-import { isCurrentChild } from "@/lib/site-menu"
+import { isCurrentChild, SEARCH_SHORTCUTS } from "@/lib/site-menu"
 import { cn } from "@/lib/utils"
 
 /**
@@ -34,20 +34,12 @@ const current = (entry: MenuEntry) => (isCurrentEntry(entry, pathname) ? "page" 
 const panelId = (entry: MenuEntry) => `meny-${entry.href.slice(1).replace(/[^\w-]/g, "-")}`
 const hasPanel = (entry: MenuEntry) => !entry.external && entry.children.length > 0
 
-const item =
-  "hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary text-muted-foreground flex min-h-11 items-center gap-1 font-medium underline-offset-[0.6em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
+const item = "nav-link gap-1 font-medium"
 // A button can't be the current page, so the section it opens is marked with data-current.
 const toggle =
-  "group/toggle hover:text-foreground data-current:text-foreground data-current:decoration-primary aria-expanded:text-foreground text-muted-foreground flex min-h-11 cursor-pointer items-center gap-1 font-medium underline-offset-[0.6em] decoration-2 hover:underline data-current:underline aria-expanded:underline"
+  "group/toggle nav-link cursor-pointer gap-1 font-medium aria-expanded:text-foreground aria-expanded:underline data-current:text-foreground data-current:underline data-current:decoration-primary data-current:decoration-2"
 const chevron =
   "size-4 transition-transform group-aria-expanded/toggle:rotate-180 motion-reduce:transition-none"
-
-const shortcuts = [
-  { label: "Senaste fynden", href: "/obsar/senaste" },
-  { label: "Larm", href: "/larm" },
-  { label: "Fågellokaler", href: "/lokaler" },
-  { label: "Programmet", href: "/kalender" },
-]
 ---
 
 <header class="relative z-20 border-b [view-transition-name:site-header]" data-site-header>
@@ -118,31 +110,18 @@ const shortcuts = [
             <div id="meny-sok" hidden class="header-panel bg-background absolute inset-x-0 top-full z-20 border-b">
               <div class="spread mx-auto w-full max-w-page gap-y-4 px-4 pt-6 pb-10 sm:px-6">
                 <p class="in-margin type-item">Sök</p>
-                <form action="/sok" method="get" role="search" class="in-text flex flex-col gap-2">
-                  <div class="flex gap-2">
-                    <div class="relative min-w-0 flex-1">
-                      <Search aria-hidden="true" className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2" />
-                      <Input
-                        type="search"
-                        name="q"
-                        aria-label="Sök bland artiklar, sidor och fågellokaler"
-                        placeholder="En art, en plats, ett år …"
-                        className="focus-strong h-12 pl-11 text-lg md:text-lg"
-                      />
-                    </div>
-                    <button type="submit" class={buttonVariants({ className: "focus-strong h-12 px-5 text-base" })}>Sök</button>
-                  </div>
-                  <p class="text-muted-foreground text-sm">
+                <SearchForm class="in-text">
+                  <p class="type-caption">
                     Bland artiklar, sidor och fågellokaler. Tryck <kbd class="font-sans font-semibold">/</kbd> för att söka var du än är.
                   </p>
-                </form>
-                <section aria-label="Gå direkt till" class="in-aside flex flex-col gap-1 pt-0.5">
-                  <h2 class="type-meta text-muted-foreground">Gå direkt till</h2>
+                </SearchForm>
+                <section aria-label="Gå direkt till" class="in-aside flex flex-col gap-1">
+                  <h2 class="type-label">Gå direkt till</h2>
                   <ul class="grid grid-cols-2 gap-x-5">
                     {
-                      shortcuts.map((shortcut) => (
+                      SEARCH_SHORTCUTS.map((shortcut) => (
                         <li>
-                          <a href={shortcut.href} class="hover:decoration-primary flex min-h-11 items-center font-medium underline-offset-4 hover:underline">
+                          <a href={shortcut.href} class="title-link flex min-h-11 items-center font-medium">
                             {shortcut.label}
                           </a>
                         </li>
@@ -178,7 +157,7 @@ const shortcuts = [
                 const children = entry.children.filter((child) => child.href !== entry.href && !child.group)
                 return (
                   <li class="border-b last:border-b-0">
-                    <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:decoration-primary flex min-h-12 items-center text-lg font-medium underline-offset-[0.4em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                    <a href={entry.href} aria-current={current(entry)} class="aria-[current=page]:decoration-primary flex min-h-12 items-center text-lg font-medium underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
                       {entry.title}
                     </a>
                     {children.length > 0 && (
@@ -188,7 +167,7 @@ const shortcuts = [
                             <a
                               href={child.href}
                               aria-current={isCurrentChild(child, entry, pathname) ? "page" : undefined}
-                              class="text-muted-foreground aria-[current=page]:text-foreground flex min-h-11 items-center gap-1"
+                              class="nav-link gap-1"
                             >
                               {child.title}
                               {child.external && (

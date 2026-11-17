@@ -4,10 +4,12 @@ export const prerender = false
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import Body from "@/components/site/Body.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import SubpageList from "@/components/site/SubpageList.astro"
 import { buttonVariants } from "@/components/ui/button"
 import SiteLayout from "@/layouts/site.astro"
 import { loadMembership } from "@/lib/membership"
-import { resolvePath } from "@/lib/page-tree"
+import { hrefOf, resolvePath } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
 import { cn } from "@/lib/utils"
 
@@ -34,16 +36,11 @@ if (!page) return new Response(null, { status: 404 })
 const children = node.children as (typeof node & Pick<PublicPageRow, "description">)[]
 const joinHref =
   children.find((child) => child.slug === "medlemskap")?.path ?? "/om-foreningen/medlemskap"
-const hrefOf = (child: (typeof children)[number]) =>
-  child.kind === "link" ? (child.link_url ?? "/") : child.path
 ---
 
 <SiteLayout title={page.title} description={page.description || undefined} menu={navigation.menu}>
-  <article class="flex flex-col gap-12">
-    <header class="at-text flex flex-col gap-4">
-      <h1 class="type-title">{page.title}</h1>
-      {page.description && <p class="type-ingress text-muted-foreground measure">{page.description}</p>}
-    </header>
+  <article class="page-stack">
+    <PageHeader title={page.title} ingress={page.description} />
 
     {/* The club's emblem bird, in its own water: who the club is, before a word
         about fees. From the article "Strömstarens ankomst". */}
@@ -58,7 +55,7 @@ const hrefOf = (child: (typeof children)[number]) =>
         fetchpriority="high"
         class="bg-muted aspect-3/2 w-full object-cover sm:rounded-[4px] md:aspect-2/1"
       />
-      <figcaption class="type-meta text-muted-foreground at-text px-4 sm:px-0">
+      <figcaption class="type-caption at-text px-4 sm:px-0">
         Strömstaren, klubbens emblemfågel sedan 1986. Foto: Lars-Erik Andréasson.
       </figcaption>
     </figure>
@@ -71,13 +68,13 @@ const hrefOf = (child: (typeof children)[number]) =>
       {page.body_html && <Body html={page.body_html} class="in-wide content-register" />}
       {
         membership && (
-          <Aside label="Bli medlem" class="max-md:pb-2">
+          <Aside label="Bli medlem">
             <AsideNote label="Bli medlem">
-              <p class="text-lg leading-relaxed text-balance">
+              <p class="text-balance">
                 {membership.fee_adult} kr om året, {membership.fee_youth} kr om du är {membership.youth_max_age} år
                 eller yngre.
               </p>
-              <p class="text-muted-foreground leading-relaxed text-pretty">
+              <p class="text-muted-foreground text-base">
                 Som medlem får du programbladet Cinclus och stöttar fågelskyddet i kommunen.
               </p>
               <a href={joinHref} class={cn(buttonVariants(), "focus-strong mt-3 h-11 w-fit px-5 text-base")}>
@@ -92,19 +89,12 @@ const hrefOf = (child: (typeof children)[number]) =>
     {
       children.length > 0 && (
         <section aria-labelledby="mer" class="margined gap-y-3">
-          <h2 id="mer" class="type-meta text-muted-foreground md:pt-[0.35rem] md:pr-4">
+          <h2 id="mer" class="type-label md:pr-4">
             Mer om klubben
           </h2>
-          <ul class="flex flex-col gap-5">
-            {children.map((child) => (
-              <li class="flex flex-col gap-0.5">
-                <a href={hrefOf(child)} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
-                  {child.title}
-                </a>
-                {child.description && <p class="text-muted-foreground leading-relaxed">{child.description}</p>}
-              </li>
-            ))}
-          </ul>
+          <SubpageList
+            pages={children.map((child) => ({ href: hrefOf(child), title: child.title, description: child.description }))}
+          />
         </section>
       )
     }

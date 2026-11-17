@@ -1,10 +1,12 @@
 ---
+import MarginDate from "@/components/site/MarginDate.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
 import PhotoViewer from "@/components/site/PhotoViewer.astro"
 import { photoLink, renderBody } from "@/lib/article-body"
 import type { FullArticle } from "@/lib/public-content"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
 import { liftHero } from "@/lib/teaser"
-import { transitionName } from "@/lib/view-transition"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 interface Props {
   article: FullArticle
@@ -17,8 +19,7 @@ const published = article.published_at
 // leaves the body so it doesn't print twice.
 const { hero, body } = liftHero(article.cover, article.body_html)
 // Named before the aside's list asks, so the article's own photo gets the name.
-Astro.locals.transitionNames ??= new Set()
-const heroTransition = transitionName(Astro.locals.transitionNames, "artikel", article.id)
+const heroTransition = transitionName(takenTransitionNames(Astro.locals), "artikel", article.id)
 // The hero opens in the viewer like a photo in the body.
 const heroLink = hero && photoLink(hero.src, hero.srcset, hero.width, hero.height)
 ---
@@ -28,26 +29,15 @@ const heroLink = hero && photoLink(hero.src, hero.srcset, hero.width, hero.heigh
     the margin beside the text, never in a row of their own; and the outer
     margin, when the page fills it, beside the cover and the text together, in
     view while the text scrolls. On a phone the aside follows the text. */}
-<article class="flex flex-col gap-8">
-  <header class="spread">
-    <div class="in-text flex flex-col gap-4">
-      <nav aria-label="Du är här" class="type-meta text-muted-foreground">
-        <a href="/artiklar" class="crumb">Artiklar</a>
-        {
-          article.category && (
-            <>
-              <span aria-hidden="true"> / </span>
-              <a href={`/artiklar/kategori/${article.category.slug}`} class="crumb">
-                {article.category.name}
-              </a>
-            </>
-          )
-        }
-      </nav>
-      <h1 class="type-title">{article.title}</h1>
-      {article.excerpt && <p class="type-ingress text-muted-foreground">{article.excerpt}</p>}
-    </div>
-  </header>
+<article class="page-stack">
+  <PageHeader
+    title={article.title}
+    crumbs={[
+      { href: "/artiklar", label: "Artiklar" },
+      ...(article.category ? [{ href: `/artiklar/kategori/${article.category.slug}`, label: article.category.name }] : []),
+    ]}
+    ingress={article.excerpt}
+  />
 
   <div class="spread gap-y-8" data-photos>
     {
@@ -72,26 +62,25 @@ const heroLink = hero && photoLink(hero.src, hero.srcset, hero.width, hero.heigh
             />
           </a>
           {hero.caption && (
-            <figcaption class:list={["type-meta text-muted-foreground text-pretty", hero.wide && "at-text measure"]} set:html={hero.caption} />
+            <figcaption class:list={["type-caption", hero.wide && "at-text measure"]} set:html={hero.caption} />
           )}
         </figure>
       )
     }
 
-    <div class:list={["in-margin type-meta text-muted-foreground -mt-4 flex flex-col md:mt-0 md:pt-1", hero ? "md:row-start-2" : "md:row-start-1"]}>
-      {
-        published && (
-          <time datetime={isoDateTime(published)} class="flex flex-wrap gap-x-1 md:flex-col">
-            <span>{formatDate(published, "weekdayName")}</span>
-            <span>{formatDate(published, "dayMonth")}</span>
-            <span>{stockholmYear(published)}</span>
-          </time>
-        )
-      }
-      {article.author_name && <span class="mt-1">Text: {article.author_name}</span>}
-    </div>
+    {
+      (published || article.author_name) && (
+        <MarginDate
+          datetime={published && isoDateTime(published)}
+          parts={published ? [formatDate(published, "weekdayName"), formatDate(published, "dayMonth"), stockholmYear(published)] : []}
+          class:list={["in-margin max-md:-mt-4", hero ? "md:row-start-2" : "md:row-start-1"]}
+        >
+          {article.author_name && <span>Text: {article.author_name}</span>}
+        </MarginDate>
+      )
+    }
 
-    <div class:list={["in-text content", hero ? "md:row-start-2" : "md:row-start-1"]} set:html={renderBody(body)} />
+    <div class:list={["in-text content self-baseline", hero ? "md:row-start-2" : "md:row-start-1"]} set:html={renderBody(body)} />
 
     {
       Astro.slots.has("aside") && (

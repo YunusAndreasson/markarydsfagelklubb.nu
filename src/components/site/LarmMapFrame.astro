@@ -1,5 +1,6 @@
 ---
 import type { LarmMapLokal, LarmMapProps } from "@/components/site/larm-map.client"
+import MapBox from "@/components/site/MapBox.astro"
 import type { LarmPin } from "@/lib/larm-map"
 // Leaflet's own sheet first, so map.css overrides it.
 import "leaflet/dist/leaflet.css"
@@ -24,16 +25,8 @@ const { pins, lokal = null, fallback, class: className = "" } = Astro.props
 const props: LarmMapProps = { pins, lokal }
 ---
 
-<div class:list={["bg-muted relative isolate overflow-hidden rounded-[4px]", className]}>
-  {/* Drawn by larm-map.client.ts when it nears the screen. */}
-  <div data-larm-map data-props={JSON.stringify(props)} class="size-full" aria-hidden="true"></div>
-
-  <noscript>
-    <p class="text-muted-foreground absolute inset-0 flex items-center justify-center p-4 text-center text-sm">
-      {fallback}
-    </p>
-  </noscript>
-</div>
+{/* Drawn by larm-map.client.ts when it nears the screen. */}
+<MapBox kind="larm" data={props} fallback={fallback} class={className} />
 
 <script>
   import { mountLarmMaps } from "./larm-map.client"

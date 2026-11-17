@@ -16,7 +16,7 @@ interface Props {
 const { fetchedAt, wide = false } = Astro.props
 ---
 
-<p class:list={["type-meta text-muted-foreground measure leading-relaxed", !wide && "at-text"]}>
+<p class:list={["type-caption measure", !wide && "at-text"]}>
   Källa: <a href="https://www.artportalen.se/" class="link">Artportalen</a>, SLU Artdatabanken. Skyddsklassade fynd ingår
   inte, och nya rapporter kan komma in i efterhand.{fetchedAt && ` Uppdaterad ${formatDate(fetchedAt, "dateTime")}.`}
 </p>

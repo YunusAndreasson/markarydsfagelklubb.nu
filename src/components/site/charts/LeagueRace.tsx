@@ -19,7 +19,7 @@ type Props = {
 }
 
 const SHOWN = 12
-const dayMonth = new Intl.DateTimeFormat("sv-SE", {
+const dayMonthFormat = new Intl.DateTimeFormat("sv-SE", {
   day: "numeric",
   month: "long",
   timeZone: "UTC",
@@ -67,7 +67,7 @@ export default function LeagueRace({ year, until, runners }: Props) {
   // The chart loads after the slider can move, so its first draw reads this.
   const dateRef = useRef(date)
   dateRef.current = date
-  const dateLabel = dayMonth.format(new Date(`${date}T00:00:00Z`))
+  const dateLabel = dayMonthFormat.format(new Date(`${date}T00:00:00Z`))
 
   useEffect(() => {
     const element = box.current
@@ -185,7 +185,7 @@ export default function LeagueRace({ year, until, runners }: Props) {
           />
         </label>
         <output
-          className="type-meta text-muted-foreground min-w-28 tabular-nums"
+          className="type-label min-w-28 tabular-nums"
           // Quiet while it plays: a new date every half-second would drown a screen reader.
           aria-live={playing ? "off" : "polite"}
         >

@@ -1,0 +1,30 @@
+---
+/**
+ * The way back up, over a page's title: "Artiklar / Tävlingar". Meta in
+ * Blyerts, each step a small link with a full-size target (`crumb`). The page
+ * itself is the title below, so it is never repeated here.
+ */
+export interface Crumb {
+  href: string
+  label: string
+}
+
+interface Props {
+  crumbs: Crumb[]
+}
+
+const { crumbs } = Astro.props
+---
+
+<nav aria-label="Du är här" class="type-label">
+  {
+    crumbs.map((crumb, index) => (
+      <>
+        {index > 0 && <span aria-hidden="true"> / </span>}
+        <a href={crumb.href} class="crumb">
+          {crumb.label}
+        </a>
+      </>
+    ))
+  }
+</nav>

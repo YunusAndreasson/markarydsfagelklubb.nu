@@ -79,15 +79,15 @@ const tooltipBase = {
   extraCssText: "box-shadow:none;border-radius:4px;font-variant-numeric:tabular-nums;",
 }
 
-const dayMonth = new Intl.DateTimeFormat("sv-SE", {
+const dayMonthFormat = new Intl.DateTimeFormat("sv-SE", {
   day: "numeric",
   month: "long",
   timeZone: "UTC",
 })
 
 /** Day index (0 = 1 January) in a leap year, so 29 February has a name. */
-export function dayLabel(index: number): string {
-  return dayMonth.format(new Date(Date.UTC(2024, 0, 1 + index)))
+export function dayIndexLabel(index: number): string {
+  return dayMonthFormat.format(new Date(Date.UTC(2024, 0, 1 + index)))
 }
 
 /** Where each month starts, as a day index, for the x axis of a year. */
@@ -117,8 +117,8 @@ function weekAxis(boundaryGap: boolean, position?: "top", narrow = false) {
 export function weekLabel(week: number): string {
   const first = week * 7
   const last = week === 52 ? 365 : first + 6
-  const [fromDay, fromMonth] = dayLabel(first).split(" ")
-  const to = dayLabel(last)
+  const [fromDay, fromMonth] = dayIndexLabel(first).split(" ")
+  const to = dayIndexLabel(last)
   return to.endsWith(` ${fromMonth}`) ? `${fromDay}–${to}` : `${fromDay} ${fromMonth}–${to}`
 }
 
@@ -210,7 +210,7 @@ function artkurva(data: ArtkurvaData, motion: boolean, narrow: boolean): ECharts
           low && high
             ? `<div style="color:${ink.pencil}">Vanligt år: ${low[week]}–${high[week]} arter</div>`
             : ""
-        return `<div style="margin-bottom:4px;color:${ink.pencil}">t.o.m. ${dayLabel(Math.min(365, week * 7 + 6))}</div>${rows.join("")}${range}`
+        return `<div style="margin-bottom:4px;color:${ink.pencil}">t.o.m. ${dayIndexLabel(Math.min(365, week * 7 + 6))}</div>${rows.join("")}${range}`
       },
     },
     series,
@@ -374,7 +374,7 @@ function history(data: HistoryData, motion: boolean, narrow: boolean): EChartsCo
         data: data.years.map((one) => ({
           value: one.reports,
           itemStyle: {
-            color: data.marks.includes(one.year) ? ink.reflex : "rgba(255,255,255,0.55)",
+            color: data.marks.includes(one.year) ? ink.reflex : ink.onGran,
             borderRadius: [1, 1, 0, 0],
           },
         })),
@@ -546,8 +546,8 @@ function usualLine(kind: "summer" | "winter", row: MigrationRow): string {
 /**
  * "Flyttfåglarnas år": a heatmap row per bird, scaled to its own busiest week
  * as "Årets rytm" is, summer birds and winter guests in two panels on one week
- * axis. Today is a green rule and this year's arrivals green dots, the way the
- * species page marks this week and this year.
+ * axis. Today is a rule in ink and this year's arrivals ink dots ringed in
+ * white, so they hold on the darkest cells; green is only the pointer's.
  */
 function migration(data: MigrationData, motion: boolean, narrow: boolean): EChartsCoreOption {
   const { row: rowHeight, top, gap } = MIGRATION_LAYOUT
@@ -572,7 +572,7 @@ function migration(data: MigrationData, motion: boolean, narrow: boolean): EChar
       silent: true,
       symbol: "none",
       animation: false,
-      lineStyle: { color: ink.green, width: 1.5, type: "solid" },
+      lineStyle: { color: ink.mark, width: 1.5, type: "solid" },
       label:
         index === last
           ? {
@@ -580,7 +580,7 @@ function migration(data: MigrationData, motion: boolean, narrow: boolean): EChar
               // The y axis is inverted, so the line's end is at the bottom, clear of the months.
               position: "end",
               ...axisLabel,
-              color: ink.green,
+              color: ink.mark,
               fontWeight: 600,
             }
           : { show: false },
@@ -595,7 +595,7 @@ function migration(data: MigrationData, motion: boolean, narrow: boolean): EChar
     yAxisIndex: 0,
     z: 3,
     symbolSize: 7,
-    itemStyle: { color: ink.green, borderColor: ink.white, borderWidth: 1.5 },
+    itemStyle: { color: ink.mark, borderColor: ink.white, borderWidth: 1.5 },
     data: (first?.kind === "summer" ? first.rows : []).flatMap((row, index) =>
       row.thisYear ? [[row.thisYear.week, index]] : []
     ),

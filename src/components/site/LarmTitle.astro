@@ -1,0 +1,36 @@
+---
+import RarityChip from "@/components/site/RarityChip.astro"
+import { isRare, RARITY_WORTH_SAYING, type RarityLevel, rarityLabel } from "@/lib/rarity"
+
+/**
+ * A larm's title in a list: the species (a link to the larm), how many when
+ * more than one, the club's rarity chip, and from "Ovanlig" up the rarity's
+ * word, in Larmrött at the two rarest levels (docs/design.md, "Larm"). The
+ * same in the log, on a lokal and in the photo rail.
+ */
+interface Props {
+  species: string
+  count: number | null
+  rarity: RarityLevel
+  href: string
+  level?: 2 | 3
+  /** The rarity's word beside the chip; off where it gets a line of its own (the rail). */
+  word?: boolean
+}
+
+const { species, count, rarity, href, level = 3, word = true } = Astro.props
+const Heading = `h${level}` as const
+---
+
+<Heading class="type-item flex flex-wrap items-baseline gap-x-2">
+  <a href={href} class="title-link">{species}</a>
+  {count !== null && count > 1 && <span class="type-label font-sans">{count} ex.</span>}
+  <RarityChip level={rarity} />
+  {
+    word && rarity <= RARITY_WORTH_SAYING && (
+      <span class:list={["type-meta font-sans", isRare(rarity) ? "text-rarity" : "text-muted-foreground"]}>
+        {rarityLabel(rarity)}
+      </span>
+    )
+  }
+</Heading>

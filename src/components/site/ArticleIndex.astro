@@ -1,5 +1,8 @@
 ---
 import ArticleList from "@/components/site/ArticleList.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Pager from "@/components/site/Pager.astro"
 import { encodeCursor } from "@/lib/keyset"
 import type { ArticlePage } from "@/lib/public-content"
 
@@ -30,24 +33,27 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 const tab = (active: boolean) => (active ? "page" : undefined)
 ---
 
-<div class="flex flex-col gap-10">
-  <header class="flex flex-col gap-5 at-text">
-    <h1 class="type-title">{heading}</h1>
+<div class="page-stack">
+  <PageHeader title={heading}>
     {
       categories.length > 0 && (
         /* One row that scrolls sideways on a phone, where wrapping took three
            rows of 44 px targets above the first article. The page's heading
            names the current category, so an off-screen tab loses nothing. */
-        <nav aria-label="Kategorier" class="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:overflow-visible md:px-0">
+        <nav slot="after" aria-label="Kategorier" class="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:overflow-visible md:px-0">
           <ul class="flex w-max gap-x-5 md:w-auto md:flex-wrap">
             <li>
-              <a href="/artiklar" aria-current={tab(currentCategory === null)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center whitespace-nowrap underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+              <a href="/artiklar" aria-current={tab(currentCategory === null)} class="nav-link whitespace-nowrap">
                 Alla
               </a>
             </li>
             {categories.map((category) => (
               <li>
-                <a href={`/artiklar/kategori/${category.slug}`} aria-current={tab(currentCategory === category.slug)} class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center whitespace-nowrap underline-offset-[0.5em] aria-[current=page]:underline aria-[current=page]:decoration-2">
+                <a
+                  href={`/artiklar/kategori/${category.slug}`}
+                  aria-current={tab(currentCategory === category.slug)}
+                  class="nav-link whitespace-nowrap"
+                >
                   {category.name}
                 </a>
               </li>
@@ -56,32 +62,23 @@ const tab = (active: boolean) => (active ? "page" : undefined)
         </nav>
       )
     }
-  </header>
+  </PageHeader>
 
   {
     page.articles.length === 0 ? (
-      <p class="text-muted-foreground measure at-text">Här finns inga artiklar ännu.</p>
+      <EmptyNote>Här finns inga artiklar ännu.</EmptyNote>
     ) : (
       <ArticleList articles={page.articles} headingLevel={2} years="changes" />
     )
   }
 
-  {
-    (page.older || page.newer) && (
-      <nav aria-label="Fler artiklar" class="flex flex-wrap gap-x-8 gap-y-2 at-text">
-        {page.newer && (
-          <a href={link("efter", page.newer)} class="link flex min-h-11 items-center font-medium">
-            Nyare artiklar
-          </a>
-        )}
-        {page.older && (
-          <a href={link("fore", page.older)} class="link flex min-h-11 items-center font-medium">
-            Äldre artiklar
-          </a>
-        )}
-      </nav>
-    )
-  }
+  <Pager
+    label="Fler artiklar"
+    links={[
+      page.newer && { href: link("efter", page.newer), label: "Nyare artiklar", rel: "prev" },
+      page.older && { href: link("fore", page.older), label: "Äldre artiklar", rel: "next" },
+    ]}
+  />
 
   {
     years.length > 0 && (
@@ -90,11 +87,7 @@ const tab = (active: boolean) => (active ? "page" : undefined)
         <ul class="flex flex-wrap gap-x-5">
           {years.map((year) => (
             <li>
-              <a
-                href={`/artiklar/ar/${year}`}
-                aria-current={tab(currentYear === year)}
-                class="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:decoration-primary flex min-h-11 items-center tabular-nums underline-offset-[0.5em] hover:underline aria-[current=page]:underline aria-[current=page]:decoration-2"
-              >
+              <a href={`/artiklar/ar/${year}`} aria-current={tab(currentYear === year)} class="nav-link tabular-nums">
                 {year}
               </a>
             </li>

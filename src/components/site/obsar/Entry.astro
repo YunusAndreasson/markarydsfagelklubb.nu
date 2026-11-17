@@ -1,6 +1,7 @@
 ---
 import RarityChip from "@/components/site/RarityChip.astro"
 import type { RarityLevel } from "@/lib/rarity"
+import { capitalize } from "@/lib/text"
 
 /**
  * One line of a register: a short date or time in its own narrow column, the
@@ -29,18 +30,18 @@ const { when = "", datetime, title: given, href, count, sci, notes = [], rarity 
 // Artportalen writes names in lower case, the club's list capitalised, and the
 // two meet on the same page.
 const counted = count !== null && count !== undefined
-const title = counted ? given : given.charAt(0).toLocaleUpperCase("sv") + given.slice(1)
+const title = counted ? given : capitalize(given)
 const lines = notes.filter((note): note is string => Boolean(note))
 ---
 
-<li class="mb-3.5 grid break-inside-avoid grid-cols-[4.25rem_minmax(0,1fr)] gap-x-3">
-  <time datetime={datetime} class="type-meta text-muted-foreground pt-1 tabular-nums">{when}</time>
+<li class="mb-3.5 grid break-inside-avoid grid-cols-[4.25rem_minmax(0,1fr)] items-baseline gap-x-3">
+  <time datetime={datetime} class="type-label">{when}</time>
   <div class="flex min-w-0 flex-col">
     <p class="flex flex-wrap items-baseline gap-x-1.5">
       {counted && <span class="font-semibold tabular-nums">{count}</span>}
       {
         href ? (
-          <a href={href} class="type-item decoration-primary underline-offset-4 hover:underline">
+          <a href={href} class="type-item title-link">
             {title}
           </a>
         ) : (
@@ -49,7 +50,7 @@ const lines = notes.filter((note): note is string => Boolean(note))
       }
       {rarity !== null && rarity !== undefined && <RarityChip level={rarity} />}
     </p>
-    {sci && <i class="font-display text-muted-foreground text-sm">{sci}</i>}
-    {lines.map((line) => <p class="text-muted-foreground text-sm leading-snug text-balance">{line}</p>)}
+    {sci && <i class="type-caption type-latin">{sci}</i>}
+    {lines.map((line) => <p class="type-label text-balance">{line}</p>)}
   </div>
 </li>

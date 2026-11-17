@@ -47,7 +47,7 @@ const { class: className } = Astro.props
 ---
 
 <aside aria-label="Sponsorer" class={cn("flex flex-wrap items-center gap-x-8 gap-y-2", className)}>
-  <p class="type-meta text-muted-foreground w-full md:w-auto">Sponsrad av</p>
+  <p class="type-label w-full md:w-auto">Sponsrad av</p>
   <ul class="grid grid-cols-2 items-center gap-x-6 md:flex md:gap-x-8">
     {
       SPONSORS.map((sponsor) => (

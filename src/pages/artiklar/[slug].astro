@@ -47,13 +47,11 @@ const more = withoutPhoto(
     {
       article.category && more.length > 0 && (
         <Aside slot="aside" label={`Mer i ${article.category.name}`} first={false}>
-          <AsideNote label={`Mer i ${article.category.name}`}>
-            <div class="mt-2 flex flex-col gap-3">
-              <AsideArticles articles={more} />
-              <a href={`/artiklar/kategori/${article.category.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
-                Alla i {article.category.name}
-              </a>
-            </div>
+          <AsideNote label={`Mer i ${article.category.name}`} kind="note">
+            <AsideArticles articles={more} />
+            <a href={`/artiklar/kategori/${article.category.slug}`} class="action-link">
+              Alla i {article.category.name}
+            </a>
           </AsideNote>
         </Aside>
       )

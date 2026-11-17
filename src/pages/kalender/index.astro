@@ -1,13 +1,15 @@
 ---
 export const prerender = false
 
-import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import EventList from "@/components/site/EventList.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
-import { groupByMonth } from "@/lib/event-month"
+import { groupByMonth, monthTitle } from "@/lib/event-month"
 import { latestEventStartBefore, listUpcomingEvents, loadNavigation } from "@/lib/public-content"
-import { formatDate, startOfStockholmDay, stockholmMonthKey } from "@/lib/stockholm-time"
+import { startOfStockholmDay, stockholmMonthKey } from "@/lib/stockholm-time"
 
 /**
  * The programme. Upcoming events, grouped under the month they fall in, with
@@ -35,10 +37,6 @@ const months = groupByMonth(events)
 // The month of the newest past event, which may well be this one: an earlier event
 // this month has left the list above, and last month's page wouldn't show it.
 const earlierMonth = latestPast ? stockholmMonthKey(latestPast) : null
-const heading = (key: string) => {
-  const label = formatDate(`${key}-01T12:00:00Z`, "month")
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
 ---
 
 <SiteLayout
@@ -46,59 +44,47 @@ const heading = (key: string) => {
   description="Exkursioner, möten och resor med Markaryds Fågelklubb."
   menu={navigation.menu}
 >
-  <div class="flex flex-col gap-10">
+  <div class="page-stack">
     {/* The ways to keep up sit in the outer margin, beside the title
-        (docs/design.md, "Uppslaget"); the months take the text track. */}
-    <header class="spread gap-y-6">
-      <div class="in-text flex flex-col gap-5">
-        <h1 class="type-title">Program</h1>
-        <p class="type-ingress text-muted-foreground">Exkursioner, möten och resor.</p>
-      </div>
-      {/* From lg the notes hang beside the months rather than set the header's
-          height: the title is short, and a header as tall as the notes left a
-          gap above the first month. The months never use the aside track. */}
-      <Aside
-        label="Följ programmet"
-        sticky={false}
-        first={false}
-        class={months.length > 0 ? "lg:h-0 lg:pt-3" : "lg:pt-3"}
-      >
-        <AsideNote label="I din kalender">
-          <p class="text-muted-foreground leading-relaxed">
-            <a href="/kalender.ics" class="link font-medium">Prenumerera på programmet</a>,
-            så hamnar det i kalendern i din mobil eller dator, och ändringar kommer med automatiskt.
+        (docs/design.md, "Uppslaget"). From lg they hang beside the months
+        rather than set the header's height: the title is short, and a header as
+        tall as the notes left a gap above the first month. The months never
+        use the aside track. */}
+    <PageHeader title="Program" ingress="Exkursioner, möten och resor." asideLabel="Följ programmet" hang={months.length > 0}>
+      <Fragment slot="aside">
+        <AsideNote label="I din kalender" kind="note">
+          <p class="text-muted-foreground">
+            <a href="/kalender.ics" class="link">Prenumerera på programmet</a>, så hamnar det i kalendern i din mobil
+            eller dator, och ändringar kommer med automatiskt.
           </p>
         </AsideNote>
         {
           earlierMonth && (
-            <AsideNote label="Det som har varit">
+            <AsideNote label="Det som har varit" kind="note">
               {/* The link says what it does: a bare month name reads as a stray heading. */}
-              <a href={`/kalender/${earlierMonth}`} class="link flex min-h-11 w-fit items-center font-medium">
+              <a href={`/kalender/${earlierMonth}`} class="action-link">
                 Tidigare i programmet
               </a>
             </AsideNote>
           )
         }
-      </Aside>
-    </header>
+      </Fragment>
+    </PageHeader>
 
     {
       months.length === 0 && (
-        <p class="at-text text-muted-foreground">
-          Inget nytt är inlagt i programmet ännu. Om tidigare exkursioner kan du läsa under
-          <a href="/artiklar" class="link"> Artiklar</a>.
-        </p>
+        <EmptyNote>
+          Inget nytt är inlagt i programmet ännu. Om tidigare exkursioner kan du läsa under{" "}
+          <a href="/artiklar" class="link">Artiklar</a>.
+        </EmptyNote>
       )
     }
 
     {
       months.map((group) => (
-        <section aria-labelledby={`manad-${group.key}`} class="flex flex-col gap-6">
-          <h2 id={`manad-${group.key}`} class="type-section at-text">
-            {heading(group.key)}
-          </h2>
+        <Section id={`manad-${group.key}`} title={monthTitle(group.key)} dated>
           <EventList events={group.events} headingLevel={3} />
-        </section>
+        </Section>
       ))
     }
   </div>

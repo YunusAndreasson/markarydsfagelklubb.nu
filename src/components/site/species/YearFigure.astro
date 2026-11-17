@@ -4,7 +4,7 @@ import { ink, MONTHS_SHORT } from "@/lib/charts/theme"
 
 /**
  * "Över året" (docs/design.md, "Arter"): every report of the bird across all
- * the years, by week from 1 January, with the current week in Markaryd green
+ * the years, by week from 1 January, with the current week in full ink
  * so "is now the time?" answers itself. Server-drawn bars, HTML month labels,
  * no island; the caption names the busiest months.
  */
@@ -21,8 +21,8 @@ const svg = barsSvg({
   bars: weeks.map((value, week) => ({ value, mark: week === now })),
   width: 530,
   height: 120,
-  color: ink.gran,
-  markColor: ink.green,
+  color: ink.tint,
+  markColor: ink.mark,
   gap: 0.2,
 })
 ---
@@ -30,14 +30,14 @@ const svg = barsSvg({
 <figure class="flex flex-col gap-3" aria-labelledby={headingId}>
   <div>
     <div class="border-border aspect-[16/5] w-full border-b sm:aspect-[16/4]" set:html={svg} />
-    <div class="type-meta text-muted-foreground grid grid-cols-12 pt-1.5" aria-hidden="true">
+    <div class="type-label grid grid-cols-12 pt-1.5" aria-hidden="true">
       {MONTHS_SHORT.map((month, index) => <span class:list={[index % 2 === 1 && "max-sm:invisible"]}>{month}</span>)}
     </div>
   </div>
   {
     sentence && (
       <figcaption class="text-muted-foreground measure-caption leading-relaxed text-pretty">
-        {sentence} {(weeks[now] ?? 0) > 0 ? "Den gröna stapeln är den här veckan." : "Den här veckan brukar den inte synas."}
+        {sentence} {(weeks[now] ?? 0) > 0 ? "Den mörka stapeln är den här veckan." : "Den här veckan brukar den inte synas."}
       </figcaption>
     )
   }

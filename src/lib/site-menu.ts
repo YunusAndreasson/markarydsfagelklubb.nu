@@ -101,3 +101,15 @@ export function isCurrentChild(child: MenuEntry, parent: MenuEntry, pathname: st
   if (child.href === parent.href) return pathname === child.href
   return isCurrentEntry(child, pathname)
 }
+
+/**
+ * Where a search usually ends up, offered beside the search field (the header's
+ * panel and /sok) so a member can skip the search. The page adds the archive,
+ * which the header's menu already holds.
+ */
+export const SEARCH_SHORTCUTS: readonly { label: string; href: string }[] = [
+  { label: "Senaste fynden", href: "/obsar/senaste" },
+  { label: "Larm", href: "/larm" },
+  { label: "Fågellokaler", href: "/lokaler" },
+  { label: "Programmet", href: "/kalender" },
+]

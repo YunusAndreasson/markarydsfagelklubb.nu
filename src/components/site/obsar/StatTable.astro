@@ -35,10 +35,10 @@ const cell = (column: Column) => [
 
 <table class="w-full border-collapse text-left">
   <thead>
-    <tr class="type-meta text-muted-foreground border-border border-b">
+    <tr class="type-label border-border border-b">
       {
         columns.map((column) => (
-          <th scope="col" class:list={["py-2 font-medium", column.numeric && "pl-4 text-right"]}>
+          <th scope="col" class:list={["py-2", column.numeric && "pl-4 text-right"]}>
             {column.hidden ? <span class="sr-only">{column.label}</span> : column.label}
           </th>
         ))
@@ -55,7 +55,7 @@ const cell = (column: Column) => [
             return column.rowHeader ? (
               <th scope="row" class:list={[...cell(column), "font-medium"]}>
                 {links?.[rowIndex] ? (
-                  <a href={links[rowIndex]} class="link">
+                  <a href={links[rowIndex]} class="title-link">
                     {text}
                   </a>
                 ) : (

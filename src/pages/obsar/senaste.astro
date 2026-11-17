@@ -3,11 +3,11 @@ export const prerender = false
 
 import MarginGroup from "@/components/site/obsar/MarginGroup.astro"
 import NotReady from "@/components/site/obsar/NotReady.astro"
-import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
-import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { arter } from "@/lib/obsar-stats"
@@ -41,8 +41,9 @@ const fynd = (count: number) =>
   description="Alla fåglar som rapporterats i Markaryds kommun den senaste månaden, från Artportalen."
   menu={navigation.menu}
 >
-  <article class="flex flex-col gap-12">
-    <ObsarHeader
+  <article class="page-stack">
+    <PageHeader
+      crumbs={[{ href: "/obsar", label: "Obsar" }]}
       title="Senaste fynden"
       ingress={recent
         ? `${recent.sightings.length.toLocaleString("sv-SE")} rapporter om ${arter(species)} i kommunen de senaste ${recent.days} dagarna, de nyaste först.`
@@ -63,9 +64,9 @@ const fynd = (count: number) =>
 
     {
       recent && recent.sightings.length === 0 && (
-        <ObsarSection measure>
+        <Section measure>
           <p class="text-muted-foreground">Inga fåglar har rapporterats i kommunen de senaste {recent.days} dagarna.</p>
-        </ObsarSection>
+        </Section>
       )
     }
 

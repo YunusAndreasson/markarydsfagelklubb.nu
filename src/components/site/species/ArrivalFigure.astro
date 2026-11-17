@@ -1,7 +1,8 @@
 ---
 import TableTwin from "@/components/site/obsar/TableTwin.astro"
 import { ink } from "@/lib/charts/theme"
-import { type ArrivalFigure, dayMonth, FEW_REPORTS, offsetPhrase } from "@/lib/species-page"
+import { type ArrivalFigure, dayOfYearLabel, FEW_REPORTS, offsetPhrase } from "@/lib/species-page"
+import { rapporter } from "@/lib/text"
 
 /**
  * "När den kommer" (docs/design.md, "Arter"): the first sighting of each year
@@ -45,8 +46,6 @@ const dots = [
   ...figure.dots.filter((one) => one.current),
 ]
 const hasFew = figure.dots.some((one) => one.reports < FEW_REPORTS)
-const reportWord = (count: number) =>
-  count === 1 ? "1 rapport" : `${count.toLocaleString("sv-SE")} rapporter`
 const newestFirst = [...figure.dots].reverse()
 ---
 
@@ -55,7 +54,7 @@ const newestFirst = [...figure.dots].reverse()
     <div class="relative" aria-hidden="true">
       {
         figure.months.map((month) => (
-          <span class="type-meta text-muted-foreground absolute right-0 -translate-y-1/2 whitespace-nowrap" style={{ top: `${month.top * 100}%` }}>
+          <span class="type-label absolute right-0 -translate-y-1/2 whitespace-nowrap" style={{ top: `${month.top * 100}%` }}>
             {month.label}
           </span>
         ))
@@ -81,31 +80,31 @@ const newestFirst = [...figure.dots].reverse()
                 ]}
                 style={
                   one.current
-                    ? { background: ink.green }
+                    ? { background: ink.mark }
                     : one.reports < FEW_REPORTS
                       ? { borderColor: ink.pencil }
-                      : { background: ink.gran }
+                      : { background: ink.tint }
                 }
               />
               <span
                 class:list={[
-                  "bg-popover text-popover-foreground pointer-events-none absolute bottom-full mb-1 hidden w-max max-w-56 flex-col rounded-md border px-2.5 py-1.5 text-sm leading-snug shadow-sm group-hover:flex group-focus:flex",
+                  "bg-popover text-popover-foreground type-caption pointer-events-none absolute bottom-full mb-1 hidden w-max max-w-56 flex-col rounded-md border px-2.5 py-1.5 shadow-sm group-hover:flex group-focus:flex",
                   left < 15 ? "left-0" : left > 85 ? "right-0" : "left-1/2 -translate-x-1/2",
                 ]}
               >
                 <span class="font-semibold tabular-nums">{one.current ? `${one.year}, i år` : one.year}</span>
                 <span>
-                  Första {dayMonth(one.day)}
+                  Första {dayOfYearLabel(one.day)}
                   {one.offset !== null && <span class="text-muted-foreground">, {offsetPhrase(one.offset)}</span>}
                 </span>
-                <span class="text-muted-foreground">{reportWord(one.reports)} det året</span>
+                <span class="text-muted-foreground">{rapporter(one.reports)} det året</span>
               </span>
             </span>
           )
         })
       }
     </div>
-    <div class="type-meta text-muted-foreground relative col-start-2 h-6 pt-1.5" aria-hidden="true">
+    <div class="type-label relative col-start-2 h-6 pt-1.5" aria-hidden="true">
       {
         figure.decades.map((decade) => (
           <span class="absolute -translate-x-1/2 tabular-nums" style={{ left: `${decade.left * 100}%` }}>
@@ -115,17 +114,17 @@ const newestFirst = [...figure.dots].reverse()
       }
     </div>
   </div>
-  <ul class="type-meta text-muted-foreground flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
+  <ul class="type-label flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
     {
       figure.typical !== null && (
         <li class="flex items-center gap-2">
           <span class="w-5 border-t border-dashed" style={{ borderColor: ink.pencil }} />
-          Brukar komma, {dayMonth(figure.typical)}
+          Brukar komma, {dayOfYearLabel(figure.typical)}
         </li>
       )
     }
     <li class="flex items-center gap-2">
-      <span class="size-3 rounded-full" style={{ background: ink.green }} />I år
+      <span class="size-3 rounded-full" style={{ background: ink.mark }} />I år
     </li>
     {
       hasFew && (
@@ -151,7 +150,7 @@ const newestFirst = [...figure.dots].reverse()
           newestFirst.map((one) => (
             <tr class="border-border border-t">
               <td class="py-1">{one.year}</td>
-              <td class="py-1">{dayMonth(one.day)}</td>
+              <td class="py-1">{dayOfYearLabel(one.day)}</td>
               <td class="py-1 text-right">{one.reports.toLocaleString("sv-SE")}</td>
             </tr>
           ))

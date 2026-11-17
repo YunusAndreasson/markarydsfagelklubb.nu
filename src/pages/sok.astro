@@ -1,15 +1,19 @@
 ---
 export const prerender = false
 
-import { Search } from "lucide-react"
 import ArticleList from "@/components/site/ArticleList.astro"
-import { buttonVariants } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import EmptyNote from "@/components/site/EmptyNote.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Pager from "@/components/site/Pager.astro"
+import SearchForm from "@/components/site/SearchForm.astro"
+import Section from "@/components/site/Section.astro"
+import SubpageList from "@/components/site/SubpageList.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { decodeCursor, encodeCursor } from "@/lib/keyset"
 import { listPublicLokaler } from "@/lib/public-alerts"
 import { listPublishedArticles, loadNavigation, searchPages } from "@/lib/public-content"
 import { matchesName, normaliseSearchQuery } from "@/lib/search"
+import { SEARCH_SHORTCUTS } from "@/lib/site-menu"
 
 /**
  * Search (docs/design.md, "Sök"): articles, pages and lokaler, from a plain GET
@@ -19,13 +23,7 @@ import { matchesName, normaliseSearchQuery } from "@/lib/search"
  */
 
 const ARTICLE_PAGE = 20
-const SHORTCUTS = [
-  { label: "Senaste fynden", href: "/obsar/senaste" },
-  { label: "Larm", href: "/larm" },
-  { label: "Fågellokaler", href: "/lokaler" },
-  { label: "Programmet", href: "/kalender" },
-  { label: "Artikelarkivet", href: "/artiklar" },
-]
+const SHORTCUTS = [...SEARCH_SHORTCUTS, { label: "Artikelarkivet", href: "/artiklar" }]
 const OTHER_LIMIT = 8
 
 const { db } = Astro.locals
@@ -77,41 +75,24 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 ---
 
 <SiteLayout title={query ? `Sök: ${query}` : "Sök"} description="Sök bland Markaryds Fågelklubbs artiklar, sidor och fågellokaler." menu={navigation.menu}>
-  <div class="flex flex-col gap-10">
-    <header class="flex flex-col gap-5 at-text">
-      <h1 class="type-title">Sök</h1>
-      <form action="/sok" method="get" role="search" class="flex measure gap-2">
-        <div class="relative min-w-0 flex-1">
-          <Search aria-hidden="true" className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2" />
-          {/* Focused only while empty: with results on the page, the keyboard would cover them on a phone. */}
-          <Input
-            type="search"
-            name="q"
-            value={query}
-            autoFocus={!query}
-            enterKeyHint="search"
-            aria-label="Sök bland artiklar, sidor och fågellokaler"
-            placeholder="En art, en plats, ett år …"
-            className="focus-strong h-12 pl-11 text-lg md:text-lg"
-          />
-        </div>
-        <button type="submit" class={buttonVariants({ className: "focus-strong h-12 px-5 text-base" })}>Sök</button>
-      </form>
-      {
-        query && firstPage && !failed && !nothing && (
-          <p class="text-muted-foreground measure">{hits} på ”{query}”.</p>
-        )
-      }
-    </header>
+  <div class="page-stack">
+    <PageHeader title="Sök">
+      <Fragment slot="after">
+        <SearchForm value={query} autoFocus={!query} class="measure" />
+        {query && firstPage && !failed && !nothing && <p class="type-label">{hits} på ”{query}”.</p>}
+      </Fragment>
+    </PageHeader>
 
     {
       !query && (
         <section aria-labelledby="sok-genvagar" class="flex measure flex-col gap-2 at-text">
-          <h2 id="sok-genvagar" class="type-meta text-muted-foreground">Eller gå direkt till</h2>
+          <h2 id="sok-genvagar" class="type-label">Eller gå direkt till</h2>
           <ul class="flex flex-wrap gap-x-6">
             {SHORTCUTS.map((shortcut) => (
               <li>
-                <a href={shortcut.href} class="link flex min-h-11 items-center font-medium">{shortcut.label}</a>
+                <a href={shortcut.href} class="action-link">
+                  {shortcut.label}
+                </a>
               </li>
             ))}
           </ul>
@@ -121,79 +102,49 @@ const link = (param: "fore" | "efter", cursor: Parameters<typeof encodeCursor>[0
 
     {
       failed && (
-        <p class="text-muted-foreground measure at-text">
-          Sökningen gick inte att genomföra. Prova med andra ord, eller ladda om sidan om en stund.
-        </p>
+        <EmptyNote>Sökningen gick inte att genomföra. Prova med andra ord, eller ladda om sidan om en stund.</EmptyNote>
       )
     }
 
     {
       nothing && (
-        <div class="text-muted-foreground flex measure flex-col gap-2 at-text">
-          <p>Ingen träff på ”{query}”.</p>
-          <p>
-            Prova ett annat ord eller färre ord. Fynd finns under <a href="/larm" class="link">Larm</a>
-            och i <a href="/artiklar" class="link">artikelarkivet</a>.
-          </p>
-        </div>
+        <EmptyNote>
+          Ingen träff på ”{query}”. Prova ett annat ord eller färre ord. Fynd finns under{" "}
+          <a href="/larm" class="link">Larm</a> och i <a href="/artiklar" class="link">artikelarkivet</a>.
+        </EmptyNote>
       )
     }
 
     {
       foundLokaler.length > 0 && (
-        <section aria-labelledby="traff-lokaler" class="flex flex-col gap-4 at-text">
-          <h2 id="traff-lokaler" class="type-section">Fågellokaler</h2>
-          <ul class="flex flex-col gap-3">
-            {foundLokaler.map((lokal) => (
-              <li>
-                <a href={`/lokaler/${lokal.slug}`} class="type-item decoration-primary underline-offset-4 hover:underline">
-                  {lokal.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Section id="traff-lokaler" title="Fågellokaler">
+          <SubpageList pages={foundLokaler.map((lokal) => ({ href: `/lokaler/${lokal.slug}`, title: lokal.name }))} />
+        </Section>
       )
     }
 
     {
       pages.length > 0 && (
-        <section aria-labelledby="traff-sidor" class="flex flex-col gap-4 at-text">
-          <h2 id="traff-sidor" class="type-section">Sidor</h2>
-          <ul class="flex measure flex-col gap-4">
-            {pages.map((page) => (
-              <li class="flex flex-col gap-0.5">
-                <a href={page.path} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
-                  {page.title}
-                </a>
-                {page.description && <p class="text-muted-foreground leading-relaxed">{page.description}</p>}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Section id="traff-sidor" title="Sidor">
+          <SubpageList pages={pages.map((page) => ({ href: page.path, title: page.title, description: page.description }))} />
+        </Section>
       )
     }
 
     {
       found.length > 0 && (
-        <section aria-labelledby="traff-artiklar" class="flex flex-col gap-6">
-          <h2 id="traff-artiklar" class="type-section at-text">Artiklar</h2>
+        <Section id="traff-artiklar" title="Artiklar" dated>
           <ArticleList articles={found} headingLevel={3} years="changes" />
-        </section>
+        </Section>
       )
     }
 
-    {
-      (articles?.older || articles?.newer) && (
-        <nav aria-label="Fler träffar" class="flex flex-wrap gap-x-8 gap-y-2 at-text">
-          {articles.newer && (
-            <a href={link("efter", articles.newer)} class="link flex min-h-11 items-center font-medium">Nyare träffar</a>
-          )}
-          {articles.older && (
-            <a href={link("fore", articles.older)} class="link flex min-h-11 items-center font-medium">Äldre träffar</a>
-          )}
-        </nav>
-      )
-    }
+    <Pager
+      label="Fler träffar"
+      links={[
+        articles?.newer && { href: link("efter", articles.newer), label: "Nyare träffar", rel: "prev" },
+        articles?.older && { href: link("fore", articles.older), label: "Äldre träffar", rel: "next" },
+      ]}
+    />
   </div>
 </SiteLayout>

@@ -3,7 +3,7 @@ import { seasonWindow, windowWeeks } from "./artportalen/taxa"
 import type { Season, SeasonTaxon, TaxonIndex, YearStats } from "./artportalen/types"
 import type { MigrationRow } from "./charts/options"
 import { speciesHref } from "./species"
-import { dayMonth, MONTH_NAMES, NOT_IN_SPRING, weekOfDay } from "./species-page"
+import { dayOfYearLabel, MONTH_NAMES, NOT_IN_SPRING, weekOfDay } from "./species-page"
 import { stockholmYear, toStockholmInputValue } from "./stockholm-time"
 
 /**
@@ -157,9 +157,9 @@ export function migration(
       name: taxon.name,
       href: slug ? speciesHref(slug) : null,
       weeks,
-      arrival: taxon.arrival === null ? null : dayMonth(taxon.arrival),
-      departure: taxon.departure === null ? null : dayMonth(taxon.departure),
-      thisYear: day === null ? null : { week: weekOfDay(day), day: dayMonth(day) },
+      arrival: taxon.arrival === null ? null : dayOfYearLabel(taxon.arrival),
+      departure: taxon.departure === null ? null : dayOfYearLabel(taxon.departure),
+      thisYear: day === null ? null : { week: weekOfDay(day), day: dayOfYearLabel(day) },
     }
     return [
       { row, kind: taxon.kind, usual: taxon.arrival, order: taxon.arrival ?? firstWeekDay(weeks) },

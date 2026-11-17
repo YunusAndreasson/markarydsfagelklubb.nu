@@ -3,19 +3,24 @@
  * One note in the outer margin: a quiet label and what it says. The label is a
  * heading so a screen reader can move between notes; it is set as meta, since the
  * aside must never outrank the text beside it.
+ *
+ * A `fact` (the default) is set in `type-fact`, the same size on every page:
+ * a place, a day, whom to call, what it costs. A `note` (a sentence with a
+ * link, the store badges, a short list) brings its own type.
  */
 interface Props {
   label: string
   headingLevel?: 2 | 3
+  kind?: "fact" | "note"
 }
 
-const { label, headingLevel = 2 } = Astro.props
+const { label, headingLevel = 2, kind = "fact" } = Astro.props
 const Heading = `h${headingLevel}` as const
 ---
 
 <section class="flex flex-col gap-1.5">
-  <Heading class="type-meta text-muted-foreground">{label}</Heading>
-  <div class="flex flex-col gap-1">
+  <Heading class="type-label">{label}</Heading>
+  <div class:list={["flex flex-col", kind === "fact" ? "type-fact gap-1" : "gap-2"]}>
     <slot />
   </div>
 </section>

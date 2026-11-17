@@ -38,10 +38,10 @@ const groups = [
                 aria-current={isCurrentChild(child, entry, pathname) ? "page" : undefined}
                 class="group/link flex min-h-11 flex-col justify-center py-1.5"
               >
-                <span class="group-aria-[current=page]/link:decoration-primary w-fit font-medium underline-offset-4 group-hover/link:underline group-aria-[current=page]/link:underline group-aria-[current=page]/link:decoration-2">
+                <span class="decoration-primary w-fit font-medium underline-offset-4 group-hover/link:underline group-aria-[current=page]/link:underline group-aria-[current=page]/link:decoration-2">
                   {child.title}
                 </span>
-                {child.description && <span class="text-muted-foreground text-sm text-balance">{child.description}</span>}
+                {child.description && <span class="type-caption text-balance">{child.description}</span>}
               </a>
             </li>
           ))
@@ -50,14 +50,14 @@ const groups = [
     </div>
     {
       groups.length > 0 && (
-        <div class="in-aside flex flex-col gap-5 pt-0.5">
+        <div class="in-aside flex flex-col gap-5">
           {groups.map((group) => (
             <section aria-label={group.title} class="flex flex-col gap-1">
-              <h2 class="type-meta text-muted-foreground">{group.title}</h2>
+              <h2 class="type-label">{group.title}</h2>
               <ul class={cn("grid gap-x-5", group.links.length > 1 && "grid-cols-2")}>
                 {group.links.map((child) => (
                   <li>
-                    <a href={child.href} class="hover:decoration-primary flex min-h-11 items-center gap-1 font-medium underline-offset-4 hover:underline">
+                    <a href={child.href} class="title-link flex min-h-11 items-center gap-1 font-medium">
                       {child.title}
                       {child.external && (
                         <>

@@ -1,5 +1,6 @@
 import { type RarityLevel, rarityLevel } from "./rarity"
 import { RESERVED_TOP_LEVEL_SLUGS, slugify } from "./slug"
+import { capitalize } from "./text"
 
 /**
  * The species the site has a page for (docs/design.md, "Arter"), joined from
@@ -52,7 +53,6 @@ export type SpeciesRef = {
 }
 
 const normal = (text: string) => text.trim().toLocaleLowerCase("sv").replace(/\s+/g, " ")
-const capitalise = (text: string) => text.charAt(0).toLocaleUpperCase("sv") + text.slice(1)
 
 /**
  * Every species with a page, in Swedish alphabetical order.
@@ -86,7 +86,7 @@ export function buildSpecies(taxa: readonly TaxonName[], app: readonly AppSpecie
     if (own) matched.add(own.id)
     artportalenName.set(taxon.id, taxon.name)
     out.push({
-      name: own ? own.name : capitalise(taxon.name),
+      name: own ? own.name : capitalize(taxon.name),
       sci: taxon.sci,
       taxonId: taxon.id,
       appId: own?.id ?? null,

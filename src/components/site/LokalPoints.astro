@@ -22,10 +22,10 @@ const { points, slugs } = Astro.props
     points.map((point) => {
       const slug = point.linked_location_id === null ? undefined : slugs.get(point.linked_location_id)
       return (
-        <li id={point.number === null ? undefined : `plats-${point.number}`} class="grid scroll-mt-4 grid-cols-[2.25rem_minmax(0,1fr)] md:grid-cols-[7rem_minmax(0,38rem)]">
+        <li id={point.number === null ? undefined : `plats-${point.number}`} class="margined scroll-mt-4 max-md:grid-cols-[2.25rem_minmax(0,1fr)]">
           <div>
             {point.number !== null && (
-              <span class="bg-gran type-meta inline-flex size-6 items-center justify-center rounded-full font-semibold text-white" aria-hidden="true">
+              <span class="surface-gran type-meta inline-flex size-6 items-center justify-center rounded-full font-semibold" aria-hidden="true">
                 {point.number}
               </span>
             )}
@@ -33,7 +33,7 @@ const { points, slugs } = Astro.props
           <div class="flex flex-col gap-0.5">
             <h3 class="type-item">
               {slug ? (
-                <a href={`/lokaler/${slug}`} class="link">{point.name}</a>
+                <a href={`/lokaler/${slug}`} class="title-link">{point.name}</a>
               ) : (
                 point.name
               )}

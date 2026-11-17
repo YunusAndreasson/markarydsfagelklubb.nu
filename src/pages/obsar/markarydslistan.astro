@@ -5,10 +5,10 @@ import ChartFigure from "@/components/site/charts/ChartFigure.astro"
 import Entry from "@/components/site/obsar/Entry.astro"
 import MarginGroup from "@/components/site/obsar/MarginGroup.astro"
 import NotReady from "@/components/site/obsar/NotReady.astro"
-import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
-import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { linesSvg } from "@/lib/charts/svg"
 import { ink } from "@/lib/charts/theme"
@@ -108,8 +108,9 @@ const fallback =
   description="Alla fågelarter som någonsin rapporterats i Markaryds kommun, med datum när de först sågs."
   menu={navigation.menu}
 >
-  <article class="flex flex-col gap-12">
-    <ObsarHeader
+  <article class="page-stack">
+    <PageHeader
+      crumbs={[{ href: "/obsar", label: "Obsar" }]}
       title="Markarydslistan"
       ingress={allTime &&
         `${arter(taxa.length)} har rapporterats i Markaryds kommun sedan ${firstYear}. När klubben bildades ${FOUNDED} var listan ${atFounding} arter lång.`}
@@ -140,7 +141,7 @@ const fallback =
     {
       allTime && byName && (
         <>
-          <p class="type-meta text-muted-foreground at-text measure">
+          <p class="type-caption at-text measure">
             Året vid varje art är när den först sågs i kommunen. Siffran är artens prefix, från 0 för de sällsyntaste till 5 för de
             allmänna. Varje art har en egen sida.
           </p>
@@ -173,7 +174,7 @@ const fallback =
     {
       allTime && !byName && (
         <>
-          <ObsarSection id="nyast" title="Senast på listan">
+          <Section id="nyast" title="Senast på listan">
             <Register>
               {newest.map((one) => (
                 <Entry
@@ -187,10 +188,10 @@ const fallback =
                 />
               ))}
             </Register>
-          </ObsarSection>
+          </Section>
 
           {fallback && (
-            <ObsarSection id="vaxer" title="Så har listan vuxit">
+            <Section id="vaxer" title="Så har listan vuxit">
               <ChartFigure
                 chart={{ kind: "accumulation", data: { points: grown, founded: FOUNDED } }}
                 fallback={fallback}
@@ -200,7 +201,7 @@ const fallback =
                 Antal kända arter i kommunen vid varje års slut. Varje trappsteg är en ny art.
                 {notSeenSince > 0 && ` ${arter(notSeenSince)} på listan har inte rapporterats på över tjugo år.`}
               </ChartFigure>
-            </ObsarSection>
+            </Section>
           )}
 
           {[...decadesOf].map(([decade, list]) => (

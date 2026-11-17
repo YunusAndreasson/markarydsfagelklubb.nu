@@ -1,0 +1,23 @@
+---
+import AsideNote from "@/components/site/AsideNote.astro"
+import RarityChip from "@/components/site/RarityChip.astro"
+import { isRare, type RarityLevel, rarityLabel } from "@/lib/rarity"
+
+/**
+ * The club's prefix for a species, as a note in the aside: the chip and its
+ * word, the word in Larmrött at the two rarest levels (docs/design.md,
+ * "Colour"). The same on a larm and on a species page.
+ */
+interface Props {
+  level: RarityLevel
+}
+
+const { level } = Astro.props
+---
+
+<AsideNote label="Prefix">
+  <p class="flex items-center gap-2">
+    <RarityChip level={level} />
+    <span class:list={[isRare(level) && "text-rarity font-medium"]} aria-hidden="true">{rarityLabel(level)}</span>
+  </p>
+</AsideNote>

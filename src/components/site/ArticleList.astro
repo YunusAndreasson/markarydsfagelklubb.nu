@@ -1,13 +1,16 @@
 ---
+import MarginDate from "@/components/site/MarginDate.astro"
+import Print from "@/components/site/Print.astro"
 import type { ArticleTeaser } from "@/lib/public-content"
-import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
-import { transitionName } from "@/lib/view-transition"
+import { formatDate, isoDateTime, listYear } from "@/lib/stockholm-time"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
  * The dated list: the date in the margin, the title and opening line, and the
  * article's photo as a small 3:2 print on the right (docs/design.md,
- * "Tidskriften"), in the outer margin from lg up ("Uppslaget"). An article without a photo simply has no print — in practice
- * those are short notices, and a grey box would only say "no picture".
+ * "Tidskriften"), in the outer margin from lg up ("Uppslaget"). An article
+ * without a photo simply has no print — in practice those are short notices,
+ * and a grey box would only say "no picture".
  */
 
 interface Props {
@@ -23,20 +26,11 @@ interface Props {
 
 const { articles, headingLevel = 2, years = "changes" } = Astro.props
 const Heading = headingLevel === 2 ? "h2" : "h3"
-const thisYear = stockholmYear(new Date())
 
-const yearLabel = (index: number): number | null => {
-  const article = articles[index]
-  if (!article) return null
-  const year = stockholmYear(article.published_at)
-  if (years === "other-years") return year === thisYear ? null : year
-  const previous = articles[index - 1]
-  return previous && stockholmYear(previous.published_at) === year ? null : year
-}
+const yearLabel = (index: number) => listYear(articles, index, (one) => one.published_at, years)
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const taken = Astro.locals.transitionNames
+const taken = takenTransitionNames(Astro.locals)
 ---
 
 <ol class="flex flex-col gap-8">
@@ -46,39 +40,33 @@ const taken = Astro.locals.transitionNames
       // Neighbours sharing a photo read as a mistake, so only the first shows it.
       const image = article.image?.src === articles[index - 1]?.image?.src ? null : article.image
       return (
-        <li class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_12rem] md:gap-x-0 lg:spread">
-          <p class="type-meta text-muted-foreground flex gap-1.5 md:flex-col md:gap-0 md:pt-[0.2rem] lg:in-margin">
-            <time datetime={isoDateTime(article.published_at)}>{formatDate(article.published_at, "short")}</time>
-            {year !== null && <span>{year}</span>}
-          </p>
-          <div class="col-start-1 flex flex-col gap-1 md:col-start-2 md:row-start-1 lg:in-text">
+        <li class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 md:grid-cols-[var(--track-margin)_minmax(0,1fr)_auto] md:gap-x-0 lg:spread">
+          <MarginDate
+            datetime={isoDateTime(article.published_at)}
+            parts={[formatDate(article.published_at, "short"), year]}
+            class="lg:in-margin"
+          />
+          <div class="col-start-1 flex flex-col gap-1 self-baseline md:col-start-2 md:row-start-1 lg:in-text">
             <Heading class="type-item">
-              <a href={`/artiklar/${article.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+              <a href={`/artiklar/${article.slug}`} class="title-link">
                 {article.title}
               </a>
             </Heading>
             {article.standfirst && <p class="text-muted-foreground line-clamp-2 leading-relaxed">{article.standfirst}</p>}
           </div>
           {image && (
-            <a
+            /* About as tall as the title and two lines of excerpt, so a row with
+               a print keeps the rhythm of a row without. */
+            <Print
               href={`/artiklar/${article.slug}`}
-              tabindex="-1"
-              aria-hidden="true"
-              class="col-start-2 row-span-2 row-start-1 md:col-start-3 md:row-span-1 md:pl-6 lg:in-aside lg:w-48 lg:pl-0"
-            >
-              <img
-                src={image.src}
-                srcset={image.srcset || undefined}
-                sizes="(min-width: 48rem) 10.5rem, 7rem"
-                width={image.width || undefined}
-                height={image.height || undefined}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                class="bg-muted aspect-3/2 w-28 rounded-[4px] object-cover md:w-full"
-                style={transitionName(taken, "artikel", article.id)}
-              />
-            </a>
+              src={image.src}
+              srcset={image.srcset}
+              sizes="8rem"
+              width={image.width}
+              height={image.height}
+              transition={transitionName(taken, "artikel", article.id)}
+              class="col-start-2 row-span-2 row-start-1 w-28 self-start md:col-start-3 md:row-span-1 md:w-38 md:pl-6 lg:in-aside lg:w-32 lg:pl-0"
+            />
           )}
         </li>
       )

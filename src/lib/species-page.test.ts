@@ -4,7 +4,7 @@ import type { TaxonEntry } from "./artportalen/types"
 import {
   arrivalFigure,
   arrivalSentence,
-  dayMonth,
+  dayOfYearLabel,
   leadSentence,
   seasonsPhrase,
   yearSentence,
@@ -21,8 +21,8 @@ const entry = (years: number[], first: (y: number) => string): TaxonEntry => ({
 
 describe("dayMonth", () => {
   it("writes a day of the year the site's way, with no full stop", () => {
-    expect(dayMonth(1)).toBe("1\u00a0jan")
-    expect(dayMonth(113)).toBe("23\u00a0apr")
+    expect(dayOfYearLabel(1)).toBe("1\u00a0jan")
+    expect(dayOfYearLabel(113)).toBe("23\u00a0apr")
   })
 })
 

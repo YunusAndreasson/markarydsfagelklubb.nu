@@ -1,55 +1,53 @@
 ---
+import Print from "@/components/site/Print.astro"
 import type { ArticleTeaser } from "@/lib/public-content"
-import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
-import { transitionName } from "@/lib/view-transition"
+import { formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
  * A few articles in the outer margin (docs/design.md, "Uppslaget"): a small
  * print, the date and the title, one line each, so the aside stays shorter than
- * a screen and can stay in view beside the text. Neighbours never share a photo,
- * and an article without one is type across the whole width, never a grey box.
+ * a screen and can stay in view beside the text. Neighbours never share a photo.
+ * An article without one leaves the print's place empty, never a grey box, so
+ * every title starts at the same edge.
  */
 interface Props {
   articles: ArticleTeaser[]
 }
 
 const { articles } = Astro.props
-const thisYear = stockholmYear(new Date())
+const now = new Date()
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const taken = Astro.locals.transitionNames
+const taken = takenTransitionNames(Astro.locals)
 ---
 
 <ol class="flex flex-col gap-4">
   {
     articles.map((article, index) => {
       const image = article.image?.src === articles[index - 1]?.image?.src ? null : article.image
-      const year = stockholmYear(article.published_at)
       return (
         <li class="grid grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-x-3">
           {image ? (
-            <a href={`/artiklar/${article.slug}`} tabindex="-1" aria-hidden="true">
-              <img
-                src={image.src}
-                srcset={image.srcset || undefined}
-                sizes="5.5rem"
-                width={image.width || undefined}
-                height={image.height || undefined}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
-                style={transitionName(taken, "artikel", article.id)}
-              />
-            </a>
-          ) : null}
-          <div class:list={["flex flex-col", !image && "col-span-2"]}>
-            <time datetime={isoDateTime(article.published_at)} class="type-meta text-muted-foreground">
+            <Print
+              href={`/artiklar/${article.slug}`}
+              src={image.src}
+              srcset={image.srcset}
+              sizes="5.5rem"
+              width={image.width}
+              height={image.height}
+              transition={transitionName(taken, "artikel", article.id)}
+              class="self-start"
+            />
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          <div class="flex flex-col">
+            <time datetime={isoDateTime(article.published_at)} class="type-label">
               {formatDate(article.published_at, "short")}
-              {year !== thisYear && ` ${year}`}
+              {yearUnlessThis(article.published_at, now) && ` ${yearUnlessThis(article.published_at, now)}`}
             </time>
-            <a href={`/artiklar/${article.slug}`} class="font-display decoration-primary text-[1.0625rem] leading-snug font-bold text-pretty underline-offset-4 hover:underline">
+            <a href={`/artiklar/${article.slug}`} class="type-item-aside title-link">
               {article.title}
             </a>
           </div>

@@ -1,11 +1,12 @@
 ---
-import RarityChip from "@/components/site/RarityChip.astro"
+import LarmTitle from "@/components/site/LarmTitle.astro"
+import MarginDate from "@/components/site/MarginDate.astro"
+import Print from "@/components/site/Print.astro"
 import type { PublicAlert } from "@/lib/alert-dto"
 import { ANONYMOUS_OBSERVER } from "@/lib/alert-observer"
 import { alertPhotoSrc, alertPhotoSrcset } from "@/lib/alert-photo"
-import { isRare, RARITY_WORTH_SAYING, rarityLabel } from "@/lib/rarity"
-import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
-import { transitionName } from "@/lib/view-transition"
+import { formatDate, isoDateTime, listYear } from "@/lib/stockholm-time"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
  * One larm per row, in the shape of a field-notebook entry: when it was seen
@@ -23,12 +24,12 @@ interface Props {
   /** "changes": print the year when it changes. "other-years": only when it isn't this one. */
   years?: "changes" | "other-years"
   /**
-   * Show the photos, as /larm does: from `md` up each at the start of the text
-   * track with the species and place beside it, a captioned print (docs/design.md,
-   * "Uppslaget"), so the photos line up like a contact strip and the log stays
-   * scannable; full width under the row on a phone. Cropped to 3:2 to keep the
-   * rhythm — a larm's own page shows the photo whole. `false` shows none, as
-   * the lokal pages and the home page's "Övriga larm" do.
+   * Show the photos, as /larm does: from `md` up each at the end of the text
+   * track beside its caption, a captioned print (docs/design.md, "Linjalen"), so
+   * the species keep one edge, the photos line up like a contact strip and the
+   * log stays scannable; full width under the row on a phone. Cropped to 3:2 to
+   * keep the rhythm — a larm's own page shows the photo whole. `false` shows
+   * none, as the lokal pages and the home page's "Övriga larm" do.
    */
   photos?: boolean
   /**
@@ -57,21 +58,11 @@ const {
   compact = false,
   clockOnly = false,
 } = Astro.props
-const Heading = headingLevel === 2 ? "h2" : "h3"
-const thisYear = stockholmYear(new Date())
 
-const yearLabel = (index: number): number | null => {
-  const alert = alerts[index]
-  if (!alert) return null
-  const year = stockholmYear(alert.observedAt)
-  if (years === "other-years") return year === thisYear ? null : year
-  const previous = alerts[index - 1]
-  return previous && stockholmYear(previous.observedAt) === year ? null : year
-}
+const yearLabel = (index: number) => listYear(alerts, index, (one) => one.observedAt, years)
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const taken = Astro.locals.transitionNames
+const taken = takenTransitionNames(Astro.locals)
 ---
 
 {/* gap-9 leaves room between rows that carry a print; without prints the rows
@@ -80,70 +71,45 @@ const taken = Astro.locals.transitionNames
   {
     alerts.map((alert, index) => {
       const year = yearLabel(index)
-      const rare = isRare(alert.rarity)
       const print = photos && alert.photoUrl ? alert.photoUrl : null
       return (
         <li class="margined gap-y-1">
-          <p
-            class:list={[
-              "type-meta text-muted-foreground flex flex-wrap gap-x-2",
-              "md:in-margin",
-              compact ? "md:pt-[0.125rem]" : "md:flex-col md:gap-x-0 md:pt-[0.25rem]",
-            ]}
-          >
-            <time datetime={isoDateTime(alert.observedAt)} class:list={["flex flex-wrap gap-x-2", !compact && "md:flex-col"]}>
-              {!clockOnly && <span>{formatDate(alert.observedAt, "short")}</span>}
-              {!clockOnly && year !== null && <span>{year}</span>}
-              <span>{formatDate(alert.observedAt, "clock")}</span>
-            </time>
-          </p>
-          {/* A print sits beside its own caption, inside the text track, so
-              the species reads with the photo rather than across a gap. */}
-          <div class:list={["md:in-text", print && "flex flex-col md:grid md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:items-start md:gap-x-5"]}>
-          <div
-            class:list={[
-              "flex min-w-0",
-              compact ? "flex-wrap items-baseline gap-x-3" : "flex-col gap-1",
-              print && "md:col-start-2 md:row-start-1",
-            ]}
-          >
-            <Heading
-              class:list={[
-                "flex flex-wrap items-baseline gap-x-2",
-                "type-item",
-              ]}
-            >
-              <a href={`/larm/${alert.id}`} class="decoration-primary underline-offset-4 hover:underline">
-                {alert.species}
-              </a>
-              {alert.count !== null && alert.count > 1 && (
-                <span class="text-muted-foreground font-sans text-base font-normal">{alert.count} ex.</span>
-              )}
-              <RarityChip level={alert.rarity} />
-              {alert.rarity <= RARITY_WORTH_SAYING && (
-                <span class:list={["type-meta font-sans", rare ? "text-rarity" : "text-muted-foreground"]}>
-                  {rarityLabel(alert.rarity)}
-                </span>
-              )}
-            </Heading>
-            <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
-              {place && <span>{alert.place}</span>}
-              <span>{alert.observer ?? ANONYMOUS_OBSERVER}</span>
-              {compact && alert.photoUrl && <span>Foto</span>}
-            </p>
-          </div>
-          {print && (
-            <img
-              src={alertPhotoSrc(print, "480")}
-              srcset={alertPhotoSrcset(print, "feed")}
-              sizes="(min-width: 48rem) 15rem, 100vw"
-              alt={`Foto av ${alert.species}`}
-              loading="lazy"
-              decoding="async"
-              class="bg-muted mt-2 aspect-3/2 w-full rounded-[4px] object-cover md:col-start-1 md:row-start-1 md:mt-0"
-              style={transitionName(taken, "larm", alert.id)}
-            />
-          )}
+          <MarginDate
+            datetime={isoDateTime(alert.observedAt)}
+            parts={clockOnly ? [formatDate(alert.observedAt, "clock")] : [formatDate(alert.observedAt, "short"), year, formatDate(alert.observedAt, "clock")]}
+            inline={compact}
+            class="md:in-margin"
+          />
+          {/* The caption first, at the text's edge like every row's, and the print
+              after it at the end of the text track (docs/design.md, "Linjalen"):
+              the species run down one edge whether or not a larm has a photo. */}
+          <div class:list={["md:in-text", print && "grid gap-x-5 gap-y-2 md:grid-cols-[minmax(0,1fr)_minmax(0,15rem)]"]}>
+            <div class:list={["flex min-w-0", compact ? "flex-wrap items-baseline gap-x-3" : "flex-col gap-1"]}>
+              <LarmTitle
+                species={alert.species}
+                count={alert.count}
+                rarity={alert.rarity}
+                href={`/larm/${alert.id}`}
+                level={headingLevel}
+              />
+              <p class="type-label flex flex-wrap gap-x-3">
+                {place && <span>{alert.place}</span>}
+                <span>{alert.observer ?? ANONYMOUS_OBSERVER}</span>
+                {compact && alert.photoUrl && <span>Foto</span>}
+              </p>
+            </div>
+            {print && (
+              <Print
+                href={`/larm/${alert.id}`}
+                src={alertPhotoSrc(print, "480")}
+                srcset={alertPhotoSrcset(print, "feed")}
+                sizes="(min-width: 48rem) 15rem, 100vw"
+                width={480}
+                height={320}
+                transition={transitionName(taken, "larm", alert.id)}
+                class="self-start"
+              />
+            )}
           </div>
         </li>
       )

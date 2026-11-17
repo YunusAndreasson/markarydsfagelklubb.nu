@@ -1,5 +1,6 @@
 ---
 import EmailLink from "@/components/site/EmailLink.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
 import SiteLayout from "@/layouts/site.astro"
 
 // Prerendered, like the 404: when the database is what failed, this page can't
@@ -7,14 +8,13 @@ import SiteLayout from "@/layouts/site.astro"
 ---
 
 <SiteLayout title="Något gick fel" menu={[]}>
-  <div class="flex measure flex-col gap-5 at-text">
-    <h1 class="type-title">Sidan kunde inte hämtas just nu</h1>
-    <p class="type-ingress text-muted-foreground">
-      Felet ligger hos oss. Ladda om sidan om en stund. Larmen finns också i klubbens app.
+  <PageHeader
+    title="Sidan kunde inte hämtas just nu"
+    ingress="Felet ligger hos oss. Ladda om sidan om en stund. Larmen finns också i klubbens app."
+  >
+    <p slot="after" class="flex flex-wrap gap-x-8">
+      <a href="/" class="action-link">Till startsidan</a>
+      <EmailLink address="webmaster@markarydsfagelklubb.nu" label="Kontakta webbansvarig" class="action-link" />
     </p>
-    <p class="flex flex-wrap gap-x-8">
-      <a href="/" class="link flex min-h-11 items-center font-medium">Till startsidan</a>
-      <EmailLink address="webmaster@markarydsfagelklubb.nu" label="Kontakta webbansvarig" class="link flex min-h-11 items-center font-medium" />
-    </p>
-  </div>
+  </PageHeader>
 </SiteLayout>

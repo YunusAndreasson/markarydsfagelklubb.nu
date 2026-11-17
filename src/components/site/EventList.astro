@@ -47,11 +47,15 @@ const now = new Date()
       // Not the deadline twice: it has its own line below.
       const summary = event.summary ? summaryBesideDeadline(event.summary, Boolean(deadline)) : ""
       return (
-        <li class="margined gap-x-3 max-md:grid-cols-[4.25rem_minmax(0,1fr)] md:gap-x-0">
-          <p class="type-meta text-muted-foreground flex flex-col md:in-margin">
+        <li class="margined items-start gap-x-3 max-md:grid-cols-[4.25rem_minmax(0,1fr)] md:gap-x-0">
+          {/* The programme's own device (docs/design.md, "Uppslaget"): the day of
+              the month large, so the title lines up with the number, not the
+              weekday over it. That is the one row that opts out of the first
+              baseline (`items-start`) and keeps an offset. */}
+          <p class="type-label flex flex-col md:in-margin">
             <time datetime={isoDateTime(event.starts_at)} class="flex flex-col">
               <span>{formatDate(event.starts_at, "weekdayName")}</span>
-              <span class="font-display text-foreground text-[2.25rem] leading-[1.05] font-bold tabular-nums lining-nums">
+              <span class="type-day">
                 {formatDate(event.starts_at, "day")}
               </span>
               {/* Month and time on one line where the margin is 7rem; stacked in the
@@ -61,16 +65,16 @@ const now = new Date()
                 {!event.all_day && <span>{formatDate(event.starts_at, "clock")}</span>}
               </span>
             </time>
-            {status && <span class="text-primary mt-0.5 font-semibold">{status}</span>}
+            {status && <span class="text-foreground mt-0.5 font-semibold">{status}</span>}
           </p>
           <div class="measure flex flex-col gap-1 pt-[1.15rem] md:in-text">
             <Heading class="type-item">
-              <a href={`/kalender/${event.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+              <a href={`/kalender/${event.slug}`} class="title-link">
                 {event.title}
               </a>
             </Heading>
             {(kind || event.place) && (
-              <p class="text-muted-foreground flex flex-wrap gap-x-3 leading-relaxed">
+              <p class="type-label flex flex-wrap gap-x-3">
                 {kind && <span>{kind}</span>}
                 {event.place && <span>{event.place}</span>}
               </p>

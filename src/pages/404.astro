@@ -1,6 +1,6 @@
 ---
-import { buttonVariants } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import PageHeader from "@/components/site/PageHeader.astro"
+import SearchForm from "@/components/site/SearchForm.astro"
 import SiteLayout from "@/layouts/site.astro"
 
 // Prerendered: it renders at build time without the database, so the menu
@@ -8,18 +8,16 @@ import SiteLayout from "@/layouts/site.astro"
 ---
 
 <SiteLayout title="Sidan hittades inte" menu={[]}>
-  <div class="flex measure flex-col gap-5 at-text">
-    <h1 class="type-title">Sidan hittades inte</h1>
-    <p class="type-ingress text-muted-foreground">
-      Adressen kan vara felstavad, eller så har sidan flyttats. Sök efter det du letar efter:
-    </p>
-    <form action="/sok" method="get" role="search" class="flex max-w-md gap-2">
-      <Input type="search" name="q" aria-label="Sök på webbplatsen" placeholder="En art, en plats, ett år …" className="focus-strong h-11 min-w-0 flex-1 text-base" />
-      <button type="submit" class={buttonVariants({ className: "focus-strong h-11 px-5 text-base" })}>Sök</button>
-    </form>
-    <p class="flex flex-wrap gap-x-8">
-      <a href="/" class="link flex min-h-11 items-center font-medium">Till startsidan</a>
-      <a href="/artiklar" class="link flex min-h-11 items-center font-medium">Alla artiklar</a>
-    </p>
-  </div>
+  <PageHeader
+    title="Sidan hittades inte"
+    ingress="Adressen kan vara felstavad, eller så har sidan flyttats. Sök efter det du letar efter:"
+  >
+    <Fragment slot="after">
+      <SearchForm class="measure" />
+      <p class="flex flex-wrap gap-x-8">
+        <a href="/" class="action-link">Till startsidan</a>
+        <a href="/artiklar" class="action-link">Alla artiklar</a>
+      </p>
+    </Fragment>
+  </PageHeader>
 </SiteLayout>

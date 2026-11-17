@@ -6,12 +6,13 @@ import ArticleList from "@/components/site/ArticleList.astro"
 import ArticleTiles from "@/components/site/ArticleTiles.astro"
 import Aside from "@/components/site/Aside.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import EventList from "@/components/site/EventList.astro"
-import HomeSection from "@/components/site/HomeSection.astro"
 import LarmBand from "@/components/site/LarmBand.astro"
 import JubileeBand from "@/components/site/obsar/JubileeBand.astro"
 import ObsarHome from "@/components/site/obsar/ObsarHome.astro"
 import PastSightings from "@/components/site/obsar/PastSightings.astro"
+import Section from "@/components/site/Section.astro"
 import Sponsors from "@/components/site/Sponsors.astro"
 import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
 import SiteLayout from "@/layouts/site.astro"
@@ -32,7 +33,7 @@ import {
   toStockholmInputValue,
 } from "@/lib/stockholm-time"
 import { isHeroWorthy } from "@/lib/teaser"
-import { transitionName } from "@/lib/view-transition"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 // The club's day and magazine (docs/design.md, "Larmbandet", "Tidskriften",
 // "Uppslaget"): one sentence and the newest larm photos on the spruce band, the
@@ -110,8 +111,7 @@ const prints = latestPrints(alerts, 5, now)
 const events = upcoming ?? []
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const taken = Astro.locals.transitionNames
+const taken = takenTransitionNames(Astro.locals)
 ---
 
 <SiteLayout menu={navigation.menu} image={leadImage?.src}>
@@ -126,11 +126,12 @@ const taken = Astro.locals.transitionNames
       the first screen, after the lead and the programme. */}
   <Sponsors class="hidden md:-mt-8 md:mb-4 md:flex md:justify-end" />
 
+  <div class="page-stack">
   {
     !lead && (
-      <p class="at-text text-muted-foreground">
+      <EmptyNote>
         {page ? "Här kommer nyheterna att synas." : "Nyheterna kunde inte hämtas just nu. Ladda om sidan om en stund."}
-      </p>
+      </EmptyNote>
     )
   }
 
@@ -168,8 +169,8 @@ const taken = Astro.locals.transitionNames
         )}
         <p
           class:list={[
-            "type-meta text-muted-foreground flex flex-wrap items-center gap-x-3",
-            !leadImage && "md:in-margin md:flex-col md:items-start md:gap-y-1.5 md:pt-[0.15rem]",
+            "type-label flex flex-wrap items-center gap-x-3",
+            !leadImage && "md:in-margin md:flex-col md:items-start md:gap-y-1 md:self-baseline",
             leadImage && "lg:hidden",
           ]}
         >
@@ -186,16 +187,16 @@ const taken = Astro.locals.transitionNames
             </a>
           )}
         </p>
-        <div class:list={["flex flex-col gap-4", !leadImage && "in-text"]}>
+        <div class:list={["flex flex-col gap-4", !leadImage && "in-text md:self-baseline"]}>
           {!leadImage && lead.category && (
-            <p class="type-meta text-muted-foreground -mb-2 hidden md:flex">
+            <p class="type-label -mb-2 hidden md:flex">
               <a href={`/artiklar/kategori/${lead.category.slug}`} class="crumb">
                 {lead.category.name}
               </a>
             </p>
           )}
           {leadImage && (
-            <p class="type-meta text-muted-foreground hidden flex-wrap items-center gap-x-3 lg:flex">
+            <p class="type-label hidden flex-wrap items-center gap-x-3 lg:flex">
               <time datetime={isoDateTime(lead.published_at)}>
                 {formatDate(lead.published_at, "weekday")}
               </time>
@@ -207,7 +208,7 @@ const taken = Astro.locals.transitionNames
             </p>
           )}
           <h2 class="type-display">
-            <a href={`/artiklar/${lead.slug}`} class="decoration-primary underline-offset-[0.12em] hover:underline hover:decoration-4">
+            <a href={`/artiklar/${lead.slug}`} class="title-link">
               {lead.title}
             </a>
           </h2>
@@ -216,7 +217,7 @@ const taken = Astro.locals.transitionNames
             <div class="content" set:html={hideEmails(linkPhones(lead.opening.paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")))} />
           )}
           {lead.opening.more && (
-            <a href={`/artiklar/${lead.slug}`} class="link flex min-h-11 w-fit items-center font-medium">
+            <a href={`/artiklar/${lead.slug}`} class="action-link">
               Läs hela artikeln
             </a>
           )}
@@ -252,45 +253,45 @@ const taken = Astro.locals.transitionNames
       the club sit beside it in the outer margin. */}
   {
     events.length > 0 && (
-      <HomeSection id="narmast" title="Närmast i programmet" href="/kalender" link="Hela programmet">
+      <Section id="narmast" title="Närmast i programmet" href="/kalender" link="Hela programmet" layout="spread" wide>
         <div class="in-wide">
           <EventList events={events} headingLevel={3} />
         </div>
         <Aside label="Följ klubben" sticky={false} first={false}>
-          <AsideNote label="Programmet i din kalender" headingLevel={3}>
-            <p class="text-muted-foreground leading-relaxed">
-              <a href="/kalender.ics" class="link font-medium">Prenumerera</a>, så kommer ändringar med automatiskt.
+          <AsideNote label="Programmet i din kalender" headingLevel={3} kind="note">
+            <p class="text-muted-foreground">
+              <a href="/kalender.ics" class="link">Prenumerera på programmet</a>, så kommer ändringar med automatiskt.
             </p>
           </AsideNote>
-          <AsideNote label="Få larmen direkt i mobilen" headingLevel={3}>
+          <AsideNote label="Få larmen direkt i mobilen" headingLevel={3} kind="note">
             <AppLinks sentence={false} />
           </AsideNote>
         </Aside>
-      </HomeSection>
+      </Section>
     )
   }
 
   {
     events.length === 0 && (
-      <section aria-labelledby="appen" class="mt-16 flex flex-col gap-1 md:mt-24">
-        <h2 id="appen" class="type-meta text-muted-foreground">Få larmen direkt i mobilen</h2>
+      <section aria-labelledby="appen" class="flex flex-col gap-1.5">
+        <h2 id="appen" class="type-label">Få larmen direkt i mobilen</h2>
         <AppLinks sentence={false} />
       </section>
     )
   }
 
-  <Sponsors class="mt-16 md:hidden" />
+  <Sponsors class="md:hidden" />
 
   {/* Photos may take the whole width; the dated list keeps its dates in the
       margin. Four in the list: the archive is one click away. */}
   {
     (tiles.length > 0 || list.length > 0) && (
-      <HomeSection id="artiklar" title="Fler artiklar" href="/artiklar" link="Alla artiklar">
+      <Section id="artiklar" title="Fler artiklar" href="/artiklar" link="Alla artiklar" layout="spread" wide>
         <div class="in-full flex flex-col gap-12">
           {tiles.length > 0 && <ArticleTiles articles={tiles} headingLevel={3} showCategory />}
           {list.length > 0 && <ArticleList articles={list.slice(0, 4)} headingLevel={3} years="other-years" />}
         </div>
-      </HomeSection>
+      </Section>
     )
   }
 
@@ -304,11 +305,11 @@ const taken = Astro.locals.transitionNames
       page answers a differently spelled slug with a 301. */}
   {
     (seasonWeek.arriving.length > 0 || seasonWeek.leaving.length > 0) && (
-      <HomeSection id="veckan" title="Så här års" href="/obsar/markarydslistan?ordning=a-o" link="Alla arter">
+      <Section id="veckan" title="Så här års" href="/obsar/markarydslistan?ordning=a-o" link="Hela Markarydslistan" layout="spread" wide>
         <div class="in-wide">
           <SeasonBlock week={seasonWeek} slugs={seasonSlugs} headingId="veckan" />
         </div>
-      </HomeSection>
+      </Section>
     )
   }
 
@@ -316,19 +317,18 @@ const taken = Astro.locals.transitionNames
       earlier years, from Artportalen, ranked by the club's prefix. */}
   {
     past.length > 0 && (
-      <HomeSection id="backspegeln" title="I backspegeln">
+      <Section id="backspegeln" title="I backspegeln" layout="spread" wide>
         <div class="in-wide">
           <PastSightings birds={past} slugs={seasonSlugs} />
         </div>
-      </HomeSection>
+      </Section>
     )
   }
 
   {
     history && history.years.length > 10 && (
-      <div class="mt-16 md:mt-24">
-        <JubileeBand history={history} allTime={allTime} thisYear={thisYear} contained />
-      </div>
+      <JubileeBand history={history} allTime={allTime} thisYear={thisYear} contained />
     )
   }
+  </div>
 </SiteLayout>

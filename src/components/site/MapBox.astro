@@ -1,0 +1,28 @@
+---
+/**
+ * The frame every map draws into: a pale box at the map's size with the print's
+ * 4 px radius, the data for its script, and a line for a reader without
+ * JavaScript. The two maps keep their own scripts (`larm-map.client.ts`,
+ * `lokal-map.client.ts`), so a page loads only the one it shows.
+ */
+interface Props {
+  kind: "larm" | "lokal"
+  /** What the map's script reads, as JSON. */
+  data: unknown
+  fallback: string
+  class?: string
+}
+
+const { kind, data, fallback, class: className } = Astro.props
+const hook = { [`data-${kind}-map`]: "" }
+---
+
+<div class:list={["bg-muted relative isolate overflow-hidden rounded-[4px]", className]}>
+  <div {...hook} data-props={JSON.stringify(data)} class="size-full" aria-hidden="true"></div>
+
+  <noscript>
+    <p class="type-caption absolute inset-0 flex items-center justify-center p-6 text-center">
+      {fallback}
+    </p>
+  </noscript>
+</div>

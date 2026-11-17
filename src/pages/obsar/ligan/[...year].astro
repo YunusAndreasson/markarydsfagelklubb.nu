@@ -3,11 +3,11 @@ export const prerender = false
 
 import LeagueRace from "@/components/site/charts/LeagueRace"
 import NotReady from "@/components/site/obsar/NotReady.astro"
-import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
-import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import StatTable from "@/components/site/obsar/StatTable.astro"
 import YearStrip from "@/components/site/obsar/YearStrip.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { arter, parseYearParam } from "@/lib/obsar-stats"
@@ -59,32 +59,34 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
   description={`Vem som har sett flest fågelarter i Markaryds kommun ${year}, räknat från Artportalen.`}
   menu={navigation.menu}
 >
-  <article class="flex flex-col gap-12">
-    <ObsarHeader wide
+  <article class="page-stack">
+    <PageHeader
+      wide
+      crumbs={[{ href: "/obsar", label: "Obsar" }]}
       title={title}
       ingress={stats &&
         leader &&
         `${stats.observerCount} personer har rapporterat fåglar i kommunen ${isCurrent ? "i år" : `under ${year}`}. ${leader.name} ${isCurrent ? "leder" : "vann"} med ${arter(leader.species)}.`}
     >
       {years.length > 1 && <YearStrip slot="after" years={years} current={year} base="/obsar/ligan" latest={thisYear} label="Ligan" />}
-    </ObsarHeader>
+    </PageHeader>
 
     {!stats && <NotReady href="https://www.artportalen.se/List/Top/User/F%C3%A5glar/2026/Kommun/Markaryd" />}
 
     {
       runners.length >= 3 && (
-        <ObsarSection wide id="loppet" title="Året som ett lopp">
-          <p class="text-muted-foreground measure leading-relaxed">
+        <Section wide id="loppet" title="Året som ett lopp">
+          <Fragment slot="lead">
             De tolv främsta och hur många arter de hade vecka för vecka. Tryck på knappen för att se året spelas upp.
-          </p>
+          </Fragment>
           <LeagueRace client:visible year={year} until={until} runners={runners} />
-        </ObsarSection>
+        </Section>
       )
     }
 
     {
       rows.length > 0 && (
-        <ObsarSection wide id="tabell" title="Alla rapportörer" measure>
+        <Section wide id="tabell" title="Alla rapportörer" measure>
           <StatTable
             columns={[
               { label: "Plats", hidden: true, muted: true },
@@ -94,15 +96,14 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
             ]}
             rows={rows}
           />
-          <p class="type-meta text-muted-foreground leading-relaxed">
+          <p class="type-caption">
             Räknat från Artportalens öppna data: en art räknas för alla som står med på fyndet. Skyddsklassade fynd ingår inte,
             så siffrorna kan skilja sig något från{" "}
             <a href={`https://www.artportalen.se/List/Top/User/F%C3%A5glar/${year}/Kommun/Markaryd`} class="link">
               Artportalens observatörsliga
-            </a>
-            .
+            </a>.
           </p>
-        </ObsarSection>
+        </Section>
       )
     }
 

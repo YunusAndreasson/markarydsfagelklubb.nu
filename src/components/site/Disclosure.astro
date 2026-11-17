@@ -1,0 +1,35 @@
+---
+import { ChevronDown } from "lucide-react"
+
+/**
+ * Something one tap away, with no script: a busy day's other larm, a figure's
+ * table, every year of a list. The summary is an action (`action-link`) with a
+ * chevron that turns as it opens; what it opens grows into place (global.css,
+ * "Motion"). Whatever is inside stays in the page, so find-in-page and a reader
+ * without CSS get it too.
+ */
+interface Props {
+  label: string
+  /** The summary's words while open ("Visa färre"); the label stays when left out. */
+  openLabel?: string
+  class?: string
+  /** Placement for the summary alone: `at-text` over rows that use the margin. */
+  summaryClass?: string
+}
+
+const { label, openLabel, class: className, summaryClass } = Astro.props
+---
+
+<details class:list={["group/disclosure flex flex-col", className]}>
+  <summary class:list={["action-link cursor-pointer list-none gap-1 [&::-webkit-details-marker]:hidden", summaryClass]}>
+    <ChevronDown
+      aria-hidden="true"
+      className="size-4 shrink-0 transition-transform group-open/disclosure:rotate-180 motion-reduce:transition-none"
+    />
+    <span class:list={[openLabel && "group-open/disclosure:hidden"]}>{label}</span>
+    {openLabel && <span class="hidden group-open/disclosure:inline">{openLabel}</span>}
+  </summary>
+  <div class="pt-4">
+    <slot />
+  </div>
+</details>

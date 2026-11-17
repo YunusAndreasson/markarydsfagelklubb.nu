@@ -15,10 +15,10 @@ interface Props {
 const { id, label, note } = Astro.props
 ---
 
-<section aria-labelledby={id} class="grid gap-y-3 md:grid-cols-[7rem_minmax(0,1fr)]">
+<section aria-labelledby={id} class="grid gap-y-3 md:grid-cols-[var(--track-margin)_minmax(0,1fr)]">
   <div class="flex items-baseline gap-x-3 md:sticky md:top-6 md:flex-col md:self-start md:pr-4">
     <h2 id={id} class="type-item">{label}</h2>
-    {note && <p class="type-meta text-muted-foreground">{note}</p>}
+    {note && <p class="type-label">{note}</p>}
   </div>
   <slot />
 </section>

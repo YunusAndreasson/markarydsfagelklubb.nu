@@ -1,6 +1,7 @@
 import { weekIndex } from "@/lib/artportalen/aggregate"
 import type { AllTime, History, YearSummary } from "@/lib/artportalen/types"
 import { countWord } from "@/lib/species-page"
+import { capitalize } from "@/lib/text"
 
 /**
  * What the Obsar pages say and draw, derived from the stored statistics.
@@ -244,7 +245,7 @@ const MONTH = new Intl.DateTimeFormat("sv-SE", { month: "long", timeZone: "UTC" 
 /** "januari" for 0; `capital` gives "Januari", for a heading. */
 export function monthName(index: number, capital = false): string {
   const name = MONTH.format(new Date(Date.UTC(2024, index, 1)))
-  return capital ? name.charAt(0).toUpperCase() + name.slice(1) : name
+  return capital ? capitalize(name) : name
 }
 
 /** "2 jan", a short date for a register's narrow column (Intl writes "2 jan."). */
@@ -266,7 +267,7 @@ export function yearHeadline(stats: {
   species: { name: string; first: string }[]
 }): string {
   const latest = stats.species.at(-1)
-  const tail = latest ? `, den senaste ${latest.name} den ${dayMonth(latest.first)}` : ""
+  const tail = latest ? `, den senaste ${latest.name} den ${longDay(latest.first)}` : ""
   return `I år har ${arter(stats.speciesCount)} rapporterats i kommunen${tail}.`
 }
 
@@ -277,6 +278,6 @@ const DAY_MONTH = new Intl.DateTimeFormat("sv-SE", {
 })
 
 /** "11 november". */
-export function dayMonth(date: string): string {
+export function longDay(date: string): string {
   return DAY_MONTH.format(new Date(localDay(date))).replace(" ", "\u00a0")
 }

@@ -1,4 +1,5 @@
 ---
+import PageHeader from "@/components/site/PageHeader.astro"
 import SiteLayout from "@/layouts/site.astro"
 
 /**
@@ -15,13 +16,13 @@ const { title, description } = Astro.props
 ---
 
 <SiteLayout title={title} description={description} menu={[]}>
-  <article class="flex flex-col gap-8 at-text">
-    <h1 class="type-title measure">{title}</h1>
-    <div class="content">
-      <slot />
+  <article class="page-stack">
+    <PageHeader title={title} />
+    <div class="at-text flex flex-col gap-8">
+      <div class="content">
+        <slot />
+      </div>
+      <a href="/" class="action-link">Till startsidan</a>
     </div>
-    <p>
-      <a href="/" class="link flex min-h-11 w-fit items-center font-medium">Till startsidan</a>
-    </p>
   </article>
 </SiteLayout>

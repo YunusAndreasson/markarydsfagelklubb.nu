@@ -1,0 +1,37 @@
+---
+/**
+ * A section's pages: each title in ink, green only on hover, with its one-line
+ * description under it (Klubben's "Mer om klubben", a page's "Här hittar du",
+ * the Obsar hub, search hits). A column of green underlined links read as a
+ * sitemap.
+ */
+export interface Subpage {
+  href: string
+  title: string
+  description?: string | null
+}
+
+interface Props {
+  pages: Subpage[]
+  /** h3 for each title under a section heading; none in a list of hits. */
+  headingLevel?: 3 | null
+}
+
+const { pages, headingLevel = 3 } = Astro.props
+const Title = headingLevel ? "h3" : "p"
+---
+
+<ul class="flex measure flex-col gap-5">
+  {
+    pages.map((page) => (
+      <li class="flex flex-col gap-0.5">
+        <Title class="type-item">
+          <a href={page.href} class="title-link">
+            {page.title}
+          </a>
+        </Title>
+        {page.description && <p class="text-muted-foreground">{page.description}</p>}
+      </li>
+    ))
+  }
+</ul>

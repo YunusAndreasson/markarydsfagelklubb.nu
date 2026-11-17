@@ -3,17 +3,19 @@ export const prerender = false
 
 import Body from "@/components/site/Body.astro"
 import ChartFigure from "@/components/site/charts/ChartFigure.astro"
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import ArrivalEntries from "@/components/site/obsar/ArrivalEntries.astro"
 import NotReady from "@/components/site/obsar/NotReady.astro"
-import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
 import ObsarPair from "@/components/site/obsar/ObsarPair.astro"
-import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
 import RankList from "@/components/site/obsar/RankList.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import StatTable from "@/components/site/obsar/StatTable.astro"
 import TableTwin from "@/components/site/obsar/TableTwin.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
+import SubpageList from "@/components/site/SubpageList.astro"
 import SeasonBlock from "@/components/site/species/SeasonBlock.astro"
 import YearWatch from "@/components/site/species/YearWatch.astro"
 import SiteLayout from "@/layouts/site.astro"
@@ -32,6 +34,7 @@ import {
   speciesCurves,
   yearHeadline,
 } from "@/lib/obsar-stats"
+import { hrefOf } from "@/lib/page-tree"
 import { loadNavigation, loadPageBody, type PublicPageRow } from "@/lib/public-content"
 import { migration, thisWeek } from "@/lib/season"
 import { buildSpecies, taxonSlugs } from "@/lib/species"
@@ -58,7 +61,6 @@ if (!page) return new Response(null, { status: 404 })
 
 type Child = typeof node & Pick<PublicPageRow, "description">
 const { report, regions } = groupObsar(node.children as Child[])
-const hrefOf = (child: Child) => (child.kind === "link" ? (child.link_url ?? "/") : child.path)
 
 const now = new Date()
 const today = toStockholmInputValue(now).slice(0, 10)
@@ -185,19 +187,18 @@ const paceSentence =
     "Det som rapporteras i Markaryds kommun: årets arter, de senaste fynden, listorna och 40 års obsar."}
   menu={navigation.menu}
 >
-  <article class="flex flex-col gap-12 md:gap-16">
-    <ObsarHeader
+  <article class="page-stack">
+    <PageHeader
       title={page.title}
-      crumb={false}
       wide
       ingress={page.description || "Det som rapporteras i Markaryds kommun, hämtat från Artportalen."}
     />
 
     {
       page.body_html && (
-        <ObsarSection wide measure>
+        <Section wide measure>
           <Body html={page.body_html} />
-        </ObsarSection>
+        </Section>
       )
     }
 
@@ -206,10 +207,10 @@ const paceSentence =
     {
       stats && (
         <>
-          <ObsarSection wide id="aret">
+          <Section wide id="aret">
             <div class="flex measure flex-col gap-4">
-              <h2 id="aret" class="type-section text-pretty">{headline}</h2>
-              <p class="text-muted-foreground leading-relaxed">
+              <h2 id="aret" class="type-section">{headline}</h2>
+              <p class="text-muted-foreground">
                 {reportSentence} {paceSentence}
               </p>
             </div>
@@ -238,16 +239,16 @@ const paceSentence =
                 />
               </TableTwin>
             )}
-          </ObsarSection>
+          </Section>
 
           {(seasonWeek.arriving.length > 0 || seasonWeek.leaving.length > 0) && (
-            <ObsarSection wide id="sahar" title="Så här års">
+            <Section wide id="sahar" title="Så här års">
               <SeasonBlock week={seasonWeek} slugs={seasonSlugs} headingId="sahar" />
-            </ObsarSection>
+            </Section>
           )}
 
           {flight && flightPanels.length > 0 && (
-            <ObsarSection wide id="flytt" title="Flyttfåglarnas år">
+            <Section wide id="flytt" title="Flyttfåglarnas år">
               <ChartFigure
                 chart={{ kind: "migration", data: { panels: flightPanels, years: flight.years, today: flight.today } }}
                 height={`${migrationHeight({ panels: flightPanels })}px`}
@@ -255,7 +256,7 @@ const paceSentence =
                 Fåglarna står i den ordning de brukar komma till kommunen, och varje rad är mörkast de veckor arten brukar
                 rapporteras mest, räknat på de senaste {flightYears} åren.
                 {flight.busiest && ` Flest flyttfåglar kommer i ${flight.busiest.month}, ${flight.busiest.count} av de ${flight.summer.length}.`}{" "}
-                Det gröna strecket är i dag, och de gröna prickarna visar när varje flyttfågel kom i år.
+                Det mörka strecket är i dag, och prickarna visar när varje flyttfågel kom i år.
                 {flight.winter.length > 0 && " Vintergästerna står i den ordning de brukar komma tillbaka på hösten."}
               </ChartFigure>
               <TableTwin label="Visa datumen">
@@ -276,38 +277,38 @@ const paceSentence =
                   )}
                 </div>
               </TableTwin>
-            </ObsarSection>
+            </Section>
           )}
 
           {(missing.length > 0 || more.length > 0 || less.length > 0) && (
-            <ObsarSection wide id="hittills" title="Året så här långt">
+            <Section wide id="hittills" title="Året så här långt">
               <YearWatch missing={missing} more={more} less={less} slugs={seasonSlugs} headingId="hittills" />
-            </ObsarSection>
+            </Section>
           )}
 
           {/* The year's four short lists, paired on the content track. */}
           <ObsarPair wide>
-            <ObsarSection id="nya" title="Nya för året" href="/obsar/arslista" link="Hela årslistan" nested>
+            <Section id="nya" title="Nya för året" href="/obsar/arslista" link="Hela årslistan" nested>
               <Register columns={1}>
                 <ArrivalEntries species={stats.species} count={6} />
               </Register>
-            </ObsarSection>
+            </Section>
 
-            <ObsarSection id="senaste" title="Senaste fynden" href="/obsar/senaste" link="Alla senaste fynd" nested>
+            <Section id="senaste" title="Senaste fynden" href="/obsar/senaste" link="Alla senaste fynd" nested>
               {sightings.length === 0 ? (
-                <p class="text-muted-foreground">Inga fynd rapporterade de senaste {recent?.days ?? 30} dagarna.</p>
+                <EmptyNote inline>Inga fynd rapporterade de senaste {recent?.days ?? 30} dagarna.</EmptyNote>
               ) : (
                 <Register columns={1}>
                   <SightingEntries sightings={sightings} now={now} brief />
                 </Register>
               )}
-            </ObsarSection>
+            </Section>
 
-            <ObsarSection id="ligan" title="Flest arter i år" href="/obsar/ligan" link="Hela ligan" nested>
+            <Section id="ligan" title="Flest arter i år" href="/obsar/ligan" link="Hela ligan" nested>
               <RankList numbered items={leaders.map((one) => ({ name: one.name, value: arter(one.species, { digits: true }) }))} />
-            </ObsarSection>
+            </Section>
 
-            <ObsarSection id="platser" title="Mest rapporterat från" nested>
+            <Section id="platser" title="Mest rapporterat från" nested>
               <RankList
                 items={places.map((one) => ({
                   name: one.name.replace(/, Sm$/, ""),
@@ -315,67 +316,58 @@ const paceSentence =
                   note: `${one.reports === 1 ? "rapport" : "rapporter"}, ${arter(one.species, { digits: true })}`,
                 }))}
               />
-            </ObsarSection>
+            </Section>
           </ObsarPair>
 
           {/* The two pages the sections above don't already lead to, so
               Översikt reaches every Obsar page without a row of tabs. */}
-          <ObsarSection wide>
-            <div class="grid gap-4 sm:grid-cols-2">
-              {[
+          <Section wide id="mer" title="Mer i Obsar">
+            <SubpageList
+              pages={[
                 {
                   href: "/obsar/markarydslistan",
                   title: "Markarydslistan",
-                  text: "Alla arter som någonsin setts i kommunen, med en sida för varje.",
+                  description: "Alla arter som någonsin setts i kommunen, med en sida för varje.",
                 },
                 {
                   href: "/obsar/40-ar",
                   title: "40 års fynd",
-                  text: "Klubben fyller 40. Så har fågellivet och rapporterandet i kommunen förändrats sedan 1986.",
+                  description: "Klubben fyller 40. Så har fågellivet och rapporterandet i kommunen förändrats sedan 1986.",
                 },
-              ].map((one) => (
-                <a href={one.href} class="surface-gran group flex flex-col gap-1 rounded-[4px] px-5 py-5">
-                  <span class="type-section text-reflex underline decoration-1 underline-offset-4 group-hover:decoration-2">
-                    {one.title}
-                  </span>
-                  <span class="text-muted-foreground leading-relaxed text-balance">{one.text}</span>
-                </a>
-              ))}
-            </div>
-          </ObsarSection>
+              ]}
+            />
+          </Section>
         </>
       )
     }
 
     {
       report.map((child) => (
-        <ObsarSection wide id="rapportera" title="Har du sett något?" measure>
-          <p class="text-muted-foreground leading-relaxed">
+        <Section wide id="rapportera" title="Har du sett något?" measure>
+          <p class="text-muted-foreground">
             {obsarDescription(child)}{" "}
-            <a href={hrefOf(child)} class="link font-medium">
+            <a href={hrefOf(child)} class="link">
               {child.title}
             </a>
           </p>
-        </ObsarSection>
+        </Section>
       ))
     }
 
     {
       regions.length > 0 && (
-        <ObsarSection wide id="obsar-grannar" title="Runt omkring" measure>
-          <div class="flex flex-col gap-2">
-            <p class="text-muted-foreground">Det som rapporteras i landskapen i närheten, på Artportalen.</p>
-            <ul class="flex flex-wrap gap-x-6">
-              {regions.map((child) => (
-                <li>
-                  <a href={hrefOf(child)} class="link flex min-h-11 items-center font-medium">
-                    {child.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ObsarSection>
+        <Section wide id="obsar-grannar" title="Runt omkring" measure>
+          <Fragment slot="lead">Det som rapporteras i landskapen i närheten, på Artportalen.</Fragment>
+          <ul class="flex flex-wrap gap-x-6">
+            {regions.map((child) => (
+              <li>
+                <a href={hrefOf(child)} class="action-link">
+                  {child.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Section>
       )
     }
 

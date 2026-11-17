@@ -1,0 +1,35 @@
+---
+/**
+ * When, in the margin beside an entry or a page's text (docs/design.md,
+ * "Uppslaget"): stacked from md, where the margin is a column of its own, and
+ * on one line on a phone, where it sits above. Blyerts meta. Lines up with the
+ * title beside it on the first baseline (`margined` rows, `self-baseline` in
+ * a spread), so it needs no offset. Anything after the date (a byline, a
+ * status) goes in the slot, one line each.
+ */
+interface Props {
+  /** Leave out for the slot alone (a byline on an undated preview). */
+  datetime?: string | null
+  /** The date's parts in reading order: "lördag", "31 oktober", "2026", "18:30". Empty ones are left out. */
+  parts: (string | number | null | undefined | false)[]
+  /** Keep the parts on one line at every width (a compact row). */
+  inline?: boolean
+  class?: string
+}
+
+const { datetime, parts, inline = false, class: className } = Astro.props
+const shown = parts.filter(
+  (part) => part !== null && part !== undefined && part !== false && part !== ""
+)
+---
+
+<div class:list={["type-label flex flex-col gap-1 self-baseline", className]}>
+  {
+    datetime && shown.length > 0 && (
+      <time datetime={datetime} class:list={["flex flex-wrap gap-x-1.5", !inline && "md:flex-col"]}>
+        {shown.map((part) => <span>{part}</span>)}
+      </time>
+    )
+  }
+  <slot />
+</div>

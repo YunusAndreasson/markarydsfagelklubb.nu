@@ -72,6 +72,11 @@
    the site's own since 2026-10-31, tinted towards the spruce and water of the
    kommun; Gran and Reflex are the site's too (docs/design.md, "Dagslistan"). */
 :root {
+  /* Uppslaget's two fixed tracks: the date margin and the reading measure
+     (about 68 characters). The grid utilities below and content.css's
+     register read these; nothing else writes 7rem or 38rem. */
+  --track-margin: 7rem;
+  --track-text: 38rem;
   --background: oklch(1 0 0);
   /* Bläck, 16.7:1 on white. */
   --foreground: #17201d;
@@ -282,6 +287,64 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+/* Meta in Blyerts: dates, a note's label, a count, the crumb. The commonest
+   pairing on the site, so it has a name. It reads --muted-foreground, which
+   surface-gran remaps, so it works on a Gran band too. */
+@utility type-label {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+/* The fact a note in the aside states: a place, a day, whom to call, what it
+   costs. One size on every page, a step over body text so it reads first,
+   and Inter at its reading weight, since it is information rather than a
+   title and some facts run to a sentence ("Inte rapporterad än. Brukar …"). */
+@utility type-fact {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+/* Under a photo: quieter than meta (400, not 500), since a caption runs to
+   several lines. A chart's caption is body text instead: it carries the
+   finding (docs/design.md, "Obsar och statistik"). */
+@utility type-caption {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  text-wrap: pretty;
+}
+/* A scientific name: Alegreya's italic, as in a field guide. Sets the face
+   only, so it takes the size of the role it sits in (`type-ingress` under a
+   title, `type-caption` in a register). */
+@utility type-latin {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+}
+/* The programme's day of the month, large in Alegreya under its weekday: a
+   calendar page's own device, used only where the content is dates
+   (docs/design.md, "Uppslaget"). Ink, whatever the meta around it. */
+@utility type-day {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: 2.25rem;
+  line-height: 1.05;
+  font-weight: 700;
+  color: var(--foreground);
+}
+/* An entry's title in the aside (an article's "Mer i"): `type-item` a step
+   down, since the aside must never outrank the text beside it. */
+@utility type-item-aside {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 700;
+  text-wrap: balance;
+}
 
 /* The club's rarity number as a chip, the app's idiom (RarityBadge): a digit on
    its level's colour, solid at 0–1 so a rarity shows from across the page, and
@@ -355,16 +418,61 @@
   }
 }
 
-/* A green link: an action or a destination standing on its own ("Alla larm",
-   "App Store"), or a link inside a sentence. It looks like a link in body text
-   (content.css) and answers the pointer the same way. A title that is a link
-   stays ink, with a green underline on hover. */
+/* Links, three kinds with one meaning each (docs/design.md, "Colour").
+   `link`: green and underlined, a link inside a sentence. It looks like a link
+   in body text (content.css) and answers the pointer the same way. It takes the
+   sentence's weight. */
 @utility link {
   color: var(--primary);
   text-decoration-line: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.25em;
+  text-underline-offset: 0.2em;
   &:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+/* An action or a destination standing on its own: "Alla larm", "Hela
+   programmet", "Läs hela artikeln". A `link` with a full-size target, as wide
+   as its words. */
+@utility action-link {
+  display: flex;
+  width: fit-content;
+  min-height: 2.75rem;
+  align-items: center;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+/* A title that is a link (an article, a larm, an event, a lokal) stays ink,
+   with a green underline on hover. */
+@utility title-link {
+  text-decoration-color: var(--primary);
+  text-underline-offset: 4px;
+  &:hover {
+    text-decoration-line: underline;
+  }
+}
+/* Navigation: the menu, category tabs, a year strip, a list's order. Blyerts;
+   the current page is ink with a 2 px green underline. */
+@utility nav-link {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: var(--muted-foreground);
+  text-underline-offset: 0.5em;
+  &:hover {
+    color: var(--foreground);
+    text-decoration-line: underline;
+  }
+  &[aria-current="page"] {
+    color: var(--foreground);
+    text-decoration-line: underline;
+    text-decoration-color: var(--primary);
     text-decoration-thickness: 2px;
   }
 }
@@ -385,15 +493,15 @@
   grid-template-columns: [full-start wide-start margin-start text-start aside-start] minmax(0, 1fr) [margin-end text-end aside-end wide-end full-end];
   @media (width >= 48rem) {
     grid-template-columns:
-      [full-start wide-start margin-start] 7rem
-      [margin-end text-start aside-start] minmax(0, 38rem)
+      [full-start wide-start margin-start] var(--track-margin)
+      [margin-end text-start aside-start] minmax(0, var(--track-text))
       [text-end aside-end wide-end] minmax(0, 1fr)
       [full-end];
   }
   @media (width >= 64rem) {
     grid-template-columns:
-      [full-start wide-start margin-start] 7rem
-      [margin-end text-start] minmax(0, 38rem)
+      [full-start wide-start margin-start] var(--track-margin)
+      [margin-end text-start] minmax(0, var(--track-text))
       [text-end wide-end] 3rem
       [aside-start] minmax(14rem, 1fr)
       [aside-end full-end];
@@ -401,12 +509,18 @@
 }
 /* A row with a date in the margin, inside a block that is already on the text's
    left edge (`in-wide`) or alone in the container: margin 7rem | text ≤38rem.
-   The same two tracks as a spread's, without the outer margin. */
+   The same two tracks as a spread's, without the outer margin.
+
+   Rows line up on their first baseline, so a 14 px date beside a 21 px title
+   (or a margin label beside body text) sits on the title's line in any face,
+   with no hand-tuned offset. A photo in a row has no baseline of its own:
+   give it `self-start`. */
 @utility margined {
   display: grid;
+  align-items: baseline;
   grid-template-columns: [margin-start text-start] minmax(0, 1fr) [margin-end text-end];
   @media (width >= 48rem) {
-    grid-template-columns: [margin-start] 7rem [margin-end text-start] minmax(0, 38rem) [text-end];
+    grid-template-columns: [margin-start] var(--track-margin) [margin-end text-start] minmax(0, var(--track-text)) [text-end];
   }
 }
 @utility in-margin {
@@ -434,12 +548,32 @@
    block that also sets `measure` keeps the whole measure. */
 @utility at-text {
   @media (width >= 48rem) {
-    margin-inline-start: 7rem;
+    margin-inline-start: var(--track-margin);
+  }
+}
+/* A page's sections, one rhythm on every page (docs/design.md, "Linjalen"):
+   3rem between sections, 4.5rem from md, and less under the page's header
+   (`PageHeader`, which marks itself), since a title belongs to what follows
+   it. Margins rather than `gap`, so the header can say how close it sits. */
+@utility page-stack {
+  display: flex;
+  flex-direction: column;
+  --section-gap: 3rem;
+  --header-gap: 2rem;
+  @media (width >= 48rem) {
+    --section-gap: 4.5rem;
+    --header-gap: 2.5rem;
+  }
+  & > * + * {
+    margin-block-start: var(--section-gap);
+  }
+  & > [data-page-header] + * {
+    margin-block-start: var(--header-gap);
   }
 }
 /* The reading measure. */
 @utility measure {
-  max-width: 38rem;
+  max-width: var(--track-text);
 }
 /* A caption under a figure that spans more than the text track: it follows the
    figure a little further, to about 80 characters, so a 60rem chart doesn't

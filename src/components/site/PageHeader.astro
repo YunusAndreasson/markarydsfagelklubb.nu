@@ -1,0 +1,71 @@
+---
+import Aside from "@/components/site/Aside.astro"
+import Crumbs, { type Crumb } from "@/components/site/Crumbs.astro"
+
+/**
+ * The head of every public page but the home page (docs/design.md, "Linjalen"):
+ * the crumb, the title, a scientific name under it, the ingress, then anything
+ * the page adds below (`after`: tabs, a year strip, the search field). One
+ * spacing for all of it, and one for what follows (`page-stack` reads
+ * `data-page-header`).
+ *
+ * - The title starts at the text's edge, in line with the text beside a
+ *   page's dates; `wide` starts it at the margin's edge, for a page with
+ *   nothing in the margin (docs/design.md, "Uppslaget": one left edge).
+ * - An `aside` slot puts facts beside the title from lg, level with the
+ *   title rather than the crumb, and after the ingress on a phone. `hang`
+ *   gives it no height from lg, so notes taller than the header hang beside
+ *   what follows instead of pushing it down (the programme, "Kontaktark").
+ */
+interface Props {
+  title: string
+  /** Muted, after the title in the same heading: a larm's "3 ex.". */
+  titleNote?: string | null
+  crumbs?: Crumb[]
+  latin?: string | null
+  ingress?: string | null | false
+  wide?: boolean
+  asideLabel?: string
+  hang?: boolean
+}
+
+const {
+  title,
+  titleNote,
+  crumbs = [],
+  latin,
+  ingress,
+  wide = false,
+  asideLabel,
+  hang = false,
+} = Astro.props
+const aside = Astro.slots.has("aside")
+const after = Astro.slots.has("after")
+const track = wide ? "in-wide" : "in-text"
+---
+
+<header data-page-header class:list={["gap-y-4", aside ? "spread" : ["flex flex-col", !wide && "at-text"]]}>
+  {crumbs.length > 0 && <div class:list={[aside && track]}><Crumbs crumbs={crumbs} /></div>}
+  <div class:list={["flex min-w-0 flex-col gap-4", aside && [track, crumbs.length > 0 && "lg:row-start-2"]]}>
+    {/* The words keep the reading measure; what the page adds under them (tabs,
+        a year strip) may use the track's whole width. */}
+    <div class="flex measure flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <h1 class="type-title">
+          {title}
+          {titleNote && <span class="text-muted-foreground font-normal">{titleNote}</span>}
+        </h1>
+        {latin && <p class="type-ingress type-latin text-muted-foreground">{latin}</p>}
+      </div>
+      {ingress && <p class="type-ingress text-muted-foreground">{ingress}</p>}
+    </div>
+    {after && <slot name="after" />}
+  </div>
+  {
+    aside && (
+      <Aside label={asideLabel ?? title} sticky={false} first={false} class:list={["max-lg:mt-2", crumbs.length > 0 && "lg:row-start-2", hang && "lg:h-0"]}>
+        <slot name="aside" />
+      </Aside>
+    )
+  }
+</header>

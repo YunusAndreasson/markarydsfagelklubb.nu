@@ -5,11 +5,11 @@ import ChartFigure from "@/components/site/charts/ChartFigure.astro"
 import Entry from "@/components/site/obsar/Entry.astro"
 import MarginGroup from "@/components/site/obsar/MarginGroup.astro"
 import NotReady from "@/components/site/obsar/NotReady.astro"
-import ObsarHeader from "@/components/site/obsar/ObsarHeader.astro"
-import ObsarSection from "@/components/site/obsar/ObsarSection.astro"
 import Register from "@/components/site/obsar/Register.astro"
 import SourceNote from "@/components/site/obsar/SourceNote.astro"
 import YearStrip from "@/components/site/obsar/YearStrip.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { obsarStore, store } from "@/lib/obsar-data"
 import { arter, byArrivalMonth, monthName, parseYearParam, shortDay } from "@/lib/obsar-stats"
@@ -50,6 +50,7 @@ const isCurrent = year === thisYear
 const title = `Årslistan ${year}`
 
 import { speciesLink } from "@/lib/species"
+import { rapporter } from "@/lib/text"
 ---
 
 <SiteLayout
@@ -57,20 +58,21 @@ import { speciesLink } from "@/lib/species"
   description={`Arterna som rapporterats i Markaryds kommun ${year}, i den ordning de kom, från Artportalen.`}
   menu={navigation.menu}
 >
-  <article class="flex flex-col gap-12">
-    <ObsarHeader
+  <article class="page-stack">
+    <PageHeader
+      crumbs={[{ href: "/obsar", label: "Obsar" }]}
       title={title}
       ingress={stats &&
         `${isCurrent ? "Hittills i år har" : `Under ${year} rapporterades`} ${arter(stats.speciesCount)}${isCurrent ? " rapporterats" : ""} i kommunen, i ${stats.reports.toLocaleString("sv-SE")} rapporter. Här i den ordning de först sågs.`}
     >
       {years.length > 1 && <YearStrip slot="after" years={years} current={year} base="/obsar/arslista" latest={thisYear} label="Årslistan" />}
-    </ObsarHeader>
+    </PageHeader>
 
     {!stats && <NotReady href="https://www.artportalen.se/List/Top/Species/F%C3%A5glar/2026/Kommun/Markaryd/AnySite/OrderByDate/Desc" />}
 
     {
       stats && rhythm.length >= 5 && (
-        <ObsarSection id="rytm" title="Årets rytm">
+        <Section id="rytm" title="Årets rytm">
           <ChartFigure
             chart={{ kind: "phenology", data: { species: rhythm.map((one) => ({ name: one.name, weeks: one.weeks })) } }}
             height={`${rhythm.length * 18 + 40}px`}
@@ -78,7 +80,7 @@ import { speciesLink } from "@/lib/species"
             De {rhythm.length} mest rapporterade arterna vecka för vecka, i den ordning de kom. Varje rad är mörkast den vecka
             arten rapporterades mest. Stannfåglarna syns hela året, flyttfåglarna bara mellan ankomst och flytt.
           </ChartFigure>
-        </ObsarSection>
+        </Section>
       )
     }
 
@@ -93,7 +95,7 @@ import { speciesLink } from "@/lib/species"
                 title={one.name}
                 href={speciesLink(one.name)}
                 sci={one.sci}
-                notes={[one.reports === 1 ? "1 rapport" : `${one.reports.toLocaleString("sv-SE")} rapporter, senast ${shortDay(one.last)}`]}
+                notes={[one.reports === 1 ? rapporter(1) : `${rapporter(one.reports)}, senast ${shortDay(one.last)}`]}
               />
             ))}
           </Register>

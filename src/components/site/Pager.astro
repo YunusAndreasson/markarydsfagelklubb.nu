@@ -1,0 +1,33 @@
+---
+/**
+ * Paging under a list: newer and older, or the months either side. Side by
+ * side at the text's edge, like the list's own start; pushed to the edges of
+ * the container they read as unrelated.
+ */
+export interface PagerLink {
+  href: string
+  label: string
+  rel?: "prev" | "next"
+}
+
+interface Props {
+  label: string
+  links: (PagerLink | null | undefined | false)[]
+  wide?: boolean
+}
+
+const { label, links, wide = false } = Astro.props
+const shown = links.filter((link): link is PagerLink => Boolean(link))
+---
+
+{
+  shown.length > 0 && (
+    <nav aria-label={label} class:list={["flex flex-wrap gap-x-8 gap-y-2", !wide && "at-text"]}>
+      {shown.map((link) => (
+        <a href={link.href} rel={link.rel} class="action-link">
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  )
+}

@@ -1,8 +1,11 @@
 ---
 export const prerender = false
 
+import EmptyNote from "@/components/site/EmptyNote.astro"
 import LokalList from "@/components/site/LokalList.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
+import PageHeader from "@/components/site/PageHeader.astro"
+import Section from "@/components/site/Section.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { toPin } from "@/lib/lokal"
 import { type LokalReports, reportsByLokal, summarizeReports } from "@/lib/lokal-reports"
@@ -55,16 +58,14 @@ const active = lokaler.value
   description="Fågellokaler i Markaryds kommun, med larmen och rapporterna därifrån."
   menu={navigation.menu}
 >
-  <div class="flex flex-col gap-10">
+  <div class="page-stack">
     {/* Nothing here goes in the margin, so the title starts at the map's edge, in
         line with the logo, like the sections below (docs/design.md, "Uppslaget"). */}
-    <header class="flex flex-col gap-3">
-      <h1 class="type-title">Fågellokaler</h1>
-      <p class="type-ingress text-muted-foreground max-w-prose">
-        Bra platser att skåda fågel på i Markaryds kommun. En större grön prick på kartan betyder att
-        det har larmats därifrån de senaste två veckorna.
-      </p>
-    </header>
+    <PageHeader
+      title="Fågellokaler"
+      ingress="Bra platser att skåda fågel på i Markaryds kommun. En större grön prick på kartan betyder att det har larmats därifrån de senaste två veckorna."
+      wide
+    />
 
     {
       /* The kommun is about as wide as it is tall (19 km by 18), so a wide
@@ -76,32 +77,25 @@ const active = lokaler.value
 
     {
       lokaler.value.length === 0 ? (
-        <p class="text-muted-foreground measure">
-          Inga fågellokaler är upplagda ännu. De läggs till i appen och syns sedan här.
-        </p>
+        <EmptyNote wide>Inga fågellokaler är upplagda ännu. De läggs till i appen och syns sedan här.</EmptyNote>
       ) : (
         <>
           {active.length > 0 && (
-            <section aria-labelledby="lokaler-aktiva" class="flex flex-col gap-5">
-              <h2 id="lokaler-aktiva" class="type-section">Larm de senaste två veckorna</h2>
+            <Section id="lokaler-aktiva" title="Larm de senaste två veckorna" wide>
               <LokalList lokaler={active} letters={false} />
-            </section>
+            </Section>
           )}
           {reported.length > 0 && (
-            <section aria-labelledby="lokaler-rapporterat" class="flex flex-col gap-5">
-              <div class="flex flex-col gap-2">
-                <h2 id="lokaler-rapporterat" class="type-section">Mest rapporterat den senaste månaden</h2>
-                <p class="text-muted-foreground measure">
-                  Rapporter i Artportalen från högst en kilometer bort, de senaste {recent?.days ?? 30}&nbsp;dagarna.
-                </p>
-              </div>
+            <Section id="lokaler-rapporterat" title="Mest rapporterat den senaste månaden" wide>
+              <Fragment slot="lead">
+                Rapporter i Artportalen från högst en kilometer bort, de senaste {recent?.days ?? 30}&nbsp;dagarna.
+              </Fragment>
               <LokalList lokaler={reported} letters={false} reports={reports} tally="reports" />
-            </section>
+            </Section>
           )}
-          <section aria-labelledby="lokaler-alla" class="flex flex-col gap-5">
-            <h2 id="lokaler-alla" class="type-section">Alla lokaler</h2>
+          <Section id="lokaler-alla" title="Alla lokaler" wide>
             <LokalList lokaler={lokaler.value} reports={reports} />
-          </section>
+          </Section>
         </>
       )
     }

@@ -39,7 +39,7 @@ const svg = barsSvg({
   bars: years.map((one) => ({ value: one.reports, mark: marks.includes(one.year) })),
   width: 600,
   height: 160,
-  color: "rgba(255,255,255,0.55)",
+  color: ink.onGran,
   markColor: ink.reflex,
   gap: 0.22,
 })
@@ -49,11 +49,11 @@ const sentence = `Sedan klubben bildades ${FOUNDED} har ${facts.reportsSinceFoun
 
 <section aria-labelledby="jubileum" class:list={["surface-gran", contained && "-mx-4 sm:mx-0 sm:rounded-[4px]"]}>
   <div class:list={["flex w-full flex-col gap-6 py-8 md:py-10", contained ? "px-4 sm:px-6 md:px-8" : "mx-auto max-w-page px-4 sm:px-6"]}>
-    <div class="flex max-w-[44rem] flex-col gap-3">
-      <Heading id="jubileum" class:list={[headingLevel === 1 ? "type-title" : "type-section", "text-pretty"]}>
+    <div class="flex measure-caption flex-col gap-3">
+      <Heading id="jubileum" class:list={[headingLevel === 1 ? "type-title" : "type-section"]}>
         {headingLevel === 1 ? "40 års fynd" : sentence}
       </Heading>
-      {headingLevel === 1 && <p class="type-ingress text-pretty">{sentence}</p>}
+      {headingLevel === 1 && <p class="type-ingress text-muted-foreground">{sentence}</p>}
     </div>
 
     {
@@ -70,7 +70,7 @@ const sentence = `Sedan klubben bildades ${FOUNDED} har ${facts.reportsSinceFoun
       ) : (
         <figure class="flex flex-col gap-2">
           <div class="aspect-[5/2] w-full sm:aspect-[4/1]" set:html={svg} />
-          <figcaption class="type-meta text-muted-foreground flex justify-between tabular-nums">
+          <figcaption class="type-label flex justify-between">
             <span>{FROM}</span>
             <span>{thisYear}</span>
           </figcaption>
@@ -80,7 +80,7 @@ const sentence = `Sedan klubben bildades ${FOUNDED} har ${facts.reportsSinceFoun
 
     {
       !interactive && (
-        <a href="/obsar/40-ar" class="link text-reflex flex min-h-11 w-fit items-center font-medium">
+        <a href="/obsar/40-ar" class="action-link">
           Klubbens 40 år i siffror
         </a>
       )

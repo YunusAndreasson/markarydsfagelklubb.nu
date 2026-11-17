@@ -1,7 +1,8 @@
 ---
+import Print from "@/components/site/Print.astro"
 import type { ArticleTeaser } from "@/lib/public-content"
-import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
-import { transitionName } from "@/lib/view-transition"
+import { formatDate, isoDateTime, yearUnlessThis } from "@/lib/stockholm-time"
+import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
 /**
  * One row of up to three articles with their photos (docs/design.md,
@@ -23,40 +24,34 @@ interface Props {
 
 const { articles, headingLevel = 3, showCategory = false } = Astro.props
 const Heading = headingLevel === 2 ? "h2" : "h3"
-const thisYear = stockholmYear(new Date())
+const now = new Date()
 
 // One set per page, shared by every list on it (lib/view-transition.ts).
-Astro.locals.transitionNames ??= new Set()
-const taken = Astro.locals.transitionNames
+const taken = takenTransitionNames(Astro.locals)
 ---
 
 <ol class="grid gap-x-6 gap-y-10 md:grid-cols-3">
   {
     articles.map((article) => {
-      const year = stockholmYear(article.published_at)
+      const year = yearUnlessThis(article.published_at, now)
       return (
         <li class="flex flex-col gap-4">
           {article.image && (
-            <a href={`/artiklar/${article.slug}`} tabindex="-1" aria-hidden="true">
-              <img
-                src={article.image.src}
-                srcset={article.image.srcset || undefined}
-                sizes="(min-width: 64rem) 20rem, (min-width: 48rem) 30vw, 100vw"
-                width={article.image.width || undefined}
-                height={article.image.height || undefined}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                class="bg-muted aspect-3/2 w-full rounded-[4px] object-cover"
-                style={transitionName(taken, "artikel", article.id)}
-              />
-            </a>
+            <Print
+              href={`/artiklar/${article.slug}`}
+              src={article.image.src}
+              srcset={article.image.srcset}
+              sizes="(min-width: 64rem) 20rem, (min-width: 48rem) 30vw, 100vw"
+              width={article.image.width}
+              height={article.image.height}
+              transition={transitionName(taken, "artikel", article.id)}
+            />
           )}
           <div class="flex flex-col gap-1.5">
-            <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3 items-center">
+            <p class="type-label flex flex-wrap items-center gap-x-3">
               <time datetime={isoDateTime(article.published_at)}>
                 {formatDate(article.published_at, "short")}
-                {year !== thisYear && ` ${year}`}
+                {year !== null && ` ${year}`}
               </time>
               {showCategory && article.category && (
                 <a href={`/artiklar/kategori/${article.category.slug}`} class="crumb">
@@ -65,7 +60,7 @@ const taken = Astro.locals.transitionNames
               )}
             </p>
             <Heading class="type-item">
-              <a href={`/artiklar/${article.slug}`} class="decoration-primary underline-offset-4 hover:underline">
+              <a href={`/artiklar/${article.slug}`} class="title-link">
                 {article.title}
               </a>
             </Heading>
