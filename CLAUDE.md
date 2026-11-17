@@ -187,9 +187,12 @@ on render. The sanitizer's allowlist and the editor's extensions
 default `build.target` (Baseline Widely Available, 2026-01-01); Tailwind 4's
 CSS asks about the same (Firefox 128). Leave `build.target` at the default, and
 write plain modern code for it: no polyfills, no feature-detect fallbacks below
-it, no `@vitejs/plugin-legacy`. The one API above it is `AbortSignal.any`
-(Safari 17.4) in `src/lib/fetch.ts`, which reaches the browser only through
-the admin's image uploader.
+it, no `@vitejs/plugin-legacy`. Two things sit above it. `AbortSignal.any`
+(Safari 17.4) in `src/lib/fetch.ts` reaches the browser only through the
+admin's image uploader. CSS subgrid (Chrome 117) lines up the home page's bird
+row (`Section row`, docs/design.md "Spalterna"); without it each column flows
+on its own, with no fallback code. Container queries (Tailwind's `@container`,
+`@md:` …) are inside the floor.
 
 Since the launch (2026-11-15) the site is indexed at https://markarydsfagelklubb.nu;
 `www.` and workers.dev 301 every page to the apex (`src/lib/canonical-host.ts`), and

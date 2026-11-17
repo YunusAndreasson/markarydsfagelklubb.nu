@@ -1,7 +1,8 @@
 # Design: the public site
 
 **Read [Linjalen](#linjalen-2026-11-17) first: it names the roles and components every
-public page is built from.** Then [Kontaktark](#kontaktark-2026-11-14), [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14), then
+public page is built from.** [Spalterna](#spalterna-2026-11-17) adds the home page's
+second grid, the trio, and makes the shared pieces follow their own width. Then [Kontaktark](#kontaktark-2026-11-14), [Lupen](#lupen-2026-11-14) and [Uppslaget](#uppslaget-2026-11-14), then
 [Dagslistan](#dagslistan-2026-10-31) with its "Larmbandet" correction. Lupen is the
 photos and motion between pages; Uppslaget sets the grid every page uses; Dagslistan overrides what it names below: the typeface, the tinted neutrals
 and the header.
@@ -36,6 +37,174 @@ margin, with the place first and then what was seen. The club's photographs are
 members' own, of birds in the kommun. Species are written as a Swedish name,
 sometimes with the scientific name, which is italic by convention.
 
+## Spalterna (2026-11-17)
+
+The seventh pass, on the home page alone, asked for as "laid out perfectly, in an
+intelligent and consistent way, using the libraries to their full extent", and then
+"carefully consider the font hierarchy and the information architecture". Reviewed in
+Gecko at 360, 768, 1024, 1280 and 1440 px.
+
+**What was wrong.** Each section was right on its own; read top to bottom, the page
+wasn't:
+
+- **The right third came and went.** It was empty beside a lead without a wide photo
+  (on the first screen), beside "Så här års" and beside "I backspegeln", and full beside
+  the programme and Fynd. That is the lopsidedness the user has pointed out before.
+- **The middle was one long stack.** Three nearly identical full-width register blocks,
+  about 1,300 px at 1280, read as a data dump. Nothing said they were one subject, the
+  kommun's records from Artportalen, as against the club's own news above them.
+- **Near misses.** The tiles' third column started at 840 px and the aside line every
+  other section uses at 856. A 16 px miss reads as a mistake.
+- **Hierarchy and IA:**
+  - a list's label ("Nya för året") was set exactly like the dates under it;
+  - Fynd's 19 px sentence repeated its own first entry;
+  - Artportalen was credited three times;
+  - "Så här års" linked to Markarydslistan rather than to the rest of itself.
+- **On a phone:** three full-width tiles came before rows of the same shape, and the
+  page was 6,500 px long.
+
+**The one memorable thing: the kommun's birds read as one row of time.** This year
+(Fynd i kommunen), this season (Så här års) and earlier years around this date
+(I backspegeln) stand side by side from `lg`, on the same three columns as the article
+tiles, with the jubilee's forty years under them. The user chose the row on white
+paper over a pale band (#EEF3F1) or keeping the stack. No new colour, typeface or
+motion.
+
+**One gutter, one more grid** (`global.css`):
+
+- `--track-gap` (3rem) is the gutter between text and aside, and now between a trio's
+  columns and a register's.
+- **`trio`**: one column on a phone, three equal columns from `lg`.
+  - At the container's full width they fall on the spread's own lines:
+    3 × 21 + 2 × 3 = 69rem, and 7 + 38 + 3 = 48rem = 2 × 21 + 2 × 3. So the third
+    column *is* the aside track: 88 / 472 / 856 / 1192 px at 1280, measured.
+  - Narrower (1024–1150 px) the columns stay equal and the aside keeps its minimum,
+    so they drift apart. That's accepted rather than bending `spread` on every page.
+  - Fewer items span columns instead of changing them, so the lines hold whatever
+    the data. The tiles and the bird row use it.
+
+**Pieces that follow their own width** (container queries, the site's first): a piece
+used in a full-width section, a half, a third of the row and on a phone asks its own
+box, not the window.
+
+- `SectionHeading`: the "Alla …" link stands beside the heading from 28rem of its own
+  box, otherwise under it, as on a phone.
+- `RegisterSet`: its lists sit side by side from 36rem.
+- `Register`: two columns from 36rem and three from 56rem, since an entry needs about
+  17rem. This changes the Obsar registers at 1024–1150 px from three columns to two,
+  where three cramped the names onto two lines.
+
+**The bird row** (`BirdRow.astro`):
+
+- **Shape.** Each block is a `Section row`: from `lg` a subgrid of the row's three rows
+  (heading, lists, footnote). The headings, the first entries and the footnotes line
+  up whatever wraps; with three blocks they were measured equal to the pixel.
+- **Missing blocks.** A block with nothing to show is left out and the first takes its
+  columns. In late autumn, with "Så här års" empty, Fynd spans two columns with its
+  lists side by side, and I backspegeln keeps the aside's line.
+- **Balance.** Every list keeps four birds (Så här års's six on /obsar), so the columns
+  are about as long as each other.
+- **I backspegeln's label.** Its list has a label like the others: "Sällsynta arter
+  10–24 nov" (`windowLabel`). It says the dates the footnote used to explain, and
+  without it the column's first bird stood a line above the others'.
+- **Source.** Artportalen is credited once, under the row (`SourceNote`). The
+  footnotes keep only what is their own (`SEASON_NOTE`, `PAST_NOTE`).
+- **Links.**
+  - Fynd's lead sentence went. Its count is the heading's note ("153 arter i år").
+  - Fynd's aside of three links (Årslistan, a month's finds, Ligan) went from the home
+    page. It was the only aside in that half and pure navigation; "Allt om obsar", the
+    header's Obsar panel and the phone menu reach them.
+  - "Så här års" links to **Flyttfåglarnas år** (`/obsar#flytt`), the whole year
+    behind it.
+
+**The next story.** A lead with no picture of its own (no hero photo, no poster) gets
+the newest article with a photo beside it from `lg`: a tile in the aside, h2, at the
+tile's size (`arrangeArticles`, `HomeLead`). Every shape of the lead now pairs words
+with a picture.
+
+- **Below `lg`.** The same story is the first tile under Fler artiklar (`ArticleTiles
+  besideLead`), so phones and tablets don't change. From `lg` that tile hides and a
+  fourth takes its place.
+- **Transition name.** Both copies carry the same view-transition name: only one is
+  ever displayed, and an element that isn't rendered takes no part in a transition.
+- **Hero leads.** A lead with a wide photo keeps Uppslaget's 7:5 spread.
+
+**One way to write a date** (the user: "the date looks different for articles and
+program, why not make things like this DRY?"). Nine components each formatted their own dates. The
+programme had a big Alegreya day in ink, the lead "söndag / 8 november", the lists
+"6 nov". Now `dateParts` (`stockholm-time.ts`)
+decides the parts and `MarginDate` sets them in every margin, with two forms:
+
+- **"page"** is the date of a page's own subject, spelled out: "söndag / 8 november /
+  2026". The article page, the event page and the home page's lead use it, since the
+  lead is that article.
+- **"row"** is an entry in a list, short: "6 nov", with the year only when it isn't
+  this one. Articles, larm, the programme, tiles, "Mer i" and lokaler use it.
+
+A caller adds only what its reader needs: the programme its weekday and time, a larm
+its time. The programme lost the one list-specific look it had, the big day number
+and the ink date (Uppslaget's and Dagslistan's). "I dag" and "Pågår" stay ink, as a
+status line under the date, and its rows now line up on the first baseline like every
+other list's, with no offset. `type-day` is gone.
+
+**On a phone** the tiles after the first take the dated list's row (`ArticleTile
+compact`): title and opening on the left, a 7rem print on the right. A list row no
+longer repeats a tile's photo (`arrangeArticles`). At 360 px the page is about
+5,800 px long against 6,500 before, without dropping an article or a bird.
+
+**The type ladder on the home page** (the rule: each rung differs from the one
+under it):
+
+| Rung | Role | Size | What |
+|---|---|---|---|
+| Peak | `type-display` | 40–60 | the lead's headline; the band's prints are the other peak |
+| Section | `type-section` | 28 | every h2, including the band's and the jubilee's sentences |
+| Entry | `type-item` | 21 | events, tiles, rows, species, the next story |
+| Reading | ingress 19, body 16–17 | | the lead's excerpt and opening, excerpts |
+| List label | `type-meta`, ink | 14/500 | "Nya för året", "Brukar komma nu", "Saknas i år" |
+| Data | `type-label`, Blyerts | 14/500 | dates, categories, a species' notes |
+| Small print | `type-caption` | 14/400 | footnotes, the source line |
+
+- **A list's label is ink** (`RegisterGroup`, `YearWatch`). In Blyerts, at the size of
+  the date column right under it, it read as that column's header instead of the
+  list's name.
+- **Outline:**
+  - the h1 (hidden);
+  - h2s for the band, the lead, the next story, the sections and the jubilee;
+  - h3s for events, aside notes, tiles, rows and list labels.
+
+**Information architecture.** Two chapters, shown by layout rather than new headings:
+
+1. **The club's own:** larm, the lead and the next story, the programme, articles.
+2. **The kommun's records from Artportalen:** the row, its source and the jubilee.
+
+The order is the user's from 2026-11-15. Every section's one link leads to the rest of
+that section.
+
+**Libraries, where they earn it:**
+
+- **Used:**
+  - Tailwind 4's container queries;
+  - CSS subgrid (`grid-rows-subgrid`, Chrome 117, above the floor; without it each
+    column flows on its own);
+  - `@utility` on the track tokens;
+  - Astro components that make `index.astro` a list of sections, with the rules pure
+    and tested in `front-page.ts`.
+- **Not used, on purpose:**
+  - React or Base UI islands: the page holds no state;
+  - ECharts on the home page: the jubilee stays an SVG;
+  - entrance or scroll animation: rejected in Lupen;
+  - `:has()`: Firefox 121;
+  - `text-box-trim`: not in Gecko.
+
+**Considered and dropped:**
+
+- the row on a pale band, which would be a third surface between two Gran ones;
+- the programme beside a photo-less lead (Tidskriften's rail, which Uppslaget reversed);
+- aligning the tiles' excerpts with subgrid, which leaves gaps under one-line titles,
+  while photos, dates and titles already line up;
+- moving the hero lead onto the trio's lines, where its headline would get 14–21rem.
+
 ## Linjalen (2026-11-17)
 
 The sixth pass, asked for as a consistency review: every page balanced, a clear
@@ -67,7 +236,6 @@ is; a utility or a component decides how it looks. No new colour, typeface or mo
 | `type-caption` | 0.875rem / 1.45 / 400, Blyerts | under a photo, a footnote, a source line; also `.content figcaption` |
 | `type-latin` | Alegreya italic, the face only | a scientific name, at the size of the role it sits in |
 | `type-item-aside` | `type-item` a step down | an entry's title in the aside ("Mer i …") |
-| `type-day` | Alegreya 2.25rem, ink | the programme's day of the month, its own device |
 
 A chart's caption stays body size: it carries the finding.
 
@@ -93,8 +261,9 @@ A chart's caption stays body size: it carries the finding.
 **The first baseline.** `margined` rows align on their first baseline, so a 14 px
 date in the margin lines up with the 21 px title beside it, or a margin label with
 body text, in either face and with no offset. A photo in such a row takes
-`self-start`. The programme keeps its big day number and its own offset, the one
-row that opts out (`items-start`).
+`self-start`. ~~The programme keeps its big day number and its own offset, the one
+row that opts out (`items-start`).~~ Since Spalterna the programme's date is a
+`MarginDate` like every list's, and no row opts out.
 
 **The pieces** (`src/components/site/`):
 
@@ -125,7 +294,9 @@ row that opts out (`items-start`).
     the Obsar hub);
   - `EmptyNote` and `Pager`;
   - `Disclosure`, used by LarmFold, TableTwin and the year strip's "Alla år";
-  - `SearchForm` and `MapBox`.
+  - `SearchForm` and `MapBox`;
+  - since Spalterna: `ArticleTile` (one tile, in the row or beside the lead),
+    `HomeLead`, `BirdRow`, and `Section row` with its `foot` slot.
 - **`AsideNote`** sets its content as a `fact` (`type-fact`) unless it is a `note`
   (a sentence with a link, the store badges, a list).
 
@@ -203,7 +374,8 @@ A small pass on rows that didn't line up.
   about 150 px between the ingress and the first month. It now has zero height
   there and overflows into the aside track, which the months never use. This
   applies only when there are months to hang beside.
-- **On a phone, a programme date's month and time are stacked**, always: in
+- ~~**On a phone, a programme date's month and time are stacked**~~ (since Spalterna
+  the programme's date is one line above the title on a phone, as every list's is), always: in
   the 4.25rem margin "nov 18:30" wrapped but "jan 08:00" didn't, so two
   entries read differently. From md they share a line again.
 - **A lead without a hero photo still shows its photo.** If the lead's first
@@ -327,7 +499,8 @@ there's nothing to say.
   1280×900. **Närmast i programmet** is a section of its own instead of three lines in a
   rail, with "Programmet i din kalender" and the store badges in its aside. Then Fynd,
   Fler artiklar and the jubilee band, as before.
-- **Programme:** the day of the month is set large in Alegreya, weekday above and month
+- **Programme** (reversed in Spalterna, at the user's question: the programme's date is
+  a `MarginDate` like the articles'): the day of the month is set large in Alegreya, weekday above and month
   and time below: a calendar page's own device, used here only because this content is
   dates. On a phone the date keeps a narrow column so the eye runs down the days.
 - **Event:** the aside is the fact sheet: Plats, Anmälan (last day, or that it closed),
@@ -406,7 +579,8 @@ leads under it (the 2026-10-28 decision stands).
 - **The rail reaches back past photo-less larm** (the home page reads 200, not 12),
   so it no longer vanishes on the busiest days. An article repeating the lead's photo
   loses it (`withoutPhoto`).
-- **Program:** the date is in ink, the one list where it is what you scan for, with
+- **Program** (Spalterna: the date is Blyerts like every list's; only "I dag" and
+  "Pågår" stay ink): the date is in ink, the one list where it is what you scan for, with
   "I dag" or "Pågår" under it (`event-status.ts`). `contact_name`, `contact_phone`
   and `signup_deadline` carry what the club's sign-ups always were, a person, a number and
   a last day. A closed sign-up drops "Anmäl dig". A multi-day event stays in the
@@ -542,6 +716,10 @@ The site reads as the club's shared field notebook.
   layout allows (never a forced square), and always with alt text.
 
 ## Startsidan (2026-11-14)
+
+*Since [Spalterna](#spalterna-2026-11-17) the three bird sections are one row, Fynd has
+no lead sentence or aside, and "Så här års" links to Flyttfåglarnas år. The order below
+stands.*
 
 A second pass on the home page alone, asked for as "perfectly consistent and modern".
 Every section was built its own way: the programme's heading sat on the text track with
@@ -874,7 +1052,7 @@ public site is green unless it is a link or a control.
 ### Type: Alegreya for titles, Inter for reading
 
 The roles as they stand in `global.css` (Alegreya since Dagslistan, the
-`type-label` … `type-day` roles since Linjalen). Alegreya's small x-height sets a
+`type-label` … `type-item-aside` roles since Linjalen; `type-day` went in Spalterna). Alegreya's small x-height sets a
 step larger than Inter would.
 
 | Role | Face | Size | Weight | Leading | For |
@@ -884,7 +1062,6 @@ step larger than Inter would.
 | `type-section` | Alegreya | 1.75rem | 700 | 1.15 | a section's heading, a body's h2 |
 | `type-item` | Alegreya | 1.3125rem | 700 | 1.25 | an entry's title in every list |
 | `type-item-aside` | Alegreya | 1.0625rem | 700 | 1.3 | an entry's title in the aside |
-| `type-day` | Alegreya | 2.25rem | 700 | 1.05 | the programme's day of the month |
 | `type-ingress` | Inter | 1.1875rem | 400, muted | 1.5 | a page's ingress, a section's lead sentence |
 | `type-fact` | Inter | 1.125rem | 400 | 1.5 | an aside note's fact |
 | Body | Inter | 1rem → 1.0625rem (`.content`) | 400 | 1.65 | running text |
@@ -1484,8 +1661,8 @@ Larm
 
 Which birds usually arrive in the kommun, or leave it, within two weeks of today,
 from the last twenty years in Artportalen (`src/lib/season.ts`, the nightly `season`
-key). On the home page after "Fynd i kommunen", and on Obsar's Översikt after the
-year's headline. Two short registers (no lead sentence since 2026-11-15: it only
+key). On the home page in the bird row beside "Fynd i kommunen" (four birds a list,
+linking to Flyttfåglarnas år), and on Obsar's Översikt after the year's headline (six). Two short registers (no lead sentence since 2026-11-15: it only
 named the birds the lists name) with the usual date in the margin and this year's
 status under each bird. Hidden when nothing falls in the window.
 
@@ -1548,8 +1725,9 @@ The kommun's rare birds from earlier years within a week of today
 års". Artportalen says what was seen when; **the club's larm prefix says what is
 rare**, joined on the scientific name, then the Swedish one (`matchApp` in
 `species.ts`, the same rule as the species pages). No lead sentence (it only repeated
-the list's first birds). **One list, no subheadings** (2026-11-16): the eight rarest,
-in two columns; the newest year in the date column, the bird with its chip, its days
+the list's first birds). **One list** (2026-11-16): the eight rarest, under one label
+that names the dates, "Sällsynta arter 10–24 nov" (Spalterna), in two columns when
+there is room; the newest year in the date column, the bird with its chip, its days
 under it ("13 nov, även 16 nov 1986"). Hidden when nothing qualifies.
 
 - **The rule**: prefix 0–2 only. Until 2026-11-16 a 3 or a 4 also counted in a year
@@ -1824,7 +2002,7 @@ The Obsar pages now use the site's own grid, and only through components
   An entry is a short date or time, the species in Alegreya, then quieter lines.
 - **Tables stay at the measure**: across 57rem a reader loses the row between a name
   and its number.
-- **The home page's "Fynd i kommunen"** (`ObsarHome`) is a `RegisterSet` like the
+- **The home page's "Fynd i kommunen"** (in `BirdRow` since Spalterna) is a `RegisterSet` like the
   other bird sections ("Startsidan"). The jubilee band moved to the foot of the page, as its closing figure.
 
 **How it is built.** Each figure's first paint is a plain SVG drawn by our own code
