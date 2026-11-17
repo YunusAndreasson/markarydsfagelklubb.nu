@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.5/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.7/schema.json",
   // .jsonc, not .json: Biome parses `biome.json` as strict JSON, and a comment
   // in it fails silently — the config is discarded and every default applies,
   // which shows up as thousands of diagnostics from dist/.
