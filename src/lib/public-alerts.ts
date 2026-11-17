@@ -474,8 +474,17 @@ export type PublicLokal = {
   at: PublicAlert[]
   /** The rest of the three-kilometre band — the larm the feed labels "Nära …". */
   near: PublicAlert[]
-  /** Every lokal's id, address and name, for links between them. No member data. */
-  directory: { id: number; slug: string; name: string }[]
+  /**
+   * Every lokal's id, address, name and position: for links between them, and
+   * to place Artportalen's reports at the nearest one. No member data.
+   */
+  directory: {
+    id: number
+    slug: string
+    name: string
+    latitude: number | null
+    longitude: number | null
+  }[]
 }
 
 /** One lokal with its larm, or null when no lokal has that slug. */
@@ -511,7 +520,13 @@ export async function loadPublicLokal(slug: string): Promise<LarmResult<PublicLo
       lokal,
       at: at.sort(newestFirst),
       near: near.sort(newestFirst),
-      directory: lokaler.map(({ id, slug: address, name }) => ({ id, slug: address, name })),
+      directory: lokaler.map(({ id, slug: address, name, latitude, longitude }) => ({
+        id,
+        slug: address,
+        name,
+        latitude,
+        longitude,
+      })),
     },
   }
 }

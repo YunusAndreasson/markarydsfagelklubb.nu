@@ -7,10 +7,14 @@ import AsideNote from "@/components/site/AsideNote.astro"
 import LarmFold from "@/components/site/LarmFold.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
 import LokalPoints from "@/components/site/LokalPoints.astro"
+import Register from "@/components/site/obsar/Register.astro"
+import SightingEntries from "@/components/site/obsar/SightingEntries.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { toPin } from "@/lib/lokal"
 import { ACTIVE_DAYS } from "@/lib/lokal-alerts"
 import { type MapPoint, splitForLokal } from "@/lib/lokal-points"
+import { REPORT_KM, reportsByLokal } from "@/lib/lokal-reports"
+import { obsarStore, store } from "@/lib/obsar-data"
 import { loadPublicLokal } from "@/lib/public-alerts"
 import { listLokalPoints, loadNavigation } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
@@ -33,7 +37,12 @@ const { slug } = Astro.params
 const { db } = Astro.locals
 if (!db || !slug || !isValidSlug(slug)) return new Response(null, { status: 404 })
 
-const [navigation, found] = await Promise.all([loadNavigation(db), loadPublicLokal(slug)])
+const kv = obsarStore()
+const [navigation, found, recent] = await Promise.all([
+  loadNavigation(db),
+  loadPublicLokal(slug),
+  kv ? store.readRecent(kv) : null,
+])
 if (!found.ok) return new Response(null, { status: 500 })
 if (!found.value) return new Response(null, { status: 404 })
 
@@ -69,6 +78,16 @@ const mapPoints = own.flatMap((point): MapPoint[] => {
   ]
 })
 const nearShown = near.slice(0, NEAR_LIMIT)
+
+// Artportalen's last month here: reports within a kilometre that are nearer to
+// this lokal than to any other (lokal-reports.ts). Newest first, a dozen shown.
+const reports = reportsByLokal(recent?.sightings ?? [], directory).get(lokal.id) ?? []
+const REPORTS_SHOWN = 12
+const reportsShown = reports.slice(0, REPORTS_SHOWN)
+const newestReport = reports[0] ?? null
+// A tally, in digits like the larm beside it ("3 larm", "12 rapporter"):
+// Svenska skrivregler allows figures for counts set as statistics.
+const reportWord = (count: number) => `${count}\u00a0${count === 1 ? "rapport" : "rapporter"}`
 const newestAt = at[0] ?? null
 const newestNear = near[0] ?? null
 /** The newest in full; the whole history stays here, a tap away. */
@@ -169,6 +188,25 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
     }
 
     {
+      reports.length > 0 && (
+        <section aria-labelledby="artportalen" class="flex flex-col gap-5 at-text">
+          <div class="flex flex-col gap-2">
+            <h2 id="artportalen" class="type-section">Rapporterat i Artportalen</h2>
+            <p class="text-muted-foreground measure">
+              Rapporter från högst {REPORT_KM === 1 ? "en kilometer" : `${REPORT_KM} km`} bort, de
+              senaste {recent?.days ?? 30}&nbsp;dagarna.
+              {reports.length > REPORTS_SHOWN && ` Här är de ${countWord(REPORTS_SHOWN)} senaste av ${reports.length}.`}
+              {" "}Artnamnet leder till rapporten.
+            </p>
+          </div>
+          <Register columns={2}>
+            <SightingEntries sightings={reportsShown} brief who />
+          </Register>
+        </section>
+      )
+    }
+
+    {
       near.length > 0 && (
         <section aria-labelledby="i-narheten" class="flex flex-col gap-5">
           <div class="flex flex-col gap-2 at-text">
@@ -187,7 +225,7 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
     }
       </div>
 
-      {(newestAt || newestNear || parent) && (
+      {(newestAt || newestReport || newestNear || parent) && (
         /* A summary with a way to the lists below, so from lg up only: on a
            narrower screen the lists themselves follow the text. */
         <Aside label="Om lokalen" class="max-lg:hidden">
@@ -199,6 +237,17 @@ const pin = toPin({ ...lokal, alertCount: at.length, lastAlertAt, active, recent
               </p>
               <a href="#pa-lokalen" class="link flex min-h-11 w-fit items-center font-medium">
                 Se larmen
+              </a>
+            </AsideNote>
+          )}
+          {newestReport && (
+            <AsideNote label="I Artportalen">
+              <p>
+                {reportWord(reports.length)}, senast {newestReport.name.toLocaleLowerCase("sv")}{" "}
+                {dayLabel(newestReport.start)}
+              </p>
+              <a href="#artportalen" class="link flex min-h-11 w-fit items-center font-medium">
+                Se rapporterna
               </a>
             </AsideNote>
           )}

@@ -1109,6 +1109,18 @@ B      Broarna i Timsfors    9 larm   senast 16 aug.
   109 are mostly the same reports counted again at every other lokal in town. A
   register built on that ranks a dozen places identically and calls each a
   hotspot. The 78 "at" larm partition cleanly across 22 lokaler.
+- **Artportalen's reports too (2026-11-17).** The nightly-and-half-hourly job keeps
+  the kommun's last 30 days of reports (`Recent`), now with each report's position
+  and its uncertainty. `lokal-reports.ts` places a report at the nearest lokal within
+  **1 km**, only one lokal, and never a report whose own uncertainty is over 1 km
+  (one filed as "Markaryd, Sm" carries 2.3 km). Distance, not the site name: the two
+  name places differently. /lokaler gets "Mest rapporterat den senaste månaden" (the
+  six busiest, with the species) under the larm list, and the register a line
+  "12 rapporter i Artportalen"; a lokal page gets "Rapporterat i Artportalen" (the
+  newest twelve, with site and observers, each linked to its report) and an aside
+  note. Larm and rapporter are never mixed: "larm" is the app's, "rapport" is
+  Artportalen's. Tallies are figures, like the larm beside them; counts in a
+  sentence are words up to twelve.
 - **Pins are dots, not teardrops** — 9px, in the site's tokens, with a
   paper-coloured ring so they read over water, forest and road. Green for a larm
   in the last fortnight, Blyerts when quiet, matching the app's legend so a

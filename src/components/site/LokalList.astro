@@ -1,6 +1,7 @@
 ---
 import type { LokalSummary } from "@/lib/lokal"
 import { registerLetter } from "@/lib/lokal"
+import type { LokalReports } from "@/lib/lokal-reports"
 import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
 
 /**
@@ -16,15 +17,28 @@ import { formatDate, isoDateTime, stockholmYear } from "@/lib/stockholm-time"
  * In the list of recently active lokaler (no letters) each row also names the
  * birds larmed from it lately — the same "Nyss:" line the map's tooltip shows,
  * since this list is that tooltip's accessible twin.
+ *
+ * `reports` adds Artportalen's last month at each lokal (`lokal-reports.ts`):
+ * a count under the larm in the register, and, with `tally="reports"`, the
+ * list of the most reported lokaler, which names the species instead.
  */
 
 interface Props {
   lokaler: LokalSummary[]
   /** Alphabetical groups under their letter. Off for a list in another order. */
   letters?: boolean
+  /** Each lokal's Artportalen reports this last month, by lokal id. */
+  reports?: Map<number, LokalReports>
+  /** What a row counts: the larm (the default) or the Artportalen reports. */
+  tally?: "larm" | "reports"
 }
 
-const { lokaler, letters = true } = Astro.props
+const { lokaler, letters = true, reports = new Map(), tally = "larm" } = Astro.props
+// A tally, in digits like the larm beside it ("3 larm", "12 rapporter"):
+// Svenska skrivregler allows figures for counts set as statistics.
+const rapporter = (count: number) => `${count}\u00a0${count === 1 ? "rapport" : "rapporter"}`
+const species = (names: readonly string[]) =>
+  names.map((name) => name.toLocaleLowerCase("sv")).join(", ")
 const thisYear = stockholmYear(new Date())
 
 /** "12 sep." this year, "12 sep. 2025" when it isn't — the site's rule everywhere. */
@@ -56,12 +70,28 @@ for (const lokal of lokaler) {
           </p>
         )}
         <ul class="flex flex-col gap-3">
-          {group.lokaler.map((lokal) => (
+          {group.lokaler.map((lokal) => {
+            const report = reports.get(lokal.id)
+            return (
             <li class="flex flex-col gap-0.5 break-inside-avoid">
               <a href={`/lokaler/${lokal.slug}`} class="type-item decoration-primary w-fit underline-offset-4 hover:underline">
                 {lokal.name}
               </a>
-              {lokal.alertCount > 0 && lokal.lastAlertAt && (
+              {tally === "reports" && report && (
+                <>
+                  <p class="type-meta text-muted-foreground flex flex-wrap gap-x-3">
+                    <span>{rapporter(report.count)}</span>
+                    <span>
+                      senast{" "}
+                      <time datetime={report.last}>{lastSeen(report.last)}</time>
+                    </span>
+                  </p>
+                  <p class="text-muted-foreground text-sm leading-snug text-pretty">
+                    {species(report.species)}
+                  </p>
+                </>
+              )}
+              {tally === "larm" && lokal.alertCount > 0 && lokal.lastAlertAt && (
                 /* On a phone the register is for finding a place; the tallies that
                    matter are in the list of recent ones above it. */
                 <p class:list={["type-meta text-muted-foreground flex-wrap gap-x-3", letters ? "hidden sm:flex" : "flex"]}>
@@ -71,13 +101,19 @@ for (const lokal of lokaler) {
                   </span>
                 </p>
               )}
-              {!letters && lokal.recentSpecies.length > 0 && (
+              {tally === "larm" && letters && report && (
+                <p class="type-meta text-muted-foreground hidden sm:block">
+                  {rapporter(report.count)} i Artportalen
+                </p>
+              )}
+              {tally === "larm" && !letters && lokal.recentSpecies.length > 0 && (
                 <p class="text-muted-foreground text-sm leading-snug text-pretty">
                   Nyss: {lokal.recentSpecies.map((name) => name.toLocaleLowerCase("sv")).join(", ")}
                 </p>
               )}
             </li>
-          ))}
+            )
+          })}
         </ul>
       </div>
     ))

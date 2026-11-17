@@ -26,7 +26,12 @@ export type SosRecord = {
     activity?: { id: number; value?: string | null } | null
   } | null
   event: { startDate: string; endDate?: string | null }
-  location?: { locality?: string | null } | null
+  location?: {
+    locality?: string | null
+    decimalLatitude?: number | null
+    decimalLongitude?: number | null
+    coordinateUncertaintyInMeters?: number | null
+  } | null
 }
 
 /** One row of `Observations/TaxonAggregation`. */
@@ -125,6 +130,11 @@ export type Sighting = {
   activity: string | null
   locality: string | null
   observers: string | null
+  /**
+   * Where it was reported, as Artportalen gives it, with its uncertainty in
+   * metres. Null when the report has none, and in KV written before 2026-11-17.
+   */
+  position?: { latitude: number; longitude: number; metres: number | null } | null
 }
 
 export type Recent = { fetchedAt: string; days: number; sightings: Sighting[] }

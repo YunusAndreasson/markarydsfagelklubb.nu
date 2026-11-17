@@ -5,6 +5,8 @@ import LokalList from "@/components/site/LokalList.astro"
 import LokalMapFrame from "@/components/site/LokalMapFrame.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { toPin } from "@/lib/lokal"
+import { type LokalReports, reportsByLokal, summarizeReports } from "@/lib/lokal-reports"
+import { obsarStore, store } from "@/lib/obsar-data"
 import { listPublicLokaler } from "@/lib/public-alerts"
 import { loadNavigation } from "@/lib/public-content"
 
@@ -20,8 +22,26 @@ import { loadNavigation } from "@/lib/public-content"
 const { db } = Astro.locals
 if (!db) return new Response(null, { status: 500 })
 
-const [navigation, lokaler] = await Promise.all([loadNavigation(db), listPublicLokaler()])
+const kv = obsarStore()
+const [navigation, lokaler, recent] = await Promise.all([
+  loadNavigation(db),
+  listPublicLokaler(),
+  kv ? store.readRecent(kv) : null,
+])
 if (!lokaler.ok) return new Response(null, { status: 500 })
+
+// Artportalen's last month, placed at the lokaler (lokal-reports.ts). Without
+// the KV read, or before it holds positions, the page is about larm alone.
+const reports = new Map<number, LokalReports>()
+for (const [id, list] of reportsByLokal(recent?.sightings ?? [], lokaler.value)) {
+  const summary = summarizeReports(list)
+  if (summary) reports.set(id, summary)
+}
+const REPORTED_SHOWN = 6
+const reported = lokaler.value
+  .filter((lokal) => reports.has(lokal.id))
+  .sort((a, b) => (reports.get(b.id)?.count ?? 0) - (reports.get(a.id)?.count ?? 0))
+  .slice(0, REPORTED_SHOWN)
 
 const pins = lokaler.value.map(toPin).filter((pin) => pin !== null)
 // Where it has happened lately, newest first: usually what a visitor came for.
@@ -32,7 +52,7 @@ const active = lokaler.value
 
 <SiteLayout
   title="Fågellokaler"
-  description="Fågellokaler i Markaryds kommun, med larmen därifrån."
+  description="Fågellokaler i Markaryds kommun, med larmen och rapporterna därifrån."
   menu={navigation.menu}
 >
   <div class="flex flex-col gap-10">
@@ -67,9 +87,20 @@ const active = lokaler.value
               <LokalList lokaler={active} letters={false} />
             </section>
           )}
+          {reported.length > 0 && (
+            <section aria-labelledby="lokaler-rapporterat" class="flex flex-col gap-5">
+              <div class="flex flex-col gap-2">
+                <h2 id="lokaler-rapporterat" class="type-section">Mest rapporterat den senaste månaden</h2>
+                <p class="text-muted-foreground measure">
+                  Rapporter i Artportalen från högst en kilometer bort, de senaste {recent?.days ?? 30}&nbsp;dagarna.
+                </p>
+              </div>
+              <LokalList lokaler={reported} letters={false} reports={reports} tally="reports" />
+            </section>
+          )}
           <section aria-labelledby="lokaler-alla" class="flex flex-col gap-5">
             <h2 id="lokaler-alla" class="type-section">Alla lokaler</h2>
-            <LokalList lokaler={lokaler.value} />
+            <LokalList lokaler={lokaler.value} reports={reports} />
           </section>
         </>
       )

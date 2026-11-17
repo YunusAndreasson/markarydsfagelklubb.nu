@@ -7,15 +7,17 @@ import Entry from "./Entry.astro"
  * Sightings as register entries. `brief` (the hub, the home page): the day in
  * the narrow column and the place under the species. Full (Senaste fynden, under
  * a day already named in the margin): the time, and the count as written, the
- * activity and the observers too.
+ * activity and the observers too. `who` adds the observers to a brief entry
+ * (a lokal's page, where who was there is half the news).
  */
 interface Props {
   sightings: Sighting[]
   brief?: boolean
+  who?: boolean
   now?: Date
 }
 
-const { sightings, brief = false, now = new Date() } = Astro.props
+const { sightings, brief = false, who = false, now = new Date() } = Astro.props
 const place = (one: Sighting) => one.locality?.replace(/, Sm$/, "")
 ---
 
@@ -29,7 +31,7 @@ const place = (one: Sighting) => one.locality?.replace(/, Sm$/, "")
       count={one.count}
       notes={
         brief
-          ? [place(one)]
+          ? [place(one), who ? one.observers : null]
           : [[one.countText, one.activity].filter(Boolean).join(", "), place(one), one.observers]
       }
     />

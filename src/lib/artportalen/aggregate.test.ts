@@ -248,6 +248,22 @@ describe("toSighting", () => {
     })
   })
 
+  it("keeps a report's position and its uncertainty, or none", () => {
+    const base = record("2026-11-12", KOLTRAST, { count: "1" })
+    expect(
+      toSighting({
+        ...base,
+        location: {
+          locality: "Hydroviken, Sm",
+          decimalLatitude: 56.46,
+          decimalLongitude: 13.6,
+          coordinateUncertaintyInMeters: 25,
+        },
+      })?.position
+    ).toEqual({ latitude: 56.46, longitude: 13.6, metres: 25 })
+    expect(toSighting({ ...base, location: { locality: "Markaryd, Sm" } })?.position).toBeNull()
+  })
+
   it("keeps only Artportalen's own https links", () => {
     expect(safeArtportalenUrl("https://www.artportalen.se/sighting/1")).toBe(
       "https://www.artportalen.se/sighting/1"

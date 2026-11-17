@@ -43,6 +43,12 @@ const RECENT_FIELDS = [
   "occurrence.url",
   "occurrence.activity",
   "event.endDate",
+  // Where, so a report can be placed at a lokal (lokal-reports.ts). The
+  // uncertainty says how far to trust it: a report filed as "Markaryd" carries
+  // the whole town's 2 km.
+  "location.decimalLatitude",
+  "location.decimalLongitude",
+  "location.coordinateUncertaintyInMeters",
 ]
 
 /** Artportalen said "slow down". The job stops and the next run carries on. */

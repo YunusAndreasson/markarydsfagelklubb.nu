@@ -364,7 +364,18 @@ export function toSighting(
     activity: record.occurrence?.activity?.value?.trim() || null,
     locality: record.location?.locality?.trim() || null,
     observers: splitObservers(record.occurrence?.recordedBy).join(", ") || null,
+    position: positionOf(record),
   }
+}
+
+/** A report's coordinates, or null when it has none that are numbers. */
+function positionOf(record: SosRecord): Sighting["position"] {
+  const latitude = record.location?.decimalLatitude
+  const longitude = record.location?.decimalLongitude
+  if (typeof latitude !== "number" || typeof longitude !== "number") return null
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null
+  const metres = record.location?.coordinateUncertaintyInMeters
+  return { latitude, longitude, metres: typeof metres === "number" ? metres : null }
 }
 
 /** Only links back to Artportalen itself, over https, are kept. */
