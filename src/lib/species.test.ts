@@ -49,6 +49,32 @@ describe("buildSpecies", () => {
     expect(one).toMatchObject({ appId: 8, rarity: 4, sci: "Astur gentilis" })
   })
 
+  it("joins the app's tamduva to the species Artportalen counts its reports as", () => {
+    // Artportalen's tamduva reports roll up to Columba livia, klippduva; the
+    // app lists the feral pigeon as Columba livia domestica.
+    const list = buildSpecies(
+      [{ id: 6332453, name: "klippduva", sci: "Columba livia" }],
+      [app(171, "Tamduva", "Columba livia domestica", 5, 2)]
+    )
+    expect(list).toHaveLength(1)
+    expect(list[0]).toMatchObject({
+      name: "Tamduva",
+      slug: "tamduva",
+      altSlug: "klippduva",
+      taxonId: 6332453,
+      appId: 171,
+      alertCount: 2,
+    })
+  })
+
+  it("prefers the species itself to a form of it", () => {
+    const [one] = buildSpecies(
+      [{ id: 1, name: "klippduva", sci: "Columba livia" }],
+      [app(2, "Tamduva", "Columba livia domestica"), app(3, "Klippduva", "Columba livia")]
+    )
+    expect(one).toMatchObject({ appId: 3 })
+  })
+
   it("capitalises an Artportalen-only bird and gives it no prefix, since the club hasn't", () => {
     const [one] = buildSpecies([{ id: 5, name: "rördrom", sci: "Botaurus stellaris" }], [])
     expect(one).toMatchObject({ name: "Rördrom", slug: "rordrom", appId: null, rarity: null })

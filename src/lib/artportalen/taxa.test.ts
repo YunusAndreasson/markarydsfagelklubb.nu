@@ -231,6 +231,7 @@ describe("typicalDays", () => {
             r: 9,
             w: [
               [0, 2],
+              [5, 2],
               [13, 3],
               [41, 4],
               [52, 1],
@@ -244,7 +245,60 @@ describe("typicalDays", () => {
       departure: 13 * 7 + 4,
       kind: "winter",
       years: 20,
+      passing: false,
     })
+  })
+
+  it("tells a bird that only passes from one that comes for the summer or the winter", () => {
+    // Ejder: March and April every year, never in June or July.
+    const ejder = entry(
+      range(2006, 2025),
+      () => "03-30",
+      () => "04-20",
+      [
+        [12, 3],
+        [15, 4],
+      ]
+    )
+    expect(typicalDays(ejder, window)).toMatchObject({ kind: "summer", passing: true })
+    // Gök: reported through June most years.
+    const gok = entry(
+      range(2006, 2025),
+      () => "05-07",
+      () => "06-30",
+      [
+        [18, 3],
+        [24, 2],
+      ]
+    )
+    expect(typicalDays(gok, window)).toMatchObject({ kind: "summer", passing: false })
+    // Rödvingetrast: spring and autumn, the odd New Year's Day straggler, no midwinter.
+    const rodvingetrast = entry(
+      range(2006, 2025),
+      () => "01-01",
+      () => "11-05",
+      [
+        [0, 1],
+        [13, 4],
+        [41, 4],
+        [44, 2],
+      ]
+    )
+    expect(typicalDays(rodvingetrast, window)).toMatchObject({ kind: "winter", passing: true })
+  })
+
+  it("takes no June 'arrival' for a bird that is only heard then", () => {
+    // Hornuggla: a resident found by its begging young in June, never in winter.
+    const hornuggla = entry(
+      range(2006, 2025),
+      () => "06-13",
+      () => "07-10",
+      [
+        [23, 2],
+        [26, 1],
+      ]
+    )
+    expect(typicalDays(hornuggla, window)).toMatchObject({ arrival: null, kind: null })
   })
 
   it("has no season for a visitor seen in too few years", () => {

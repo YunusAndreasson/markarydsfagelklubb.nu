@@ -71,7 +71,17 @@ export function matchApp<T extends { name: string; sci: string }>(
 ): (taxon: { name: string; sci: string }) => T | undefined {
   const bySci = new Map(app.map((one) => [normal(one.sci), one]))
   const byName = new Map(app.map((one) => [normal(one.name), one]))
-  return (taxon) => bySci.get(normal(taxon.sci)) ?? byName.get(normal(taxon.name))
+  // Last, an app name for a form of the species: the app's "Tamduva" is
+  // Columba livia domestica, and Artportalen counts its tamduva reports as
+  // Columba livia, "klippduva". In the kommun those are all feral pigeons.
+  const byForm = new Map(
+    app.flatMap((one) => {
+      const words = normal(one.sci).split(" ")
+      return words.length > 2 ? [[words.slice(0, 2).join(" "), one] as const] : []
+    })
+  )
+  return (taxon) =>
+    bySci.get(normal(taxon.sci)) ?? byName.get(normal(taxon.name)) ?? byForm.get(normal(taxon.sci))
 }
 
 export function buildSpecies(taxa: readonly TaxonName[], app: readonly AppSpecies[]): SpeciesRef[] {

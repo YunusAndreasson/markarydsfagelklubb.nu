@@ -1435,6 +1435,15 @@ Larm
   arrival caption and legend then don't repeat the usual day, and a bird with no
   migration season has no "När den kommer" section at all. A summer bird's leaving
   is left out: its median last report is when it goes quiet (gök: early July).
+- **A bird that only passes says so (2026-11-17).** A review read as a birder found
+  ejder, sjöorre, salskrake, blå kärrhök and bläsand "coming to the kommun" as if to
+  breed, and rödvingetrast and vigg as winter guests that "stanna kvar". A summer
+  bird reported in June–July in at most one year in ten, or a winter one in
+  midwinter (8 January to February) in at most one in ten, is `passing`: "brukar
+  passera kommunen kring 30 mar, men som inte stannar över sommaren", "passerar
+  kommunen på våren … och igen på hösten". The next bird up, ljungpipare, is at
+  13 %. A typical arrival after 5 June is no arrival (`LATEST_ARRIVAL`): hornuggla,
+  a resident found by its begging young, had read as a migrant arriving 13 June.
 - **The figures use the whole track**, from the text's edge to the page's
   (`Section`, as the Obsar charts), because the user found the page tight
   with everything in the 38rem text track and the aside empty below the facts.
@@ -1578,7 +1587,9 @@ species page. Read from the per-taxon index, so it moves with every fast run.
 - **A species page's ingress names seasons, never "året runt" by default**: a bird
   with no migration season whose reports sit in one or two seasons is "mest på
   hösten" (vinterhämpling) or "mest under våren och hösten"; "året runt" only when
-  three or four seasons each hold 15 % of its reports.
+  three or four seasons each hold 15 % of its reports. A bird seen most years in
+  three seasons and all but never in the fourth (under 2 %) is "utom på sommaren"
+  (skogsgås), not "året runt"; a rare guest's handful of reports names no season.
 
 ### Page
 

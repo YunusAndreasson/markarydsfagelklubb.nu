@@ -5,6 +5,7 @@ import {
   arrivalFigure,
   arrivalSentence,
   dayOfYearLabel,
+  exceptSeason,
   leadSentence,
   seasonsPhrase,
   yearSentence,
@@ -52,22 +53,42 @@ describe("arrivalSentence", () => {
 })
 
 describe("leadSentence", () => {
+  const summer = {
+    arrival: 127,
+    departure: 185,
+    kind: "summer",
+    years: 20,
+    passing: false,
+  } as const
+  const winter = { arrival: 291, departure: 95, kind: "winter", years: 20, passing: false } as const
+
   it("names a summer bird's coming, not its last report", () => {
-    expect(
-      leadSentence({ arrival: 127, departure: 185, kind: "summer", years: 20 }, 20, null, 2026, [])
-    ).toBe("En flyttfågel som brukar komma till kommunen kring 7\u00a0maj.")
+    expect(leadSentence(summer, 20, null, 2026, [])).toBe(
+      "En flyttfågel som brukar komma till kommunen kring 7\u00a0maj."
+    )
   })
 
   it("tells a winter guest by its autumn return", () => {
-    expect(
-      leadSentence({ arrival: 291, departure: 95, kind: "winter", years: 20 }, 20, null, 2026, [])
-    ).toBe(
+    expect(leadSentence(winter, 20, null, 2026, [])).toBe(
       "En vintergäst som brukar komma till kommunen kring 18\u00a0okt och stanna kvar till omkring 5\u00a0apr."
     )
   })
 
+  it("doesn't say a bird that only passes comes for the summer or stays the winter", () => {
+    // Ejder: flies over in spring on its way to the Baltic.
+    expect(leadSentence({ ...summer, arrival: 89, passing: true }, 20, null, 2026, [])).toBe(
+      "En flyttfågel som brukar passera kommunen kring 30\u00a0mar, men som inte stannar över sommaren."
+    )
+    // Rödvingetrast: passes in March–April and October–November, gone in midwinter.
+    expect(
+      leadSentence({ ...winter, arrival: 284, departure: 109, passing: true }, 20, null, 2026, [])
+    ).toBe(
+      "En flyttfågel som passerar kommunen på våren, till omkring 19\u00a0apr, och igen på hösten, från kring 11\u00a0okt."
+    )
+  })
+
   it("has a plain line for a resident, a rare guest and a bird long gone", () => {
-    const none = { arrival: null, departure: null, kind: null }
+    const none = { arrival: null, departure: null, kind: null, passing: false }
     const allYear = Array.from({ length: 53 }, () => 2)
     expect(leadSentence({ ...none, years: 20 }, 20, null, 2026, allYear)).toContain("året runt")
     expect(leadSentence({ ...none, years: 3 }, 20, null, 2026, [])).toBe(
@@ -81,7 +102,7 @@ describe("leadSentence", () => {
   it("says nothing about the twenty years until the index holds them", () => {
     // Production before its first nights: only this year is in the index, so
     // an ärtsångare seen every year has no past year in the window.
-    const none = { arrival: null, departure: null, kind: null, years: 0 }
+    const none = { arrival: null, departure: null, kind: null, years: 0, passing: false }
     expect(leadSentence(none, 0, { first: 1966, last: 2026 }, 2026, [])).toBeNull()
     expect(
       leadSentence({ ...none, years: 8 }, 16, { first: 1966, last: 2026 }, 2026, [])
@@ -89,7 +110,7 @@ describe("leadSentence", () => {
   })
 
   it("tells a bird back this year after twenty years from one new to the kommun", () => {
-    const none = { arrival: null, departure: null, kind: null, years: 0 }
+    const none = { arrival: null, departure: null, kind: null, years: 0, passing: false }
     expect(leadSentence(none, 20, { first: 1980, last: 2026 }, 2026, [])).toBe(
       "Sedd i kommunen i år, för första gången på över tjugo år."
     )
@@ -99,7 +120,7 @@ describe("leadSentence", () => {
   })
 
   it("says 'varje år' only for all twenty, and names no season from a handful of reports", () => {
-    const none = { arrival: null, departure: null, kind: null }
+    const none = { arrival: null, departure: null, kind: null, passing: false }
     const spring = Array.from({ length: 53 }, (_, week) => (week === 15 ? 30 : 0))
     expect(leadSentence({ ...none, years: 19 }, 20, null, 2026, spring)).toBe(
       "Ses i kommunen nästan varje år, mest på våren."
@@ -115,7 +136,7 @@ describe("leadSentence", () => {
     const october = Array.from({ length: 53 }, (_, week) => (week >= 40 && week <= 46 ? 5 : 0))
     expect(
       leadSentence(
-        { arrival: null, departure: null, kind: null, years: 20 },
+        { arrival: null, departure: null, kind: null, years: 20, passing: false },
         20,
         null,
         2026,
@@ -139,6 +160,25 @@ describe("seasonsPhrase", () => {
 
   it("is null for a bird seen the year round", () => {
     expect(seasonsPhrase(Array.from({ length: 53 }, () => 1))).toBeNull()
+  })
+
+  it("says which season is missing when the other three hold the reports", () => {
+    const none = { arrival: null, departure: null, kind: null, years: 20, passing: false }
+    // Skogsgås: autumn, winter and spring, never from April to September.
+    expect(seasonsPhrase(weeks([0, 13], [38, 51]))).toBeNull()
+    expect(exceptSeason(weeks([0, 13], [38, 51]))).toBe("utom på sommaren")
+    expect(leadSentence(none, 20, null, 2026, weeks([0, 13], [38, 51]))).toBe(
+      "Ses i kommunen varje år, utom på sommaren."
+    )
+    // A resident few report in summer is still seen then: no "utom".
+    const fewInSummer: number[] = weeks([0, 20], [36, 52])
+    fewInSummer[26] = 4
+    fewInSummer[30] = 4
+    expect(exceptSeason(fewInSummer)).toBeNull()
+    // A rare guest's handful of reports says nothing about a missing season.
+    expect(leadSentence({ ...none, years: 7 }, 20, null, 2026, weeks([0, 13], [38, 51]))).toBe(
+      "Sedd i kommunen sju av de senaste tjugo åren, en ovanlig gäst."
+    )
   })
 })
 

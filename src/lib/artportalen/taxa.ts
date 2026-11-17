@@ -129,7 +129,33 @@ export type Typical = {
   departure: number | null
   kind: SeasonKind | null
   years: number
+  /**
+   * A bird that only passes: a "summer" bird hardly ever reported in high
+   * summer (ejder, salskrake, blå kärrhök fly over in spring and nest far
+   * away), or a "winter" one hardly ever in midwinter (rödvingetrast, vigg).
+   * Its days are still when it comes and goes; only the words differ.
+   */
+  passing: boolean
 }
+
+/**
+ * The latest day a summer bird's typical arrival can fall on (5 June). The last
+ * migrants, kärrsångare and härmsångare, are here by the end of May; a bird
+ * first reported in June most years hasn't come then, it has started to be
+ * heard: hornuggla, a resident, is found by its begging young.
+ */
+export const LATEST_ARRIVAL = 156
+
+/** At most this share of the years with the bird have it in the season it would be away in. */
+const PASSING_SHARE = 0.1
+/** High summer, when a bird that breeds here is: June and July (week bins 22–29). */
+const HIGH_SUMMER: [number, number] = [22, 29]
+/**
+ * Midwinter, when a winter guest is here: 8 January to February (bins 1–7).
+ * The first week is left out, since New Year's Day counts find the last
+ * stragglers of the autumn.
+ */
+const MIDWINTER: [number, number] = [1, 7]
 
 /** A summer gap at least this long, in week bins, makes a winter guest. */
 const GAP_WEEKS = 8
@@ -172,16 +198,21 @@ const dayOfWeek = (week: number) => week * 7 + 4
  */
 export function typicalDays(entry: TaxonEntry, window: readonly number[]): Typical {
   const seen = window.map((year) => ({ year, data: entry.years[year] })).filter((one) => one.data)
-  const none = { arrival: null, departure: null, kind: null, years: seen.length }
+  const none = { arrival: null, departure: null, kind: null, years: seen.length, passing: false }
   if (seen.length < SEASON_MIN_YEARS) return none
 
   const kind = seasonKind(entry, window)
   const mostly = (count: number) => count > seen.length / 2
+  /** True when hardly any of the years have the bird in these week bins. */
+  const rarelyIn = ([from, to]: [number, number]) =>
+    seen.filter(({ data }) => data?.w.some(([week]) => week >= from && week <= to)).length <=
+    seen.length * PASSING_SHARE
 
   if (kind === "summer") {
     const firsts = seen.map(({ year, data }) => dayOfYear(`${year}-${data?.a ?? data?.f}`))
     const lasts = seen.map(({ year, data }) => dayOfYear(`${year}-${data?.l}`))
     const arrival = median(firsts)
+    if (arrival > LATEST_ARRIVAL) return none
     const leaves = mostly(lasts.filter((day) => day >= STILL_HERE_FROM).length)
       ? null
       : median(lasts)
@@ -190,6 +221,7 @@ export function typicalDays(entry: TaxonEntry, window: readonly number[]): Typic
       departure: leaves !== null && leaves > arrival && leaves >= LEAVES_FROM ? leaves : null,
       kind,
       years: seen.length,
+      passing: rarelyIn(HIGH_SUMMER),
     }
   }
 
@@ -204,6 +236,7 @@ export function typicalDays(entry: TaxonEntry, window: readonly number[]): Typic
       departure: dayOfWeek(median(gaps.map((gap) => gap.left))),
       kind,
       years: seen.length,
+      passing: rarelyIn(MIDWINTER),
     }
   }
 

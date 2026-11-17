@@ -807,7 +807,10 @@ and brudand counted. The jobs now ask for species, Underart, Population and
 Morfotyp (`COUNTED_CATEGORIES` in `aggregate.ts`) and count each record as its
 species, as Artportalen's lists do: 231 all time, the same as Artportalen's list
 but for brudand, which Artportalen leaves out, and the name of *Columba livia*
-(klippduva here, tamduva there). The all-time list is built from the years
+(klippduva here, tamduva there). Its reports are nearly all of the population
+tamduva (107 of 109 since 2020), so its species page joins the app's Tamduva
+(*Columba livia domestica*, `matchApp`) and is called that; the Obsar lists keep
+Artportalen's species name. The all-time list is built from the years
 (`allTimeFromIndex`), since TaxonAggregation keeps a subspecies apart from its
 species. Hybrids, genera and "a or b" rows still count for nothing. A kommun-year is at most 4 420 records, so a
 year is scanned whole and the league counted from it. What was built differs from

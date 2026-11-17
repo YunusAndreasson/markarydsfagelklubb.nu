@@ -156,14 +156,19 @@ export function leadSentence(
   thisYear: number,
   weeks: readonly number[]
 ): string | null {
-  const { arrival, departure, kind, years } = typical
+  const { arrival, departure, kind, years, passing } = typical
   // Only the coming: a summer bird's last report is when it goes quiet (a
   // gök's is early July), not when it leaves, and "Över året" shows the rest.
   if (kind === "summer" && arrival !== null) {
-    return `En flyttfågel som brukar komma till kommunen kring ${dayOfYearLabel(arrival)}.`
+    return passing
+      ? `En flyttfågel som brukar passera kommunen kring ${dayOfYearLabel(arrival)}, men som inte stannar över sommaren.`
+      : `En flyttfågel som brukar komma till kommunen kring ${dayOfYearLabel(arrival)}.`
   }
   if (kind === "winter" && arrival !== null && departure !== null) {
-    return `En vintergäst som brukar komma till kommunen kring ${dayOfYearLabel(arrival)} och stanna kvar till omkring ${dayOfYearLabel(departure)}.`
+    // A winter guest's arrival is its autumn return and its departure the spring leaving.
+    return passing
+      ? `En flyttfågel som passerar kommunen på våren, till omkring ${dayOfYearLabel(departure)}, och igen på hösten, från kring ${dayOfYearLabel(arrival)}.`
+      : `En vintergäst som brukar komma till kommunen kring ${dayOfYearLabel(arrival)} och stanna kvar till omkring ${dayOfYearLabel(departure)}.`
   }
   if (windowYears < SEASON_WINDOW) return null
   if (years === 0) {
@@ -178,8 +183,9 @@ export function leadSentence(
   if (years >= 15) {
     // "Varje år" only when it is: nötkråka's 19 of 20 is "nästan".
     const every = years >= SEASON_WINDOW ? "varje år" : "nästan varje år"
-    return when
-      ? `Ses i kommunen ${every}, ${when}.`
+    const phrase = when ?? exceptSeason(weeks)
+    return phrase
+      ? `Ses i kommunen ${every}, ${phrase}.`
       : "Finns i kommunen och rapporteras året runt, utan någon tydlig flyttningstid."
   }
   const guest = years < 8 ? ", en ovanlig gäst" : ""
@@ -188,16 +194,30 @@ export function leadSentence(
 
 /** A season with at least this share of the reports counts as one it is seen in. */
 const SEASON_SHARE = 0.15
+/**
+ * Below this share the bird is all but never seen in that season, so the
+ * other three aren't "året runt": skogsgås, with no report from April to
+ * September in sixty years. A resident few report in summer (stjärtmes,
+ * talltita) still has a few per cent there.
+ */
+const EMPTY_SEASON_SHARE = 0.02
 /** Fewer reports than this say nothing about when it is seen: one berguv isn't "mest på våren". */
 export const SEASON_MIN_REPORTS = 5
 
+const SEASON_NAMES = [
+  ["på vintern", "vintern"],
+  ["på våren", "våren"],
+  ["på sommaren", "sommaren"],
+  ["på hösten", "hösten"],
+] as const
+
 /**
- * "mest på hösten", "mest under våren och hösten": the seasons that hold the
- * reports, or null for a bird seen the whole year round (three or four of them).
- * Winter is December to February, the way a birder counts it.
+ * Reports per season, winter, spring, summer, autumn, and the seasons that
+ * hold a fair share of them. Winter is December to February, the way a birder
+ * counts it.
  */
-export function seasonsPhrase(weeks: readonly number[]): string | null {
-  const seasons = [0, 0, 0, 0] // vinter, vår, sommar, höst
+function seasonShares(weeks: readonly number[]): { shares: number[]; held: number[] } | null {
+  const seasons = [0, 0, 0, 0]
   weeks.forEach((count, week) => {
     const month = monthOfWeek(week)
     const season = month === 11 ? 0 : Math.floor((month + 1) / 3)
@@ -205,19 +225,38 @@ export function seasonsPhrase(weeks: readonly number[]): string | null {
   })
   const total = seasons.reduce((sum, one) => sum + one, 0)
   if (total < SEASON_MIN_REPORTS) return null
-  const held = seasons.flatMap((count, season) => (count / total >= SEASON_SHARE ? [season] : []))
+  const shares = seasons.map((count) => count / total)
+  return {
+    shares,
+    held: shares.flatMap((share, season) => (share >= SEASON_SHARE ? [season] : [])),
+  }
+}
+
+/**
+ * "mest på hösten", "mest under våren och hösten": the seasons that hold the
+ * reports, or null for a bird seen in three or four of them.
+ */
+export function seasonsPhrase(weeks: readonly number[]): string | null {
+  const seasons = seasonShares(weeks)
+  if (!seasons) return null
+  const { held } = seasons
   if (held.length >= 3 || held.length === 0) return null
-  const names = [
-    ["på vintern", "vintern"],
-    ["på våren", "våren"],
-    ["på sommaren", "sommaren"],
-    ["på hösten", "hösten"],
-  ] as const
-  if (held.length === 1) return `mest ${names[held[0] as number][0]}`
+  if (held.length === 1) return `mest ${SEASON_NAMES[held[0] as number][0]}`
   const [a, b] = held as [number, number]
   // Winter and spring read in calendar order; autumn and winter the way the season runs.
   const pair = a === 0 && b === 3 ? [3, 0] : [a, b]
-  return `mest under ${names[pair[0] as number][1]} och ${names[pair[1] as number][1]}`
+  return `mest under ${SEASON_NAMES[pair[0] as number][1]} och ${SEASON_NAMES[pair[1] as number][1]}`
+}
+
+/**
+ * "utom på sommaren": for a bird seen in three seasons and all but never in
+ * the fourth, which isn't one seen "året runt". Null otherwise.
+ */
+export function exceptSeason(weeks: readonly number[]): string | null {
+  const seasons = seasonShares(weeks)
+  if (seasons?.held.length !== 3) return null
+  const empty = seasons.shares.findIndex((share) => share < EMPTY_SEASON_SHARE)
+  return empty < 0 ? null : `utom ${SEASON_NAMES[empty as 0 | 1 | 2 | 3][0]}`
 }
 
 /**
