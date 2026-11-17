@@ -27,6 +27,8 @@ interface Props {
   alternates?: readonly Alternate[]
   /** Safari on iPhone shows the club app's Smart App Banner: the public pages, not the admin. */
   appBanner?: boolean
+  /** Structured data for the head (schema.org), as one JSON-LD block. */
+  jsonLd?: Record<string, unknown>
 }
 
 const {
@@ -37,6 +39,7 @@ const {
   lang = "sv",
   alternates = [],
   appBanner = false,
+  jsonLd,
 } = Astro.props
 // Prerendered pages have no request to resolve against, and pass no image.
 const imageUrl = image ? new URL(image, Astro.url).href : null
@@ -106,6 +109,14 @@ const SPECULATION_RULES = {
     {imageUrl && <meta property="og:image" content={imageUrl} />}
     <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
     {appBanner && <meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />}
+    {/* Escaped so no stored text can close the script element. */}
+    {jsonLd && (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")}
+      />
+    )}
     {/* Pages a reader is about to open, fetched ahead (docs/design.md, "Lupen"):
         on a hover of about 200 ms, and rendered ahead on the press itself.
         Chromium only; other browsers ignore it. Public pages are cached for

@@ -13,6 +13,8 @@ import AppLinks from "@/components/site/AppLinks.astro"
 import EmailLink from "@/components/site/EmailLink.astro"
 import SiteHeader from "@/components/site/SiteHeader.astro"
 import BaseLayout from "@/layouts/base.astro"
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/app-stores"
+import { SITE_ORIGIN } from "@/lib/canonical-host"
 import type { Alternate, SiteLang } from "@/lib/languages"
 import type { MenuEntry } from "@/lib/page-tree"
 import { SITE_FALLBACK_MENU } from "@/lib/site-menu"
@@ -36,6 +38,16 @@ interface Props {
 
 const SITE_NAME = "Markaryds Fågelklubb"
 const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
+// The club and its app's store pages, so search engines read the site and the app as one.
+const ORGANIZATION = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${SITE_ORIGIN}/#organization`,
+  name: SITE_NAME,
+  url: SITE_ORIGIN,
+  logo: new URL(logo.src, SITE_ORIGIN).href,
+  sameAs: [APP_STORE_URL, GOOGLE_PLAY_URL],
+}
 /**
  * The header's one button (docs/design.md, "Klubben"): joining is what the
  * section is for, so it is the one place the public site spends a filled
@@ -100,6 +112,7 @@ const footerGroups = [
   lang={lang}
   alternates={alternates}
   appBanner
+  jsonLd={ORGANIZATION}
 >
   <a
     href="#innehall"
