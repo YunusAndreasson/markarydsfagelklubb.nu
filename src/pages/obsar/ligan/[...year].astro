@@ -13,6 +13,7 @@ import { obsarStore, store } from "@/lib/obsar-data"
 import { arter, parseYearParam } from "@/lib/obsar-stats"
 import { loadNavigation } from "@/lib/public-content"
 import { stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
+import { counted } from "@/lib/text"
 
 /**
  * Ligan (roadmap F6): who has seen the most species in the kommun in a year,
@@ -66,7 +67,7 @@ const rows = (stats?.league ?? []).map((one, index, all) => [
       title={title}
       ingress={stats &&
         leader &&
-        `${stats.observerCount} personer har rapporterat fåglar i kommunen ${isCurrent ? "i år" : `under ${year}`}. ${leader.name} ${isCurrent ? "leder" : "vann"} med ${arter(leader.species)}.`}
+        `${counted(stats.observerCount, "person", "personer")} har rapporterat fåglar i kommunen ${isCurrent ? "i år" : `under ${year}`}. ${leader.name} ${isCurrent ? "leder" : "vann"} med ${arter(leader.species)}.`}
     >
       {years.length > 1 && <YearStrip slot="after" years={years} current={year} base="/obsar/ligan" latest={thisYear} label="Ligan" />}
     </PageHeader>

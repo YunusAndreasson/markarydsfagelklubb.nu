@@ -63,7 +63,7 @@ import { rapporter } from "@/lib/text"
       crumbs={[{ href: "/obsar", label: "Obsar" }]}
       title={title}
       ingress={stats &&
-        `${isCurrent ? "Hittills i år har" : `Under ${year} rapporterades`} ${arter(stats.speciesCount)}${isCurrent ? " rapporterats" : ""} i kommunen, i ${stats.reports.toLocaleString("sv-SE")} rapporter. Här i den ordning de först sågs.`}
+        `${isCurrent ? "Hittills i år har" : `Under ${year} rapporterades`} ${arter(stats.speciesCount)}${isCurrent ? " rapporterats" : ""} i kommunen, i ${rapporter(stats.reports)}. Här i den ordning de först sågs.`}
     >
       {years.length > 1 && <YearStrip slot="after" years={years} current={year} base="/obsar/arslista" latest={thisYear} label="Årslistan" />}
     </PageHeader>
