@@ -7,6 +7,7 @@ import alegreyaLatin from "@fontsource-variable/alegreya/files/alegreya-latin-wg
 import interLatin from "@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2"
 import appleTouchIcon from "@/assets/apple-touch-icon.png"
 import icon from "@/assets/icon-64.png"
+import { APP_STORE_ID } from "@/lib/app-stores"
 import { SITE_ORIGIN } from "@/lib/canonical-host"
 import { type Alternate, ogLocale, type SiteLang } from "@/lib/languages"
 import "@/styles/global.css"
@@ -24,9 +25,19 @@ interface Props {
   lang?: SiteLang
   /** The same page in other languages, itself included, for hreflang. */
   alternates?: readonly Alternate[]
+  /** Safari on iPhone shows the club app's Smart App Banner: the public pages, not the admin. */
+  appBanner?: boolean
 }
 
-const { title, description, image, type = "website", lang = "sv", alternates = [] } = Astro.props
+const {
+  title,
+  description,
+  image,
+  type = "website",
+  lang = "sv",
+  alternates = [],
+  appBanner = false,
+} = Astro.props
 // Prerendered pages have no request to resolve against, and pass no image.
 const imageUrl = image ? new URL(image, Astro.url).href : null
 // hreflang wants absolute URLs, and the canonical ones, as the sitemap lists
@@ -94,6 +105,7 @@ const SPECULATION_RULES = {
     {description && <meta property="og:description" content={description} />}
     {imageUrl && <meta property="og:image" content={imageUrl} />}
     <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
+    {appBanner && <meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />}
     {/* Pages a reader is about to open, fetched ahead (docs/design.md, "Lupen"):
         on a hover of about 200 ms, and rendered ahead on the press itself.
         Chromium only; other browsers ignore it. Public pages are cached for
