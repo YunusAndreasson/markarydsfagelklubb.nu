@@ -51,8 +51,16 @@ cached post lists **and** `*categories*`, whose stale copy reported a new catego
 by id). WordPress had a new category, Konstutställning (#54 → Föreningsaktuellt).
 6652 had been reused by the club for 2026, so its title fix changed. 10472 is a
 poster alone, so `BODY_FIXES` adds its text as alt text and as a sentence before
-the image. The rally PDF `rally2026-1.pdf` doesn't answer on WordPress, so its
-link was removed.
+the image. The rally PDF `rally2026-1.pdf` didn't answer on WordPress that evening,
+so its link was removed. ~~Gone on WordPress.~~ **It wasn't (2026-11-18):** a member
+noticed "Se artlista." without a link on the rally report (10352), and the file
+answers on the old host (Oderland, `curl --resolve markarydsfagelklubb.nu:443:91.201.60.22`,
+200, 74 110 bytes, modified 2 Nov). The import reads anything but a 2xx non-HTML
+answer as "gone", so the host's burst firewall probably answered for it. The file
+is kept in `.wp-import/originals/…/2026/11/rally2026-1.pdf`; putting it in
+site-files and relinking the article is waiting on the user's approval. The one
+other document unlinked this way (`Markaryds-Fågelklubb-verksamhet-2010.pdf`)
+does 404 there, in both Unicode forms.
 
 **The pilot ran first, the same day**: the migration is applied, the dummy articles
 and their categories are deleted (the dummy pages and events stay until real
