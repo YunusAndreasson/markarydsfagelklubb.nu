@@ -1,3 +1,4 @@
+import { categoryDescription } from "./category-description"
 import { type Cursor, newerThan, olderThan } from "./keyset"
 import type { LokalPointRow } from "./lokal-points"
 import type { MediaFormat, MediaImage } from "./media"
@@ -388,14 +389,20 @@ export async function listEventsForFeed(
   return data
 }
 
+/**
+ * The categories, for the tabs and a category page's ingress. Whole rows, so the
+ * read works before and after the migration that adds `description`
+ * (src/lib/category-description.ts says why).
+ */
 export async function listPublicCategories(db: SupabasePublicClient) {
-  const { data, error } = await db
-    .from("categories")
-    .select("id, slug, name")
-    .order("sort_order")
-    .order("name")
+  const { data, error } = await db.from("categories").select("*").order("sort_order").order("name")
   if (error) console.error(`mafk-web: list categories failed — ${error.message}`)
-  return data ?? []
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    description: categoryDescription(row),
+  }))
 }
 
 export async function loadPageBody(db: SupabasePublicClient, id: number) {

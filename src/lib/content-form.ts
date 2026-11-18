@@ -350,14 +350,22 @@ export function parseLinkForm(form: FormData, rules: TreeRules = {}): Parsed<Lin
   })
 }
 
-export type CategoryForm = { name: string; slug: string }
+export type CategoryForm = { name: string; slug: string; description?: string }
 
+/**
+ * A category's form. The description is read only when the form has the field,
+ * which /admin/kategorier shows once `categories.description` exists: sending
+ * a column the database doesn't have would fail the save.
+ */
 export function parseCategoryForm(form: FormData): Parsed<CategoryForm> {
   const errors: FieldErrors = {}
   const name = text(form, "name")
   checkTitle(name, errors, "name")
   const slug = checkSlug(text(form, "slug"), name, new Set(), errors)
-  return done(errors, { name, slug })
+  if (!form.has("description")) return done(errors, { name, slug })
+  const description = text(form, "description")
+  checkLength(description, LIMITS.description, "description", MESSAGES.descriptionTooLong, errors)
+  return done(errors, { name, slug, description })
 }
 
 export type LokalPointForm = {

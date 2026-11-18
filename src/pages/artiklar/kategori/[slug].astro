@@ -27,9 +27,10 @@ const page = await listPublishedArticles(db, {
 if (!page) return new Response(null, { status: 500 })
 ---
 
-<SiteLayout title={category.name} menu={navigation.menu}>
+<SiteLayout title={category.name} description={category.description || undefined} menu={navigation.menu}>
   <ArticleIndex
     heading={category.name}
+    ingress={category.description}
     basePath={`/artiklar/kategori/${category.slug}`}
     categories={categories}
     currentCategory={category.slug}

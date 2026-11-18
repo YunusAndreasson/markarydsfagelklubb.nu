@@ -8,6 +8,8 @@ import type { ArticlePage } from "@/lib/public-content"
 
 interface Props {
   heading: string
+  /** A category's description, under its name; none on /artiklar and the years. */
+  ingress?: string | null
   /** Where "Äldre" and "Nyare" link to: /artiklar or a category's page. */
   basePath: string
   categories: { slug: string; name: string }[]
@@ -21,6 +23,7 @@ interface Props {
 
 const {
   heading,
+  ingress,
   basePath,
   categories,
   currentCategory,
@@ -34,7 +37,7 @@ const tab = (active: boolean) => (active ? "page" : undefined)
 ---
 
 <div class="page-stack">
-  <PageHeader title={heading}>
+  <PageHeader title={heading} ingress={ingress || null}>
     {
       categories.length > 0 && (
         /* One row that scrolls sideways on a phone, where wrapping took three
