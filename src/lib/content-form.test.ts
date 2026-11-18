@@ -148,6 +148,35 @@ describe("parseCategoryForm", () => {
       errors: { name: MESSAGES.nameMissing },
     })
   })
+
+  it("reads the description only from a form that has the field", () => {
+    // Before its migration the page has no field, and the save must not send one.
+    expect(parseCategoryForm(form({ name: "Referat" }))).toEqual({
+      ok: true,
+      value: { name: "Referat", slug: "referat" },
+    })
+    expect(
+      parseCategoryForm(form({ name: "Mötesplats Ekebacken", description: " Tisdagsvandringar. " }))
+    ).toEqual({
+      ok: true,
+      value: {
+        name: "Mötesplats Ekebacken",
+        slug: "motesplats-ekebacken",
+        description: "Tisdagsvandringar.",
+      },
+    })
+    expect(parseCategoryForm(form({ name: "Referat", description: "" }))).toEqual({
+      ok: true,
+      value: { name: "Referat", slug: "referat", description: "" },
+    })
+  })
+
+  it("keeps the description to the pages' limit", () => {
+    expect(parseCategoryForm(form({ name: "Referat", description: "x".repeat(301) }))).toEqual({
+      ok: false,
+      errors: { description: MESSAGES.descriptionTooLong },
+    })
+  })
 })
 
 describe("parseRouteId", () => {

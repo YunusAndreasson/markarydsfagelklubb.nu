@@ -3,11 +3,13 @@ export const prerender = false
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import AdminLayout from "@/layouts/admin.astro"
 import { deleteCategory, listCategories, saveCategory, WRITE_MESSAGES } from "@/lib/admin-content"
-import { type FieldErrors, parseCategoryForm, parseRouteId } from "@/lib/content-form"
+import { categoryDescription, hasDescriptionColumn } from "@/lib/category-description"
+import { type FieldErrors, LIMITS, parseCategoryForm, parseRouteId } from "@/lib/content-form"
 
 const { supabase } = Astro.locals
 if (!supabase) return new Response(null, { status: 503 })
@@ -17,6 +19,8 @@ let errors: FieldErrors = {}
 let errorFor: number | "new" | null = null
 let formError: string | null = null
 let draftName = ""
+// What was typed into the description of the form that came back with an error.
+let draftDescription: string | null = null
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData()
@@ -42,12 +46,18 @@ if (Astro.request.method === "POST") {
     }
     errorFor = id ?? "new"
     if (id === null) draftName = String(form.get("name") ?? "")
+    if (form.has("description")) draftDescription = String(form.get("description") ?? "")
   }
 }
 
 const { data: categories, error } = await listCategories(supabase)
 if (error) console.error(`mafk-web: list categories failed — ${error.message}`)
 const nameError = errors.name ?? errors.slug
+// The field appears once `categories.description` exists (its migration); before
+// that the forms don't send it, and saving works as it did.
+const withDescription = hasDescriptionColumn(categories ?? [])
+const descriptionValue = (target: number | "new", saved: string) =>
+  errorFor === target && draftDescription !== null ? draftDescription : saved
 const confirmId = parseRouteId(Astro.url.searchParams.get("ta-bort") ?? undefined)
 const confirming = (categories ?? []).find((category) => category.id === confirmId)
 ---
@@ -57,7 +67,7 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
     <h1 class="text-2xl font-semibold tracking-tight">Kategorier</h1>
     <p class="text-muted-foreground leading-7">
       Artiklarna sorteras i kategorier på webbplatsen. Tar du bort en kategori finns dess artiklar
-      kvar, utan kategori.
+      kvar, utan kategori. Byter du namn behåller kategorin sin adress.
     </p>
 
     {Astro.url.searchParams.has("sparad") && (
@@ -88,15 +98,25 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
     <ul class="flex flex-col divide-y rounded-2xl border">
       {(categories ?? []).map((category) => (
         <li class="px-4 py-3">
-          <form method="POST" class="flex flex-wrap items-end gap-3">
+          <form method="POST" class="flex flex-col gap-3">
             <input type="hidden" name="id" value={category.id} />
-            <Field className="min-w-48 flex-1" data-invalid={errorFor === category.id && nameError ? true : undefined}>
-              <FieldLabel htmlFor={`name-${category.id}`} className="sr-only">Namn</FieldLabel>
-              <Input id={`name-${category.id}`} name="name" value={category.name} className="h-11" required aria-invalid={errorFor === category.id && nameError ? true : undefined} />
-              {errorFor === category.id && <FieldError>{nameError}</FieldError>}
-            </Field>
-            <Button type="submit" name="intent" value="save" variant="outline" className="h-11">Byt namn</Button>
-            <a href={`/admin/kategorier?ta-bort=${category.id}`} class={buttonVariants({ variant: "destructive", className: "h-11" })}>Ta bort</a>
+            <div class="flex flex-wrap items-end gap-3">
+              <Field className="min-w-48 flex-1" data-invalid={errorFor === category.id && nameError ? true : undefined}>
+                <FieldLabel htmlFor={`name-${category.id}`} className="sr-only">Namn</FieldLabel>
+                <Input id={`name-${category.id}`} name="name" value={category.name} className="h-11" required aria-invalid={errorFor === category.id && nameError ? true : undefined} />
+                {errorFor === category.id && <FieldError>{nameError}</FieldError>}
+              </Field>
+              <Button type="submit" name="intent" value="save" variant="outline" className="h-11">{withDescription ? "Spara" : "Byt namn"}</Button>
+              <a href={`/admin/kategorier?ta-bort=${category.id}`} class={buttonVariants({ variant: "destructive", className: "h-11" })}>Ta bort</a>
+            </div>
+            {withDescription && (
+              <Field data-invalid={errorFor === category.id && errors.description ? true : undefined}>
+                <FieldLabel htmlFor={`description-${category.id}`}>Beskrivning</FieldLabel>
+                <Textarea id={`description-${category.id}`} name="description" rows={2} maxLength={LIMITS.description} defaultValue={descriptionValue(category.id, categoryDescription(category))} aria-invalid={errorFor === category.id && errors.description ? true : undefined} />
+                <FieldDescription>Visas under namnet på kategorins sida. Lämna tomt om namnet säger allt.</FieldDescription>
+                {errorFor === category.id && errors.description && <FieldError>{errors.description}</FieldError>}
+              </Field>
+            )}
           </form>
         </li>
       ))}
@@ -105,13 +125,22 @@ const confirming = (categories ?? []).find((category) => category.id === confirm
       )}
     </ul>
 
-    <form method="POST" class="flex flex-wrap items-end gap-3">
-      <Field className="min-w-48 flex-1" data-invalid={errorFor === "new" && nameError ? true : undefined}>
-        <FieldLabel htmlFor="name-new">Ny kategori</FieldLabel>
-        <Input id="name-new" name="name" value={draftName} className="h-11" required aria-invalid={errorFor === "new" && nameError ? true : undefined} />
-        {errorFor === "new" && <FieldError>{nameError}</FieldError>}
-      </Field>
-      <Button type="submit" name="intent" value="save" className="h-11">Lägg till</Button>
+    <form method="POST" class="flex flex-col gap-3">
+      <div class="flex flex-wrap items-end gap-3">
+        <Field className="min-w-48 flex-1" data-invalid={errorFor === "new" && nameError ? true : undefined}>
+          <FieldLabel htmlFor="name-new">Ny kategori</FieldLabel>
+          <Input id="name-new" name="name" value={draftName} className="h-11" required aria-invalid={errorFor === "new" && nameError ? true : undefined} />
+          {errorFor === "new" && <FieldError>{nameError}</FieldError>}
+        </Field>
+        <Button type="submit" name="intent" value="save" className="h-11">Lägg till</Button>
+      </div>
+      {withDescription && (
+        <Field data-invalid={errorFor === "new" && errors.description ? true : undefined}>
+          <FieldLabel htmlFor="description-new">Beskrivning</FieldLabel>
+          <Textarea id="description-new" name="description" rows={2} maxLength={LIMITS.description} defaultValue={descriptionValue("new", "")} aria-invalid={errorFor === "new" && errors.description ? true : undefined} />
+          {errorFor === "new" && errors.description && <FieldError>{errors.description}</FieldError>}
+        </Field>
+      )}
     </form>
   </div>
 </AdminLayout>

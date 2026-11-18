@@ -1391,6 +1391,17 @@ Alla  Föreningsaktuellt  Referat  Program  ← category links, current underlin
 The year prints in the margin under the first entry of each year, so a scroll
 back through time reads like turning notebook pages.
 
+**A category's page has an ingress (2026-11-18)** when the category has a
+description, under its name and above the tabs, the role every page's opening
+line has; it is also the page's meta description. A member found "Mötesplats
+Ekebacken" listed with nothing to say what it is. The text is
+`categories.description` (migration `20261118203552`), edited at
+`/admin/kategorier`, plain text up to 300 characters like a page's description;
+empty prints nothing. The site reads whole category rows, so it works before the
+migration is applied as well (`src/lib/category-description.ts`). Since the same
+day a renamed category also **keeps its slug**: the admin derives one only for a
+new category.
+
 ### Article
 
 ```

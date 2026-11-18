@@ -129,23 +129,33 @@ export async function deleteEvent(
 
 // Categories
 
+/** Whole rows, so `description` comes along once its migration is applied (category-description.ts). */
 export async function listCategories(supabase: SupabaseServerClient) {
-  return supabase
-    .from("categories")
-    .select("id, slug, name, sort_order")
-    .order("sort_order")
-    .order("name")
+  return supabase.from("categories").select("*").order("sort_order").order("name")
 }
 
+/**
+ * A new category takes its slug from its name; a saved one keeps its slug, and so
+ * its address, whatever it is renamed to. "Tävlingar" became "Utmaningar" on
+ * 2026-11-18 and stayed at /artiklar/kategori/tavlingar, which a save here
+ * would otherwise have moved and left every link to it dead.
+ */
 export async function saveCategory(
   supabase: SupabaseServerClient,
   id: number | null,
-  values: { name: string; slug: string }
+  values: { name: string; slug: string; description?: string }
 ): Promise<WriteResult> {
+  const { slug, ...changes } = values
+  // `description` is in the generated types only after `pnpm types:db` follows
+  // its migration; until then parseCategoryForm never sends it, so the
+  // assertions only bridge the types, never a missing column.
   const { error } =
     id === null
-      ? await supabase.from("categories").insert(values)
-      : await supabase.from("categories").update(values).eq("id", id)
+      ? await supabase.from("categories").insert(values as Tables["categories"]["Insert"])
+      : await supabase
+          .from("categories")
+          .update(changes as Tables["categories"]["Update"])
+          .eq("id", id)
   return error ? failure("save category", error) : { ok: true, value: null }
 }
 
