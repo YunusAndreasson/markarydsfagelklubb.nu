@@ -6,6 +6,7 @@ import {
   monthOf,
   monthRange,
   monthTitle,
+  nearestMonths,
   parseMonthKey,
   shiftMonth,
 } from "./event-month"
@@ -87,6 +88,35 @@ describe("monthOf", () => {
     // 23:30 UTC on 31 October is already November in Stockholm.
     expect(monthOf("2026-10-31T23:30:00Z")).toEqual({ year: 2026, month: 11 })
     expect(monthOf("2026-10-31T21:30:00Z")).toEqual({ year: 2026, month: 10 })
+  })
+})
+
+describe("nearestMonths", () => {
+  it("links the months the nearest events are in, skipping the empty ones between", () => {
+    // Säsongsavslutning on 27 November, the Vinterfågelrally on 3 January: a
+    // December page goes back to November and on to January.
+    expect(nearestMonths("2026-11-27T17:30:00Z", "2027-01-03T07:00:00Z")).toEqual({
+      previous: "2026-11",
+      next: "2027-01",
+    })
+  })
+
+  it("links nothing past the first and the last event", () => {
+    expect(nearestMonths(null, "2026-01-04T07:00:00Z")).toEqual({ previous: null, next: "2026-01" })
+    expect(nearestMonths("2027-01-03T07:00:00Z", null)).toEqual({ previous: "2027-01", next: null })
+    expect(nearestMonths(null, null)).toEqual({ previous: null, next: null })
+  })
+
+  it("names the Swedish month an event starts in", () => {
+    // 23:30 UTC on 31 October is already November in Stockholm.
+    expect(nearestMonths("2026-10-31T23:30:00Z", null).previous).toBe("2026-11")
+  })
+
+  it("never links a month that has no page", () => {
+    expect(nearestMonths("1999-12-31T10:00:00Z", "2101-01-01T10:00:00Z")).toEqual({
+      previous: null,
+      next: null,
+    })
   })
 })
 

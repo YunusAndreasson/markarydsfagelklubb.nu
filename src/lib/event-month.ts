@@ -65,6 +65,26 @@ export function isWithinRange({ year }: Month): boolean {
 }
 
 /**
+ * The months a month page links to at its foot: the nearest ones with something
+ * in them, given when the last event before the month and the first after it
+ * begin, or null where there is none. The plain neighbours walked a member
+ * going back through the programme into empty months, one page at a time, all
+ * the way to 2000 (feedback 2026-11-18).
+ */
+export function nearestMonths(
+  latestBefore: string | null,
+  earliestAfter: string | null
+): { previous: string | null; next: string | null } {
+  const key = (start: string | null) => {
+    if (!start) return null
+    const month = stockholmMonthKey(start)
+    // Only a month that has a page: parseMonthKey holds the range.
+    return parseMonthKey(month) ? month : null
+  }
+  return { previous: key(latestBefore), next: key(earliestAfter) }
+}
+
+/**
  * Split a list already sorted by date into its months, in the order they
  * appear. The upcoming programme prints a heading whenever the month changes,
  * which is where the year comes from — so the rows don't have to repeat it.

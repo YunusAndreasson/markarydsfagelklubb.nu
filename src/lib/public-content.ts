@@ -290,7 +290,10 @@ export async function listUpcomingEvents(
   return data
 }
 
-/** When the newest event before `before` began, for "Tidigare i programmet". Null if none. */
+/**
+ * When the newest event before `before` began, for "Tidigare i programmet" and a
+ * month page's way back. Null if none.
+ */
 export async function latestEventStartBefore(
   db: SupabasePublicClient,
   before: Date
@@ -303,6 +306,22 @@ export async function latestEventStartBefore(
     .limit(1)
     .maybeSingle()
   if (error) console.error(`mafk-web: latest past event failed — ${error.message}`)
+  return data?.starts_at ?? null
+}
+
+/** When the first event from `from` on begins, for a month page's way forward. Null if none. */
+export async function earliestEventStartFrom(
+  db: SupabasePublicClient,
+  from: Date
+): Promise<string | null> {
+  const { data, error } = await db
+    .from("events")
+    .select("starts_at")
+    .gte("starts_at", from.toISOString())
+    .order("starts_at")
+    .limit(1)
+    .maybeSingle()
+  if (error) console.error(`mafk-web: next event failed — ${error.message}`)
   return data?.starts_at ?? null
 }
 

@@ -1507,9 +1507,15 @@ fredag         Ugglespaning vid Hualtet      ← title is the link
   an event whose type is "other" is described by its own title.
 - **A grid was rejected.** The club runs a couple of events a month, so a month
   grid would be mostly empty squares, and it reads badly at 360 px. The month
-  pages are the same list, filtered, with the neighbouring months linked at the
-  foot — side by side in the reading column, not pushed to the container's
-  edges, where they read as unrelated.
+  pages are the same list, filtered, with the nearest months that have
+  something in them linked at the foot — side by side in the reading column,
+  not pushed to the container's edges, where they read as unrelated.
+  **Since 2026-11-18 not the plain neighbours** (`nearestMonths` in
+  `src/lib/event-month.ts`): a member reported that the earlier programme's
+  links didn't work, and going back from January 2026, the first month with
+  events, they led only to "Inga aktiviteter den här månaden", one empty month
+  at a time back to 2000. The first and the last month with events link only
+  one way.
 - **The clock is dropped for an all-day event** rather than printed as 00:00.
 
 An event's own page follows the article page: the summary is the ingress,

@@ -12,11 +12,10 @@ import Pager from "@/components/site/Pager.astro"
 import SiteLayout from "@/layouts/site.astro"
 import { publicEventKindLabel } from "@/lib/event-kind"
 import {
-  monthKey,
   monthTitle as monthLabel,
   monthRange,
+  nearestMonths,
   parseMonthKey,
-  shiftMonth,
 } from "@/lib/event-month"
 import {
   deadlineInstant,
@@ -30,7 +29,9 @@ import type { MenuEntry } from "@/lib/page-tree"
 import { formatPhone } from "@/lib/phone"
 import {
   type EventSummary,
+  earliestEventStartFrom,
   type FullEvent,
+  latestEventStartBefore,
   listEventsInMonth,
   loadNavigation,
   loadPublishedEvent,
@@ -57,19 +58,26 @@ if (!db || !isValidSlug(slug)) return new Response(null, { status: 404 })
 const month = parseMonthKey(slug)
 let events: EventSummary[] = []
 let event: FullEvent | null = null
-let previous = ""
-let next = ""
+let previous: string | null = null
+let next: string | null = null
 let menu: MenuEntry[] = []
 
 if (month) {
-  const [navigation, found] = await Promise.all([
+  // The foot links the nearest months with something in them, not the plain
+  // neighbours: before the first event and after the last, those were empty
+  // pages that only led to more of the same.
+  const range = monthRange(month)
+  const [navigation, found, latestBefore, earliestAfter] = await Promise.all([
     loadNavigation(db),
-    listEventsInMonth(db, monthRange(month)),
+    listEventsInMonth(db, range),
+    latestEventStartBefore(db, range.start),
+    earliestEventStartFrom(db, range.end),
   ])
   if (!found) return new Response(null, { status: 500 })
   events = found
-  previous = monthKey(shiftMonth(month, -1))
-  next = monthKey(shiftMonth(month, 1))
+  const nearest = nearestMonths(latestBefore, earliestAfter)
+  previous = nearest.previous
+  next = nearest.next
   menu = navigation.menu
 } else {
   const [navigation, found] = await Promise.all([loadNavigation(db), loadPublishedEvent(db, slug)])
@@ -137,8 +145,8 @@ const description = month
         <Pager
           label="Fler månader"
           links={[
-            { href: `/kalender/${previous}`, label: monthLabel(previous), rel: "prev" },
-            { href: `/kalender/${next}`, label: monthLabel(next), rel: "next" },
+            previous ? { href: `/kalender/${previous}`, label: monthLabel(previous), rel: "prev" } : null,
+            next ? { href: `/kalender/${next}`, label: monthLabel(next), rel: "next" } : null,
           ]}
         />
       </div>

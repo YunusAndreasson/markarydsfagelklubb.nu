@@ -609,7 +609,7 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
 **How it ended up:**
 
 - `/kalender` (upcoming, grouped by month), `/kalender/2026-10` (one month,
-  with the neighbouring months linked), `/kalender/<slug>`, `/kalender.ics`,
+  with the nearest months that have events linked), `/kalender/<slug>`, `/kalender.ics`,
   and the next event on the home page above the lead.
 - The `events` table copies the articles publishing model exactly, so
   `src/lib/publish-state.ts` drives drafts and scheduling unchanged, and a
