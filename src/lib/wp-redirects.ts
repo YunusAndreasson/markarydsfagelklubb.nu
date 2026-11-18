@@ -56,6 +56,11 @@ export function wpRedirect(pathname: string, searchParams: URLSearchParams): str
     return id && /^\d+$/.test(id) ? settle(IDS[id]) : null
   }
   const path = normaliseOldPath(pathname)
+  // WordPress paged its lists as <list>/page/<n>: the posts on its home page, a
+  // category ("Äldre inlägg" under Program), a month. The site's lists page by
+  // keyset, not by number, so each goes to the start of the list it was part of.
+  const paged = /^(.*)\/page\/\d+$/.exec(path)
+  if (paged) return paged[1] ? wpRedirect(paged[1], searchParams) : "/artiklar"
   const mapped = settle(PATHS[path] ?? MOVED_PAGES[path])
   if (mapped) return mapped
   // WordPress's date archives weren't posts, so the map has no keys for them.

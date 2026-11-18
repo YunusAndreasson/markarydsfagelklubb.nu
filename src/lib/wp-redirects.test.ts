@@ -102,3 +102,20 @@ describe("WordPress date archives", () => {
     expect(wpRedirect("/2024/maj", none)).toBeNull()
   })
 })
+
+describe("WordPress's paged lists", () => {
+  const none = new URLSearchParams()
+  it("go to the start of the list they were a page of", () => {
+    expect(wpRedirect("/category/program/page/2/", none)).toBe("/artiklar/kategori/program")
+    expect(wpRedirect("/category/program-2025/page/3", none)).toBe("/artiklar/kategori/program")
+    expect(wpRedirect("/category/motesplats-lokasjon/motesplats-ekebacken/page/2", none)).toBe(
+      "/artiklar/kategori/motesplats-ekebacken"
+    )
+    expect(wpRedirect("/2025/05/page/2", none)).toBe("/artiklar/ar/2025")
+    expect(wpRedirect("/page/2/", none)).toBe("/artiklar")
+  })
+  it("leave a page of a list the site doesn't know alone", () => {
+    expect(wpRedirect("/author/admin/page/2", none)).toBeNull()
+    expect(wpRedirect("/category/finns-inte/page/2", none)).toBeNull()
+  })
+})
