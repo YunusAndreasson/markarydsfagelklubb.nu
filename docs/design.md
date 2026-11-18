@@ -1986,6 +1986,11 @@ Klubben               /om-foreningen            Verksamhet, Cinclus, Medlemskap,
                                                   Fågelholkar, Länkar
 ```
 
+**2026-11-18, from a member's feedback:** Klubben's Tävlingar is called
+**Utmaningar** (same URL), and **Inventeringar** (the year's survey species) sits
+after it. The articles' tab "Program" is gone: "Program" now means only the
+kalender (roadmap, F2).
+
 - **Larm is its own top-level section**, not filed under Obsar, because the
   agenda calls it *"viktig funktion"* and because Obsar is where the club sends
   people *out* to Artportalen, while Larm is the club's own material.

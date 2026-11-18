@@ -3,7 +3,7 @@ import { join } from "node:path"
 import { parseArgs } from "node:util"
 import { sanitizeContent } from "../../src/lib/sanitize"
 import { applyBodyFixes } from "./body-fixes"
-import { pickCategory, SITE_CATEGORIES } from "./categories"
+import { categoryFor, SITE_CATEGORIES } from "./categories"
 import { fetchPosts, readExport, WordPressClient, type WpCategory } from "./sources"
 import { tidyLineBreaks } from "./tidy"
 import { TITLE_FIXES } from "./title-fixes"
@@ -146,7 +146,10 @@ for (const post of posts) {
   if (slugsSeen.has(slug)) problems.push(`slug "${slug}" collides with another post`)
   slugsSeen.add(slug)
 
-  const category = pickCategory(post.categories.map((id) => wpCategorySlug.get(id) ?? `#${id}`))
+  const category = categoryFor(
+    post.id,
+    post.categories.map((id) => wpCategorySlug.get(id) ?? `#${id}`)
+  )
   if (category.kind === "unmapped")
     problems.push(`unmapped categories: ${category.wpSlugs.join(", ")}`)
 

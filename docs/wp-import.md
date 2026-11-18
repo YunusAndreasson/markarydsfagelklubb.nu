@@ -188,7 +188,9 @@ pilot, because it is also how you re-run a slice after a fix.
 1. **Categories.** Insert the six from F2's mapping table if absent. The
    45-to-6 mapping and the priority order (Tävlingar > Program > Mötesplats
    Ekebacken > Exkursioner > Referat > Föreningsaktuellt) are in the roadmap and
-   belong in one exported constant here, not scattered.
+   belong in one exported constant here, not scattered. **Five since
+   2026-11-18:** Program is mapped onto Exkursioner and Tävlingar is named
+   Utmaningar (slug `tavlingar`), see the roadmap's F2.
 2. **Posts.** For each, newest first:
    - skip anything not `publish`;
    - map the category, or leave `category_id` null for "Okategoriserade";

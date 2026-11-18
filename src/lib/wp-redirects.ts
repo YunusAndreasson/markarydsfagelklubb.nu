@@ -28,6 +28,11 @@ export const MOVED_PAGES: Readonly<Record<string, string>> = {
   "/fagellokaler/tanneryd-damm": "/lokaler/jacobssons-udde",
   // WordPress answered the old address with the post's new slug; article 4929 links to it.
   "/tisdagar-april-maj-motesplats-ekebacken": "/artiklar/tisdagar-april-maj-motesplats-ekebacken-2",
+  // The articles' "Program" went on 2026-11-18, so the word means only /kalender;
+  // its posts, old excursion announcements, are under Exkursioner. This also
+  // carries WordPress's /category/program* there in one hop. It applies only once
+  // the category row is gone: until then the category page answers itself.
+  "/artiklar/kategori/program": "/artiklar/kategori/exkursioner",
 }
 
 const settle = (target: string | undefined): string | null =>

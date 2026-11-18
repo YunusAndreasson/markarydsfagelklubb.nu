@@ -84,6 +84,12 @@ describe("wpRedirect", () => {
     }
   })
 
+  it("sends the retired Program category and its old WordPress links to Exkursioner", () => {
+    expect(wpRedirect("/artiklar/kategori/program", none)).toBe("/artiklar/kategori/exkursioner")
+    expect(wpRedirect("/category/program/", none)).toBe("/artiklar/kategori/exkursioner")
+    expect(wpRedirect("/category/program-2026", none)).toBe("/artiklar/kategori/exkursioner")
+  })
+
   it("leaves everything else alone", () => {
     expect(wpRedirect("/finns-inte", none)).toBeNull()
     expect(wpRedirect("/%E0%A4%A", none)).toBeNull()
@@ -106,8 +112,8 @@ describe("WordPress date archives", () => {
 describe("WordPress's paged lists", () => {
   const none = new URLSearchParams()
   it("go to the start of the list they were a page of", () => {
-    expect(wpRedirect("/category/program/page/2/", none)).toBe("/artiklar/kategori/program")
-    expect(wpRedirect("/category/program-2025/page/3", none)).toBe("/artiklar/kategori/program")
+    expect(wpRedirect("/category/program/page/2/", none)).toBe("/artiklar/kategori/exkursioner")
+    expect(wpRedirect("/category/program-2025/page/3", none)).toBe("/artiklar/kategori/exkursioner")
     expect(wpRedirect("/category/motesplats-lokasjon/motesplats-ekebacken/page/2", none)).toBe(
       "/artiklar/kategori/motesplats-ekebacken"
     )

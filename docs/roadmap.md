@@ -566,6 +566,17 @@ Each lists the agenda item, the proposed shape, dependencies and open questions.
     else applies.
   - The four zero-post categories (`svalan`, `veteranerna`, `+`, `fågellarm`)
     are absorbed above and simply never appear.
+  - **Changed 2026-11-18, after a member's feedback** (Lars Erik Andreasson,
+    "Program har blivit lite blandat"; the user's go): **Program is gone from
+    the articles.** It held 18 announcements from 2011 to 2026, while most of the
+    year's programme posts sat under other categories, and "Program" in the menu
+    is the kalender. Its posts moved to Exkursioner, the spring's Mötesplats
+    Ekebacken invitation (WP 5480) to Mötesplats Ekebacken, and
+    `/artiklar/kategori/program` 301s to Exkursioner (`MOVED_PAGES`). **Tävlingar
+    is called Utmaningar**, as the article category and as the Klubben page, the
+    member's suggestion ("mjukare"); its slug `tavlingar`, and so every URL,
+    stayed. The import follows both (`scripts/wp-import/categories.ts`,
+    `CATEGORY_FIXES` for 5480).
 - **Nothing is open for the import any more.**
 
 ### F3 — Kalender (events)
@@ -977,3 +988,4 @@ Cloudflare zone.
 | D1 (revised) | A larm's position | **Published exactly** (the user, 2026-11-14), reversing D1's "never a coordinate": a still map on `/larm/<id>` with the reported point, the named lokal as a ring and an OpenStreetMap link. Labels in the feed stay coarse. Withheld for a protected species. The privacy-policy update and the protected-species list become **launch blockers**. A map in the home page's larm band was built and dropped the same day: it didn't sit well on the Gran band | 2026-11-14 |
 | F6, F7 | Artsidor and "Så här års" | **Built 2026-11-14**: a page per bird at `/arter/<slug>` (Artportalen's history plus the club's larm, matched on scientific then Swedish name), Markarydslistan gains an A–Ö order as the one species register (a separate `/arter` register was built and folded in the same day, since it listed the same birds; `/arter` now 301s there), and a "Så här års" block on the home page and Obsar's Översikt. The history comes from a per-taxon index in KV (`ap:v1:taxa`, `ap:v1:season`) that the jobs keep current and the nightly job backfills from the year keys. Bird song from xeno-canto is **later**: it needs an API key and per-recording licence filtering | 2026-11-14 |
 | F1 | Visitor pages in English and German ("Besökare", `docs/design.md`) | **`/en` and `/de`, one page each** (the user, 2026-11-17), the only pages that aren't Swedish; found from **a line above the header from md and the first row of Meny on a phone**. Built from the site's own pieces: the lokal map, four described lokaler, the lokaler alerted from in the past two weeks, Artportalen, allemansrätten, the club. **No promise that guests may join excursions**; visitors may write in Swedish, English or German. hreflang between the two only | 2026-11-17 |
+| F2 | A member's feedback on the new site (2026-11-18) | **The user's go on all six points.** The rally report's species list relinked (the PDF had only failed to answer at the import); **Inventeringar** under Klubben, with the year's species; **Tävlingar → Utmaningar** (slug kept); Mötesplats Ekebacken gets a category description (`categories.description`, a migration the user applies); the articles' **Program** category retired into Exkursioner; the programme's month pages link the **nearest months with events** | 2026-11-18 |

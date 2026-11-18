@@ -1,9 +1,14 @@
 /**
- * WordPress's 46 categories onto the site's six (docs/roadmap.md, F2, signed
- * off 2026-09-20). Keyed on the WordPress category slug, read from
+ * WordPress's 46 categories onto the site's categories (docs/roadmap.md, F2,
+ * signed off 2026-09-20). Keyed on the WordPress category slug, read from
  * `/wp-json/wp/v2/categories` the same day and again on 2026-10-23.
  *
  * "Okategoriserade" is deliberately absent: those posts get no category.
+ *
+ * Since 2026-11-18 there are five: "Program" is gone from the articles, so the
+ * word means one thing on the site, the programme at /kalender. Its posts are
+ * the club's old excursion announcements and went to Exkursioner, and
+ * "Tävlingar" is called "Utmaningar" (its slug, and so its URL, is unchanged).
  */
 
 export type SiteCategory = {
@@ -13,8 +18,7 @@ export type SiteCategory = {
 
 /** Most specific first: when a post has several, the earliest here wins. */
 export const SITE_CATEGORIES: readonly SiteCategory[] = [
-  { slug: "tavlingar", name: "Tävlingar" },
-  { slug: "program", name: "Program" },
+  { slug: "tavlingar", name: "Utmaningar" },
   { slug: "motesplats-ekebacken", name: "Mötesplats Ekebacken" },
   { slug: "exkursioner", name: "Exkursioner" },
   { slug: "referat", name: "Referat" },
@@ -53,7 +57,7 @@ export const CATEGORY_MAP: Readonly<Record<string, string>> = {
   skadartips: "referat",
   fenelogi: "referat",
   orngruppen: "referat",
-  // Tävlingar
+  // Utmaningar (slug tavlingar)
   smalandsrallyt: "tavlingar",
   vinterfagelrally: "tavlingar",
   "vinterfaglar-inpa-knuten": "tavlingar",
@@ -71,10 +75,19 @@ export const CATEGORY_MAP: Readonly<Record<string, string>> = {
   "motesplats-lokasjon": "exkursioner",
   // Mötesplats Ekebacken
   "motesplats-ekebacken": "motesplats-ekebacken",
-  // Program
-  program: "program",
-  "program-2025": "program",
-  "program-2026": "program",
+  // Program: the programme is /kalender, its old announcements are excursions.
+  program: "exkursioner",
+  "program-2025": "exkursioner",
+  "program-2026": "exkursioner",
+}
+
+/**
+ * Posts whose site category no mapping gives, keyed by WordPress post id, so a
+ * re-import keeps the choice. 5480, the spring's Mötesplats Ekebacken invitation,
+ * was filed only under Program 2026.
+ */
+export const CATEGORY_FIXES: Readonly<Record<number, string>> = {
+  5480: "motesplats-ekebacken",
 }
 
 export type CategoryPick =
@@ -93,4 +106,10 @@ export function pickCategory(wpSlugs: readonly string[]): CategoryPick {
   const mapped = new Set(wpSlugs.map((slug) => CATEGORY_MAP[slug]).filter(Boolean))
   const winner = SITE_CATEGORIES.find((category) => mapped.has(category.slug))
   return winner ? { kind: "category", slug: winner.slug } : { kind: "none" }
+}
+
+/** A post's site category: its fix if it has one, otherwise what its WordPress categories give. */
+export function categoryFor(wpId: number, wpSlugs: readonly string[]): CategoryPick {
+  const fixed = CATEGORY_FIXES[wpId]
+  return fixed ? { kind: "category", slug: fixed } : pickCategory(wpSlugs)
 }
