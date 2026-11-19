@@ -43,6 +43,12 @@ import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 // date) and the jubilee band's forty years to close. front-page.ts decides what
 // goes where; this file only lays it out.
 
+// What a search result and a shared link say about the club (approved
+// 2026-11-19). The title already names the club, so nothing is appended.
+const TITLE = "Markaryds Fågelklubb – fågelskådning i Markaryds kommun"
+const DESCRIPTION =
+  "Fågelklubben i Markaryds kommun: larm om ovanliga fåglar, obsar och artlistor, exkursioner och möten. Bli medlem eller hämta klubbens app."
+
 // One read serves the day list and the rail. Far above the
 // busiest day so far (43 larm), and it reaches back past a day of photo-less
 // reports for the rail.
@@ -122,7 +128,13 @@ const leadTransition = lead && leadPicture ? transitionName(taken, "artikel", le
 const nextTransition = nextStory ? transitionName(taken, "artikel", nextStory.id) : undefined
 ---
 
-<SiteLayout menu={navigation.menu} image={leadImage?.src} jsonLd={[websiteNode()]}>
+<SiteLayout
+  fullTitle={TITLE}
+  description={DESCRIPTION}
+  menu={navigation.menu}
+  image={leadImage?.src}
+  jsonLd={[websiteNode()]}
+>
   {/* The page's h1 first, in the band slot ahead of the larm band, so a screen
       reader moving by heading meets it before the band's h2. */}
   <h1 slot="band" class="sr-only">Markaryds Fågelklubb</h1>

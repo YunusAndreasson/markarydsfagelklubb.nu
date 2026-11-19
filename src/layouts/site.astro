@@ -23,6 +23,8 @@ import { type JsonLd, jsonLdGraph, ORGANIZATION_ID, SITE_NAME } from "@/lib/stru
 interface Props {
   /** The page's own title; the club's name is appended. */
   title?: string
+  /** The whole title, as it is, in place of `title` and the club's name: the home page's. */
+  fullTitle?: string
   description?: string
   /**
    * From the page tree. Each route loads it; the layout queries nothing. Empty
@@ -67,6 +69,7 @@ const JOIN_PATH = "/om-foreningen/medlemskap"
 
 const {
   title,
+  fullTitle,
   description,
   menu: loaded,
   image,
@@ -124,7 +127,7 @@ const footerGroups = [
 ---
 
 <BaseLayout
-  title={title ? `${title} · ${SITE_NAME}` : SITE_NAME}
+  title={fullTitle ?? (title ? `${title} · ${SITE_NAME}` : SITE_NAME)}
   description={description ?? TAGLINE}
   image={image}
   type={type}
