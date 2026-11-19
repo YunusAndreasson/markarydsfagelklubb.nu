@@ -104,10 +104,13 @@ const everYears = ever
   : null
 const lead = typical ? leadSentence(typical, window.length, everYears, thisYear, weeks ?? []) : null
 const date = (value: string) => formatDate(`${value}T12:00:00Z`, "long")
+// The head's title names the kommun, as a search for the bird here does:
+// "Mandarinand i Markaryds kommun · Markaryds Fågelklubb". The h1 is the bird alone.
+const headTitle = `${bird.name} i Markaryds kommun`
 ---
 
 <SiteLayout
-  title={bird.name}
+  title={headTitle}
   description={`${bird.name} (${bird.sci}) i Markaryds kommun: när den brukar komma, när på året den syns och var den har larmats.`}
   menu={navigation.menu}
 >
