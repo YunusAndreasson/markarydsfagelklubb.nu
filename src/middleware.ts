@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware"
 import { decideAdminAccess, isAdminPath, type SessionKind } from "@/lib/admin-access"
 import { readIsAdmin } from "@/lib/admin-flag"
-import { canonicalRedirect } from "@/lib/canonical-host"
+import { canonicalRedirect, visitorScheme } from "@/lib/canonical-host"
 import { applySecurityHeaders, supabaseConnectOrigins } from "@/lib/security-headers"
 import { createSupabasePublicClient } from "@/lib/supabase-public"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
@@ -42,7 +42,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // One address for the site: www, workers.dev and plain http move to the
   // apex over https.
-  const canonical = canonicalRedirect(context.url)
+  const canonical = canonicalRedirect(context.url, visitorScheme(context.request.headers))
   if (canonical) return applySecurityHeaders(movedPermanently(canonical))
 
   // /api/health reads the environment itself, so it can report a

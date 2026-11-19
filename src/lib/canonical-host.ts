@@ -15,12 +15,32 @@ const OTHER_HOSTS: ReadonlySet<string> = new Set([
 ])
 
 /**
+ * The scheme the visitor used, as Cloudflare's edge reports it: `CF-Visitor`
+ * (`{"scheme":"http"}`), else `X-Forwarded-Proto`. Null when neither is there,
+ * as under `wrangler dev`, which rewrites every local request to
+ * `http://markarydsfagelklubb.nu/…` and so must not be sent to https.
+ */
+export function visitorScheme(headers: Headers): string | null {
+  const visitor = headers.get("cf-visitor")
+  if (visitor) {
+    try {
+      const scheme = (JSON.parse(visitor) as { scheme?: unknown }).scheme
+      if (typeof scheme === "string") return scheme
+    } catch {
+      // Malformed: fall through to the other header.
+    }
+  }
+  return headers.get("x-forwarded-proto")
+}
+
+/**
  * Where a request on another of the Worker's hosts or schemes belongs, or null
  * to serve it here. `/api/*` answers on every host: the deploy's smoke test
  * checks `/api/health` on workers.dev, whatever the custom domain is doing.
+ * Plain http moves only when the edge says the visitor came over http.
  */
-export function canonicalRedirect(url: URL): string | null {
-  const plainHttp = url.protocol === "http:" && url.hostname === SITE_HOST
+export function canonicalRedirect(url: URL, scheme: string | null = null): string | null {
+  const plainHttp = scheme === "http" && url.protocol === "http:" && url.hostname === SITE_HOST
   if (!plainHttp && !OTHER_HOSTS.has(url.hostname)) return null
   if (url.pathname.startsWith("/api/")) return null
   return `${SITE_ORIGIN}${url.pathname}${url.search}`
