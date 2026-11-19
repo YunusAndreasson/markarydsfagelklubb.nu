@@ -39,6 +39,8 @@ interface Props {
 }
 
 const SITE_NAME = "Markaryds Fågelklubb"
+/** The site's public Web Analytics token (Cloudflare: Analytics → Web analytics). */
+const WEB_ANALYTICS_TOKEN = "e2bdfb4ab63544e7a42804b08ae494ed"
 const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
 // The club and its app's store pages, so search engines read the site and the app as one.
 const ORGANIZATION = {
@@ -160,6 +162,9 @@ const footerGroups = [
               />
             </p>
             <AppLinks sentence={false} class="mt-2" />
+            <p class="type-caption mt-2">
+              Besök räknas anonymt med Cloudflare Web Analytics, utan cookies.
+            </p>
           </div>
         </div>
         {
@@ -181,4 +186,14 @@ const footerGroups = [
       </div>
     </footer>
   </div>
+
+  {/* Cloudflare Web Analytics, public pages only (the admin uses admin.astro):
+      cookieless, and the footer says so. The CSP allows its script and
+      report origins (security-headers.ts and public/_headers). */}
+  <script
+    is:inline
+    defer
+    src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon={JSON.stringify({ token: WEB_ANALYTICS_TOKEN })}
+  ></script>
 </BaseLayout>

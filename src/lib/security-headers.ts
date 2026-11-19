@@ -4,11 +4,19 @@ import { SUPABASE_ORIGIN } from "./media"
 /**
  * The lokal map's tiles (docs/roadmap.md, F5).
  *
- * Raster tiles are plain `<img>` loads, so this belongs in `img-src` and
- * `connect-src` stays closed. Standard OpenStreetMap tiles need no key; their
- * usage policy asks for the attribution the map's control carries.
+ * Raster tiles are plain `<img>` loads, so this belongs in `img-src`, not
+ * `connect-src`. Standard OpenStreetMap tiles need no key; their usage policy
+ * asks for the attribution the map's control carries.
  */
 const TILE_ORIGIN = "https://tile.openstreetmap.org"
+
+/**
+ * Cloudflare Web Analytics (2026-11-19): the beacon script site.astro loads on
+ * every public page, and the endpoint it reports to. Cookieless; the footer
+ * says so in one sentence.
+ */
+const ANALYTICS_SCRIPT_ORIGIN = "https://static.cloudflareinsights.com"
+const ANALYTICS_REPORT_ORIGIN = "https://cloudflareinsights.com"
 
 /**
  * Security headers applied to every response the Worker generates.
@@ -35,11 +43,11 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = Object.freeze(
   "Cross-Origin-Opener-Policy": "same-origin",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'unsafe-inline' ${ANALYTICS_SCRIPT_ORIGIN}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: ${SUPABASE_ORIGIN} ${TILE_ORIGIN}`,
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self' ${ANALYTICS_REPORT_ORIGIN}`,
     `frame-src ${embedFrameSources().join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",

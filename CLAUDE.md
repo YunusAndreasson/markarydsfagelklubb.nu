@@ -149,6 +149,11 @@ In short:
 - Security headers exist twice, in `public/_headers` for static assets and in
   `src/lib/security-headers.ts` for Worker responses. A test keeps them
   identical, so change both together.
+- Cloudflare Web Analytics (since 2026-11-19): `site.astro` loads the beacon on
+  every public page (not the admin), so the CSP allows
+  `https://static.cloudflareinsights.com` in `script-src` and
+  `https://cloudflareinsights.com` in `connect-src`. It is cookieless; the
+  footer says so in one sentence. Removing the beacon means removing both.
 
 **Gotchas already paid for in sibling repos**
 

@@ -104,7 +104,7 @@ describe("admin connect-src", () => {
     ])
     const response = applySecurityHeaders(new Response(), origins)
     expect(response.headers.get("Content-Security-Policy")).toContain(
-      "connect-src 'self' https://project-ref.supabase.co https://project-ref.storage.supabase.co;"
+      "connect-src 'self' https://project-ref.supabase.co https://project-ref.storage.supabase.co https://cloudflareinsights.com;"
     )
   })
 
