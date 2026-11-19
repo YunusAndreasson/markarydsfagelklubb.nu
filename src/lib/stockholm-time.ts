@@ -243,6 +243,30 @@ export function isoDateTime(value: Date | string): string {
 }
 
 /**
+ * An instant as ISO 8601 on Stockholm's clock, with the offset that held then:
+ * "2026-04-07T18:30:00+02:00". For structured data, where a search engine
+ * prints the time it reads, and a UTC "Z" would read as the wrong hour.
+ */
+export function stockholmIsoDateTime(value: Date | string): string {
+  const date = toDate(value)
+  const p = stockholmParts(date)
+  // Stockholm's offset is whole hours, so the seconds are UTC's.
+  const offset = offsetAt(date.getTime()) / 60_000
+  const sign = offset < 0 ? "-" : "+"
+  const minutes = Math.abs(offset)
+  return (
+    `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}:${pad(date.getUTCSeconds())}` +
+    `${sign}${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`
+  )
+}
+
+/** The Stockholm day an instant falls in, as ISO 8601: "2026-10-31". An all-day event's date. */
+export function stockholmIsoDate(value: Date | string): string {
+  const p = stockholmParts(toDate(value))
+  return `${p.year}-${pad(p.month)}-${pad(p.day)}`
+}
+
+/**
  * The year to print beside a short date, or null: only when it isn't this one.
  * The site's rule everywhere a date leaves its year out ("3 nov", "3 nov 2024").
  */

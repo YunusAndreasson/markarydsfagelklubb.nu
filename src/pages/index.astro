@@ -29,6 +29,7 @@ import { listPublishedArticles, listUpcomingEvents, loadNavigation } from "@/lib
 import { thisWeek } from "@/lib/season"
 import { buildSpecies, taxonSlugs } from "@/lib/species"
 import { startOfStockholmDay, stockholmYear, toStockholmInputValue } from "@/lib/stockholm-time"
+import { websiteNode } from "@/lib/structured-data"
 import { isHeroWorthy } from "@/lib/teaser"
 import { takenTransitionNames, transitionName } from "@/lib/view-transition"
 
@@ -121,7 +122,7 @@ const leadTransition = lead && leadPicture ? transitionName(taken, "artikel", le
 const nextTransition = nextStory ? transitionName(taken, "artikel", nextStory.id) : undefined
 ---
 
-<SiteLayout menu={navigation.menu} image={leadImage?.src}>
+<SiteLayout menu={navigation.menu} image={leadImage?.src} jsonLd={[websiteNode()]}>
   {/* The page's h1 first, in the band slot ahead of the larm band, so a screen
       reader moving by heading meets it before the band's h2. */}
   <h1 slot="band" class="sr-only">Markaryds Fågelklubb</h1>

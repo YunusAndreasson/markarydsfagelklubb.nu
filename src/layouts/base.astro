@@ -8,8 +8,9 @@ import interLatin from "@fontsource-variable/inter/files/inter-latin-opsz-normal
 import appleTouchIcon from "@/assets/apple-touch-icon.png"
 import icon from "@/assets/icon-64.png"
 import { APP_STORE_ID } from "@/lib/app-stores"
-import { SITE_ORIGIN } from "@/lib/canonical-host"
+import { canonicalUrl as canonicalOf, SITE_ORIGIN } from "@/lib/canonical-host"
 import { type Alternate, ogLocale, type SiteLang } from "@/lib/languages"
+import { type JsonLd, jsonLdText } from "@/lib/structured-data"
 import "@/styles/global.css"
 
 interface Props {
@@ -28,7 +29,7 @@ interface Props {
   /** Safari on iPhone shows the club app's Smart App Banner: the public pages, not the admin. */
   appBanner?: boolean
   /** Structured data for the head (schema.org), as one JSON-LD block. */
-  jsonLd?: Record<string, unknown>
+  jsonLd?: JsonLd
   /** False on the 404 and 500: they answer for any address, so they name none. */
   canonical?: boolean
 }
@@ -52,16 +53,12 @@ const alternateLinks = alternates.map((one) => ({
   ...one,
   url: new URL(one.href, SITE_ORIGIN).href,
 }))
-// The page's one address for search engines: the apex over https and the bare
-// path. Tracking parameters (?utm_…, ?from=), list cursors (?efter=, ?fore=)
-// and filters fold into it. Every article, species and page is in the sitemap,
-// so none is reachable only through a cursor. Without it, Search Console listed
-// those variants as "Duplicate without user-selected canonical" (2026-11-19).
-// A prerendered page is also served at its file's name (`…-appen.html`); the
-// `.html` is dropped so both name the address the site links to.
-const canonicalUrl = canonical
-  ? new URL(Astro.url.pathname.replace(/\.html$/, ""), SITE_ORIGIN).href
-  : null
+// The page's one address for search engines (canonical-host.ts). Tracking
+// parameters (?utm_…, ?from=), list cursors (?efter=, ?fore=) and filters fold
+// into it. Every article, species and page is in the sitemap, so none is
+// reachable only through a cursor. Without it, Search Console listed those
+// variants as "Duplicate without user-selected canonical" (2026-11-19).
+const canonicalUrl = canonical ? canonicalOf(Astro.url.pathname) : null
 
 const notAPage = {
   not: {
@@ -123,14 +120,8 @@ const SPECULATION_RULES = {
     {imageUrl && <meta property="og:image" content={imageUrl} />}
     <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
     {appBanner && <meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />}
-    {/* Escaped so no stored text can close the script element. */}
-    {jsonLd && (
-      <script
-        is:inline
-        type="application/ld+json"
-        set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")}
-      />
-    )}
+    {/* Escaped so no stored text can close the script element (jsonLdText). */}
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLdText(jsonLd)} />}
     {/* Pages a reader is about to open, fetched ahead (docs/design.md, "Lupen"):
         on a hover of about 200 ms, and rendered ahead on the press itself.
         Chromium only; other browsers ignore it. Public pages are cached for

@@ -9,6 +9,16 @@ export const SITE_ORIGIN = "https://markarydsfagelklubb.nu"
 
 const SITE_HOST = new URL(SITE_ORIGIN).hostname
 
+/**
+ * A page's one address for search engines: the apex over https and the bare
+ * path, whichever host or scheme the request came on, without its query. A
+ * prerendered page is also served at its file's name (`…-appen.html`); the
+ * `.html` is dropped so both name the address the site links to.
+ */
+export function canonicalUrl(pathname: string): string {
+  return new URL(pathname.replace(/\.html$/, ""), SITE_ORIGIN).href
+}
+
 const OTHER_HOSTS: ReadonlySet<string> = new Set([
   "www.markarydsfagelklubb.nu",
   "mafk-web.jonas-268.workers.dev",

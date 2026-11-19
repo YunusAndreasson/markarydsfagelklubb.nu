@@ -227,17 +227,20 @@ export async function listLokalPoints(
 
 export type FullArticle = ArticleSummary & { body_html: string; category_id: number | null }
 
+/** An article as its page reads it: with its last save, for the structured data. */
+export type PublishedArticle = FullArticle & { updated_at: string }
+
 export async function loadPublishedArticle(
   db: SupabasePublicClient,
   slug: string
-): Promise<FullArticle | null | "error"> {
+): Promise<PublishedArticle | null | "error"> {
   const { data, error } = await db
     .from("articles")
-    .select(`${SUMMARY_COLUMNS}, body_html, category_id`)
+    .select(`${SUMMARY_COLUMNS}, body_html, category_id, updated_at`)
     .eq("slug", slug)
     .maybeSingle()
     .overrideTypes<
-      (SummaryRow & { body_html: string; category_id: number | null }) | null,
+      (SummaryRow & { body_html: string; category_id: number | null; updated_at: string }) | null,
       { merge: false }
     >()
   if (error) {
@@ -245,7 +248,12 @@ export async function loadPublishedArticle(
     return "error"
   }
   return data
-    ? { ...toSummary(data), body_html: data.body_html, category_id: data.category_id }
+    ? {
+        ...toSummary(data),
+        body_html: data.body_html,
+        category_id: data.category_id,
+        updated_at: data.updated_at,
+      }
     : null
 }
 

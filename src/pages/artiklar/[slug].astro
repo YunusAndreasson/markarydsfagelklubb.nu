@@ -6,9 +6,11 @@ import Aside from "@/components/site/Aside.astro"
 import AsideArticles from "@/components/site/AsideArticles.astro"
 import AsideNote from "@/components/site/AsideNote.astro"
 import SiteLayout from "@/layouts/site.astro"
+import { canonicalUrl } from "@/lib/canonical-host"
 import { withoutPhoto } from "@/lib/front-page"
 import { listPublishedArticles, loadNavigation, loadPublishedArticle } from "@/lib/public-content"
 import { isValidSlug } from "@/lib/slug"
+import { articleNode } from "@/lib/structured-data"
 import { pickTeaserImage, teaserText } from "@/lib/teaser"
 
 const { db } = Astro.locals
@@ -34,14 +36,16 @@ const more = withoutPhoto(
   (related?.articles ?? []).filter((other) => other.id !== article.id),
   ownPhoto
 ).slice(0, 3)
+const jsonLd = [articleNode(article, canonicalUrl(Astro.url.pathname), ownPhoto ?? null)]
 ---
 
 <SiteLayout
   title={article.title}
   description={article.excerpt || teaserText(article.body_html, article.title) || undefined}
-  image={pickTeaserImage(article.cover, article.body_html)?.src}
+  image={ownPhoto}
   type="article"
   menu={navigation.menu}
+  jsonLd={jsonLd}
 >
   <ArticleView article={article}>
     {

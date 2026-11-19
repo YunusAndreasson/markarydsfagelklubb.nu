@@ -8,6 +8,9 @@ import {
   groupByDay,
   listYear,
   parseStockholmInputValue,
+  startOfStockholmDay,
+  stockholmIsoDate,
+  stockholmIsoDateTime,
   stockholmYear,
   toStockholmInputValue,
   yearUnlessThis,
@@ -203,5 +206,46 @@ describe("listYear", () => {
       2025,
       2025,
     ])
+  })
+})
+
+describe("stockholmIsoDateTime", () => {
+  it("writes Stockholm's clock with the offset of the day", () => {
+    expect(stockholmIsoDateTime("2026-01-15T09:00:00Z")).toBe("2026-01-15T10:00:00+01:00")
+    expect(stockholmIsoDateTime("2026-04-07T16:30:00Z")).toBe("2026-04-07T18:30:00+02:00")
+    expect(stockholmIsoDateTime(new Date("2026-04-07T16:30:45.500Z"))).toBe(
+      "2026-04-07T18:30:45+02:00"
+    )
+  })
+
+  it("tells the two 02:30s apart on the night summer time ends", () => {
+    // 2026-10-25: the clock goes from 03:00 back to 02:00.
+    expect(stockholmIsoDateTime("2026-10-25T00:30:00Z")).toBe("2026-10-25T02:30:00+02:00")
+    expect(stockholmIsoDateTime("2026-10-25T01:30:00Z")).toBe("2026-10-25T02:30:00+01:00")
+  })
+
+  it("puts New Year's first hour in the new year", () => {
+    expect(stockholmIsoDateTime("2025-12-31T23:30:00Z")).toBe("2026-01-01T00:30:00+01:00")
+  })
+
+  it("names the same instant it was given", () => {
+    for (const instant of [
+      "2026-03-29T00:59:00Z",
+      "2026-03-29T01:00:00Z",
+      "2026-07-01T12:00:00Z",
+    ]) {
+      expect(new Date(stockholmIsoDateTime(instant)).toISOString()).toBe(
+        new Date(instant).toISOString()
+      )
+    }
+  })
+})
+
+describe("stockholmIsoDate", () => {
+  it("gives the Stockholm day an all-day event is stored at", () => {
+    // An all-day event stores the Stockholm midnight that starts its day.
+    expect(stockholmIsoDate(startOfStockholmDay("2026-10-31T12:00:00Z"))).toBe("2026-10-31")
+    expect(stockholmIsoDate("2026-10-30T23:00:00Z")).toBe("2026-10-31")
+    expect(stockholmIsoDate("2026-06-14T22:00:00Z")).toBe("2026-06-15")
   })
 })

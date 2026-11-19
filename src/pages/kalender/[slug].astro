@@ -10,6 +10,7 @@ import MarginDate from "@/components/site/MarginDate.astro"
 import PageHeader from "@/components/site/PageHeader.astro"
 import Pager from "@/components/site/Pager.astro"
 import SiteLayout from "@/layouts/site.astro"
+import { canonicalUrl } from "@/lib/canonical-host"
 import { publicEventKindLabel } from "@/lib/event-kind"
 import {
   monthTitle as monthLabel,
@@ -44,6 +45,7 @@ import {
   stockholmMonthKey,
   stockholmYear,
 } from "@/lib/stockholm-time"
+import { eventNode } from "@/lib/structured-data"
 
 /**
  * One segment under /kalender is either a month — /kalender/2026-10 — or an
@@ -132,9 +134,11 @@ const title = month ? `${monthTitle} · Program` : `${event?.title} · Program`
 const description = month
   ? `Markaryds Fågelklubbs program i ${monthTitle.toLowerCase()}.`
   : event?.summary || undefined
+// One event is an Event for search engines; a month is only a list of them.
+const jsonLd = event ? [eventNode(event, canonicalUrl(Astro.url.pathname))] : []
 ---
 
-<SiteLayout title={title} description={description} menu={menu}>
+<SiteLayout title={title} description={description} menu={menu} jsonLd={jsonLd}>
   {
     month && (
       <div class="page-stack">

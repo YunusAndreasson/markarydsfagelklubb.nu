@@ -18,6 +18,7 @@ import { SITE_ORIGIN } from "@/lib/canonical-host"
 import type { Alternate, SiteLang } from "@/lib/languages"
 import type { MenuEntry } from "@/lib/page-tree"
 import { SITE_FALLBACK_MENU } from "@/lib/site-menu"
+import { type JsonLd, jsonLdGraph, ORGANIZATION_ID, SITE_NAME } from "@/lib/structured-data"
 
 interface Props {
   /** The page's own title; the club's name is appended. */
@@ -36,17 +37,21 @@ interface Props {
   alternates?: readonly Alternate[]
   /** False on the error pages; see base.astro. */
   canonical?: boolean
+  /**
+   * The page's own schema.org nodes (lib/structured-data.ts), joined to the
+   * club's in the head's one graph.
+   */
+  jsonLd?: readonly JsonLd[]
 }
 
-const SITE_NAME = "Markaryds Fågelklubb"
 /** The site's public Web Analytics token (Cloudflare: Analytics → Web analytics). */
 const WEB_ANALYTICS_TOKEN = "e2bdfb4ab63544e7a42804b08ae494ed"
 const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
 // The club and its app's store pages, so search engines read the site and the app as one.
+// The page's own nodes point at it by its @id.
 const ORGANIZATION = {
-  "@context": "https://schema.org",
   "@type": "Organization",
-  "@id": `${SITE_ORIGIN}/#organization`,
+  "@id": ORGANIZATION_ID,
   name: SITE_NAME,
   url: SITE_ORIGIN,
   logo: new URL(logo.src, SITE_ORIGIN).href,
@@ -69,6 +74,7 @@ const {
   lang = "sv",
   alternates,
   canonical,
+  jsonLd = [],
 } = Astro.props
 const menu = loaded.length > 0 ? loaded : SITE_FALLBACK_MENU
 
@@ -126,7 +132,7 @@ const footerGroups = [
   alternates={alternates}
   canonical={canonical}
   appBanner
-  jsonLd={ORGANIZATION}
+  jsonLd={jsonLdGraph([ORGANIZATION, ...jsonLd])}
 >
   <a
     href="#innehall"

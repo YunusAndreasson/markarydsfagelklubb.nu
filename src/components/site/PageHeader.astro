@@ -1,6 +1,8 @@
 ---
 import Aside from "@/components/site/Aside.astro"
 import Crumbs, { type Crumb } from "@/components/site/Crumbs.astro"
+import { canonicalUrl } from "@/lib/canonical-host"
+import { breadcrumbList, jsonLdText } from "@/lib/structured-data"
 
 /**
  * The head of every public page but the home page (docs/design.md, "Linjalen"):
@@ -16,6 +18,10 @@ import Crumbs, { type Crumb } from "@/components/site/Crumbs.astro"
  *   title rather than the crumb, and after the ingress on a phone. `hang`
  *   gives it no height from lg, so notes taller than the header hang beside
  *   what follows instead of pushing it down (the programme, "Kontaktark").
+ * - The crumbs go to search engines too, as a BreadcrumbList with the page
+ *   itself last. It is made here, beside the trail it repeats, so no page
+ *   builds its own; a data block, inside the header so `page-stack`'s
+ *   sibling rules still see the header and what follows it.
  */
 interface Props {
   title: string
@@ -42,6 +48,7 @@ const {
 const aside = Astro.slots.has("aside")
 const after = Astro.slots.has("after")
 const track = wide ? "in-wide" : "in-text"
+const trail = breadcrumbList(crumbs, { name: title, url: canonicalUrl(Astro.url.pathname) })
 ---
 
 <header data-page-header class:list={["gap-y-4", aside ? "spread" : ["flex flex-col", !wide && "at-text"]]}>
@@ -68,4 +75,5 @@ const track = wide ? "in-wide" : "in-text"
       </Aside>
     )
   }
+  {trail && <script is:inline type="application/ld+json" set:html={jsonLdText(trail)} />}
 </header>

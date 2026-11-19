@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest"
-import { canonicalRedirect, visitorScheme } from "./canonical-host"
+import { canonicalRedirect, canonicalUrl, visitorScheme } from "./canonical-host"
+
+describe("canonicalUrl", () => {
+  it("names the path on the apex over https", () => {
+    expect(canonicalUrl("/artiklar/infor-smalandsrallyt")).toBe(
+      "https://markarydsfagelklubb.nu/artiklar/infor-smalandsrallyt"
+    )
+    expect(canonicalUrl("/")).toBe("https://markarydsfagelklubb.nu/")
+  })
+
+  it("drops a prerendered page's .html", () => {
+    expect(canonicalUrl("/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen.html")).toBe(
+      "https://markarydsfagelklubb.nu/om-foreningen/integritetspolicy-markaryds-fagelklubb-appen"
+    )
+  })
+})
 
 describe("canonicalRedirect", () => {
   it("sends www and workers.dev to the same path on the apex", () => {
