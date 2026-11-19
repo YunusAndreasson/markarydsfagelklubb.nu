@@ -135,7 +135,6 @@ describe("articleNode", () => {
       "@type": "Article",
       headline: "Inför Smålandsrallyt",
       datePublished: "2025-10-20T10:00:00+02:00",
-      dateModified: "2026-10-24T22:29:57+02:00",
       image: "https://example.supabase.co/storage/v1/x/960.webp",
       author: CLUB,
       publisher: CLUB,
@@ -150,9 +149,8 @@ describe("articleNode", () => {
     expect(articleNode(article, url, null)).not.toHaveProperty("image")
   })
 
-  it("never says it was modified before it was published", () => {
-    const scheduled = { ...article, updated_at: "2025-10-01T08:00:00+00:00" }
-    expect(articleNode(scheduled, url, null).dateModified).toBe("2025-10-20T10:00:00+02:00")
+  it("gives no dateModified: an imported post's last save is the import", () => {
+    expect(articleNode(article, url, null)).not.toHaveProperty("dateModified")
   })
 })
 

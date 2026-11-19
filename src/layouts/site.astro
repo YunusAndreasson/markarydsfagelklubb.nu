@@ -1,4 +1,5 @@
 ---
+import logo from "@/assets/logo.webp"
 /**
  * The club's emblem, the dipper of 1986, from the app
  * (`../mafk-mobie/assets/images/splash-icon.png`, which the app shows on both
@@ -8,8 +9,7 @@
  * service passes images through untouched on rendered pages, so the file is
  * sized here, not at request time.
  */
-import shareEmblem from "@/assets/apple-touch-icon.png"
-import logo from "@/assets/logo.webp"
+import shareEmblem from "@/assets/share-emblem.jpg"
 import AppLinks from "@/components/site/AppLinks.astro"
 import EmailLink from "@/components/site/EmailLink.astro"
 import SiteHeader from "@/components/site/SiteHeader.astro"
@@ -51,9 +51,10 @@ interface Props {
 const WEB_ANALYTICS_TOKEN = "e2bdfb4ab63544e7a42804b08ae494ed"
 const TAGLINE = "Fågelskådning och naturliv i Markaryds kommun"
 /**
- * A shared link's picture when the page has no photo: the emblem on white, as
- * on a home screen, the largest copy in src/assets (180 px PNG). Facebook
- * shows a picture only from 200 px, so a larger copy would earn one there.
+ * A shared link's picture when the page has no photo: the emblem on white,
+ * 600 px, made from the app's icon (../mafk-mobie/assets/images/icon.png,
+ * transparent corners flattened onto white). Facebook shows a picture only
+ * from 200 px, which the 180 px home-screen icon missed.
  */
 const SHARE_EMBLEM = new URL(shareEmblem.src, SITE_ORIGIN).href
 // The club and its app's store pages, so search engines read the site and the app as one.

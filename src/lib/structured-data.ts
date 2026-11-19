@@ -97,18 +97,15 @@ export function capHeadline(title: string, max = HEADLINE_MAX): string {
 type ArticleFacts = { title: string; published_at: string; updated_at: string }
 
 /**
- * One article, with the club as its author and publisher. `updated_at` is the
- * row's last save, which for an imported post is the import; an article saved
- * before its scheduled time counts as modified when it was published.
+ * One article, with the club as its author and publisher. No `dateModified`:
+ * `updated_at` is the row's last save, which for the 319 imported posts is the
+ * import (2026-10-24), and Google could then date a 2011 post 2026.
  */
 export function articleNode(article: ArticleFacts, url: string, image: string | null): JsonLd {
-  const published = new Date(article.published_at)
-  const updated = new Date(article.updated_at)
   return {
     "@type": "Article",
     headline: capHeadline(article.title),
-    datePublished: stockholmIsoDateTime(published),
-    dateModified: stockholmIsoDateTime(updated > published ? updated : published),
+    datePublished: stockholmIsoDateTime(new Date(article.published_at)),
     ...(image ? { image: new URL(image, SITE_ORIGIN).href } : {}),
     author: CLUB,
     publisher: CLUB,

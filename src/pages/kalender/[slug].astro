@@ -131,9 +131,12 @@ const phoneHref = event?.contact_phone ? telHref(event.contact_phone) : null
 const hasContact = Boolean(event?.contact_name || event?.contact_phone)
 
 // An event's title carries its date: a spring's eight Mötesplats Ekebacken
-// would otherwise share one title in search results.
+// would otherwise share one title in search results. A title that already
+// names the year ("Vinterfågelrally 2027") gets the day and month only.
+const eventDate = event ? formatDate(event.starts_at, "long") : ""
+const eventYear = eventDate.match(/\d{4}$/)?.[0]
 const title = event
-  ? `${event.title} ${formatDate(event.starts_at, "long")} · Program`
+  ? `${event.title} ${eventYear && event.title.includes(eventYear) ? formatDate(event.starts_at, "dayMonth") : eventDate} · Program`
   : `${monthTitle} · Program`
 const description = month
   ? `Markaryds Fågelklubbs program i ${monthTitle.toLowerCase()}.`
