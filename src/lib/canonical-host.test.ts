@@ -11,6 +11,15 @@ describe("canonicalRedirect", () => {
     )
   })
 
+  it("sends plain http on the apex, and on www, to https", () => {
+    expect(canonicalRedirect(new URL("http://markarydsfagelklubb.nu/artiklar?sida=2"))).toBe(
+      "https://markarydsfagelklubb.nu/artiklar?sida=2"
+    )
+    expect(canonicalRedirect(new URL("http://www.markarydsfagelklubb.nu/"))).toBe(
+      "https://markarydsfagelklubb.nu/"
+    )
+  })
+
   it("serves the apex, local dev and the API where they are", () => {
     expect(canonicalRedirect(new URL("https://markarydsfagelklubb.nu/obsar"))).toBeNull()
     expect(canonicalRedirect(new URL("http://localhost:8787/"))).toBeNull()

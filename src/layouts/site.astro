@@ -34,6 +34,8 @@ interface Props {
   /** The page's language and its other-language versions; see base.astro. */
   lang?: SiteLang
   alternates?: readonly Alternate[]
+  /** False on the error pages; see base.astro. */
+  canonical?: boolean
 }
 
 const SITE_NAME = "Markaryds Fågelklubb"
@@ -56,7 +58,16 @@ const ORGANIZATION = {
  */
 const JOIN_PATH = "/om-foreningen/medlemskap"
 
-const { title, description, menu: loaded, image, type, lang = "sv", alternates } = Astro.props
+const {
+  title,
+  description,
+  menu: loaded,
+  image,
+  type,
+  lang = "sv",
+  alternates,
+  canonical,
+} = Astro.props
 const menu = loaded.length > 0 ? loaded : SITE_FALLBACK_MENU
 
 /**
@@ -111,6 +122,7 @@ const footerGroups = [
   type={type}
   lang={lang}
   alternates={alternates}
+  canonical={canonical}
   appBanner
   jsonLd={ORGANIZATION}
 >

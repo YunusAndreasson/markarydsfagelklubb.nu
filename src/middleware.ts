@@ -40,7 +40,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const { pathname, search } = context.url
 
-  // One address for the site: www and workers.dev move to the apex.
+  // One address for the site: www, workers.dev and plain http move to the
+  // apex over https.
   const canonical = canonicalRedirect(context.url)
   if (canonical) return applySecurityHeaders(movedPermanently(canonical))
 

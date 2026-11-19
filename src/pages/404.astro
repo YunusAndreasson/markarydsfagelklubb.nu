@@ -7,7 +7,7 @@ import SiteLayout from "@/layouts/site.astro"
 // is the layout's fixed top level (FALLBACK_MENU), not the page tree's.
 ---
 
-<SiteLayout title="Sidan hittades inte" menu={[]}>
+<SiteLayout title="Sidan hittades inte" menu={[]} canonical={false}>
   <PageHeader
     title="Sidan hittades inte"
     ingress="Adressen kan vara felstavad, eller så har sidan flyttats. Sök efter det du letar efter:"

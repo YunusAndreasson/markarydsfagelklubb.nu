@@ -7,7 +7,7 @@ import SiteLayout from "@/layouts/site.astro"
 // depend on it. Astro serves it for any route that answers 500.
 ---
 
-<SiteLayout title="Något gick fel" menu={[]}>
+<SiteLayout title="Något gick fel" menu={[]} canonical={false}>
   <PageHeader
     title="Sidan kunde inte hämtas just nu"
     ingress="Felet ligger hos oss. Ladda om sidan om en stund. Larmen finns också i klubbens app."
