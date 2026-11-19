@@ -130,7 +130,11 @@ const lead =
 const phoneHref = event?.contact_phone ? telHref(event.contact_phone) : null
 const hasContact = Boolean(event?.contact_name || event?.contact_phone)
 
-const title = month ? `${monthTitle} · Program` : `${event?.title} · Program`
+// An event's title carries its date: a spring's eight Mötesplats Ekebacken
+// would otherwise share one title in search results.
+const title = event
+  ? `${event.title} ${formatDate(event.starts_at, "long")} · Program`
+  : `${monthTitle} · Program`
 const description = month
   ? `Markaryds Fågelklubbs program i ${monthTitle.toLowerCase()}.`
   : event?.summary || undefined

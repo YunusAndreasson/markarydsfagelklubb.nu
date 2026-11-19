@@ -13,7 +13,8 @@ export default defineConfig({
   // this is the current model.)
   output: "static",
   // Every WordPress URL ends in "/". "never" makes the slashless form
-  // canonical, and Astro 301s /a/b/ to /a/b before the middleware runs.
+  // canonical, and Astro 301s /a/b/ to /a/b before the middleware runs. An old
+  // URL the redirect map knows skips that hop (src/worker.ts).
   trailingSlash: "never",
   build: {
     // "directory" would write a prerendered page to x/index.html, and the

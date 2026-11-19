@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import map from "@/data/wp-redirects.json"
 import { isValidSlug, RESERVED_ARTICLE_SLUGS, RESERVED_TOP_LEVEL_SLUGS } from "./slug"
-import { MOVED_PAGES, normaliseOldPath, wpRedirect } from "./wp-redirects"
+import { MOVED_PAGES, normaliseOldPath, slashedOldPath, wpRedirect } from "./wp-redirects"
 
 const paths = Object.entries(map.paths)
 const targets = [...paths.map(([, to]) => to), ...Object.values(map.ids)]
@@ -121,7 +121,39 @@ describe("WordPress's paged lists", () => {
     expect(wpRedirect("/page/2/", none)).toBe("/artiklar")
   })
   it("leave a page of a list the site doesn't know alone", () => {
-    expect(wpRedirect("/author/admin/page/2", none)).toBeNull()
     expect(wpRedirect("/category/finns-inte/page/2", none)).toBeNull()
+    expect(wpRedirect("/finns-inte/page/2", none)).toBeNull()
+  })
+})
+
+describe("WordPress's author archives", () => {
+  const none = new URLSearchParams()
+  it("go to the articles", () => {
+    expect(wpRedirect("/author/admin", none)).toBe("/artiklar")
+    expect(wpRedirect("/author/jonas/", none)).toBe("/artiklar")
+    expect(wpRedirect("/author/admin/page/2", none)).toBe("/artiklar")
+    expect(wpRedirect("/author/admin/feed", none)).toBe("/artiklar")
+  })
+  it("need an author", () => {
+    expect(wpRedirect("/author", none)).toBeNull()
+    expect(wpRedirect("/authors/admin", none)).toBeNull()
+  })
+})
+
+describe("slashedOldPath", () => {
+  it("names the bare path of an old URL that came with its slash", () => {
+    expect(slashedOldPath("/2011/04/")).toBe("/2011/04")
+    expect(slashedOldPath("/70-arter-en-kortrapport-fran-smalandsrallyt/")).toBe(
+      "/70-arter-en-kortrapport-fran-smalandsrallyt"
+    )
+    expect(slashedOldPath("/author/admin/")).toBe("/author/admin")
+    expect(slashedOldPath("/programandring//")).toBe("/programandring")
+  })
+  it("leaves the rest to Astro's own slash redirect", () => {
+    expect(slashedOldPath("/")).toBeNull()
+    expect(slashedOldPath("/2011/04")).toBeNull()
+    expect(slashedOldPath("/kalender/")).toBeNull()
+    expect(slashedOldPath("/finns-inte/")).toBeNull()
+    expect(slashedOldPath("//")).toBeNull()
   })
 })

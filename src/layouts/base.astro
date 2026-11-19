@@ -21,6 +21,12 @@ interface Props {
    * Root-relative or absolute; made absolute against the request here.
    */
   image?: string
+  /**
+   * The picture when the page has none of its own: site.astro passes the club's
+   * emblem, absolute. Small and square, so the card stays `summary`; only a
+   * photo (`image`) gets the large one.
+   */
+  fallbackImage?: string
   type?: "website" | "article"
   /** The page's language: Swedish but for the visitor pages (docs/design.md, "Besökare"). */
   lang?: SiteLang
@@ -38,6 +44,7 @@ const {
   title,
   description,
   image,
+  fallbackImage,
   type = "website",
   lang = "sv",
   alternates = [],
@@ -47,6 +54,7 @@ const {
 } = Astro.props
 // Prerendered pages have no request to resolve against, and pass no image.
 const imageUrl = image ? new URL(image, Astro.url).href : null
+const shareImage = imageUrl ?? fallbackImage ?? null
 // hreflang wants absolute URLs, and the canonical ones, as the sitemap lists
 // them: the apex over https, whichever host or scheme the request came on.
 const alternateLinks = alternates.map((one) => ({
@@ -117,7 +125,7 @@ const SPECULATION_RULES = {
     <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
-    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    {shareImage && <meta property="og:image" content={shareImage} />}
     <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
     {appBanner && <meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />}
     {/* Escaped so no stored text can close the script element (jsonLdText). */}
